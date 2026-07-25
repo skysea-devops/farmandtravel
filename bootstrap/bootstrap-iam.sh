@@ -21,7 +21,7 @@ set -euo pipefail
 # ---- Fill these in -----------------------------------------------------------
 PROJECT="farmandtravel"          # project slug (resource names + tags)
 GITHUB_ORG="skysea-devops"           # your GitHub org or username
-GITHUB_REPO="https://github.com/skysea-devops/farmandtravel.git"          # the repo that runs Terraform
+GITHUB_REPO="farmandtravel"          # the repo that runs Terraform
 DEPLOY_BRANCH="main"             # only this branch may deploy to prod
 # ------------------------------------------------------------------------------
 

@@ -11,10 +11,6 @@ output "private_subnet_ids" {
   value = module.network.private_subnet_ids
 }
 
-output "public_subnet_ids" {
-  value = module.network.public_subnet_ids
-}
-
 output "lambda_security_group_id" {
   value = module.network.lambda_sg_id
 }

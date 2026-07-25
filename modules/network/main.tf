@@ -5,39 +5,19 @@ locals {
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
-  enable_dns_hostnames = true # required for future interface VPC endpoints (SES etc.)
+  enable_dns_hostnames = true # needed for interface VPC endpoints (SES, SSM, ...) later
 
   tags = { Name = "${local.name}-vpc" }
 }
 
-# Internet Gateway serves the public subnets only. Free; kept for future ALB/egress
-# without committing to a NAT gateway.
-resource "aws_internet_gateway" "this" {
-  vpc_id = aws_vpc.this.id
-  tags   = { Name = "${local.name}-igw" }
-}
-
-# --- Subnets (/20 each out of a /16; room for 16 subnets) ---------------------
-# Public: indexes 0..(az_count-1). Currently empty (no NAT/ALB yet) -> $0.
-resource "aws_subnet" "public" {
-  count                   = var.az_count
-  vpc_id                  = aws_vpc.this.id
-  availability_zone       = var.azs[count.index]
-  cidr_block              = cidrsubnet(var.vpc_cidr, 4, count.index)
-  map_public_ip_on_launch = false
-
-  tags = {
-    Name = "${local.name}-public-${var.azs[count.index]}"
-    Tier = "public"
-  }
-}
-
-# Private: indexes 8.. . Lambda ENIs + RDS live here. No route to the internet.
+# Private subnets across az_count AZs. Lambda ENIs + RDS live here.
+# Two AZs even for a Single-AZ RDS: a DB subnet group must span >= 2 AZs (AWS rule).
+# No internet route anywhere in this VPC — it is closed. AWS access is via VPC endpoints.
 resource "aws_subnet" "private" {
   count             = var.az_count
   vpc_id            = aws_vpc.this.id
   availability_zone = var.azs[count.index]
-  cidr_block        = cidrsubnet(var.vpc_cidr, 4, count.index + 8)
+  cidr_block        = cidrsubnet(var.vpc_cidr, 4, count.index)
 
   tags = {
     Name = "${local.name}-private-${var.azs[count.index]}"
@@ -45,28 +25,8 @@ resource "aws_subnet" "private" {
   }
 }
 
-# --- Public routing -----------------------------------------------------------
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.this.id
-  tags   = { Name = "${local.name}-public-rt" }
-}
-
-resource "aws_route" "public_internet" {
-  route_table_id         = aws_route_table.public.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.this.id
-}
-
-resource "aws_route_table_association" "public" {
-  count          = var.az_count
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-
-# --- Private routing (NO NAT gateway, by design) ------------------------------
-# The private route table has no 0.0.0.0/0 route. Anything the private subnets
-# need from AWS must go through a VPC endpoint (S3 gateway below; SES/others
-# added as interface endpoints when those services come online).
+# Private route table: implicit local route + the S3 gateway endpoint's prefix-list
+# route only. No IGW, no NAT -> no path to the internet.
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
   tags   = { Name = "${local.name}-private-rt" }
@@ -78,7 +38,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# --- S3 Gateway Endpoint (free; keeps S3 traffic private, no NAT needed) -------
+# S3 Gateway Endpoint (free). Lets in-VPC Lambda reach S3 without a NAT gateway.
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.this.id
   service_name      = "com.amazonaws.${var.aws_region}.s3"
@@ -88,7 +48,7 @@ resource "aws_vpc_endpoint" "s3" {
   tags = { Name = "${local.name}-s3-gwe" }
 }
 
-# --- Security groups (no attached resources yet; wired up in Sprint 1) --------
+# --- Security groups (attached to Lambda/RDS in Sprint 1) ---------------------
 resource "aws_security_group" "lambda" {
   name        = "${local.name}-lambda-sg"
   description = "Lambda ENIs in private subnets"
