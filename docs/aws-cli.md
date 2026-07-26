@@ -1,0 +1,1 @@
+OIDC role arn:  arn:aws:iam::191072269876:oidc-provider/token.actions.githubusercontent.com

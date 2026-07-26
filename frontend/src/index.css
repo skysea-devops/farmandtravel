@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+  Farm & Travel — design tokens.
+  Direction: "field notebook / almanac". Grounded eco identity, deliberately
+  NOT the cream + terracotta + high-contrast-serif default. Palette drawn from
+  cultivated land: pine ink, forest surfaces, harvest gold, sage paper.
+*/
+@theme {
+  --color-paper: #eef0e6;      /* page background — sage-tinted off-white */
+  --color-surface: #f8f9f2;    /* cards / raised surfaces */
+  --color-ink: #1d3527;        /* primary text — deep pine, not black */
+  --color-ink-soft: #4a5c4f;   /* secondary text */
+  --color-field: #2c5a3f;      /* primary green (buttons, accents) */
+  --color-field-dark: #22462f; /* hover / deep panels */
+  --color-harvest: #c79328;    /* accent — harvest gold (yellower than terracotta) */
+  --color-harvest-soft: #e7d9a8;
+  --color-stone: #cbc9b6;      /* hairlines / muted borders */
+  --color-clay: #a8503a;       /* rare warm signal (alerts, "closed") */
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Nudge small/body text ~1px larger for readability.
+     Headings (text-lg and up) are left at their defaults. */
+  --text-xs: 0.8125rem; /* 13px (was 12) */
+  --text-sm: 0.9375rem; /* 15px (was 14) */
+  --text-base: 1.0625rem; /* 17px (was 16) */
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+  }
+  /* Fraunces optical sizing: let display faces breathe at large sizes */
+  .font-display {
+    font-optical-sizing: auto;
+  }
+  ::selection {
+    background: var(--color-harvest-soft);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-field);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Almanac hairline: a thin rule with a small centred seed glyph */
+.rule-seed {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-stone);
+}
+.rule-seed::before,
+.rule-seed::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
