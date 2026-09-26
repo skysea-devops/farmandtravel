@@ -14,7 +14,9 @@ async function ensureDatabaseUrl(): Promise<void> {
   if (process.env.DB_USER && process.env.DB_PASSWORD && host && name) {
     const user = encodeURIComponent(process.env.DB_USER);
     const pass = encodeURIComponent(process.env.DB_PASSWORD);
-    process.env.DATABASE_URL = `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+    // No sslmode in the URL: TLS is controlled by pool.ts's ssl option, otherwise
+    // pg parses sslmode and overrides it (RDS cert -> "self-signed" verify error).
+    process.env.DATABASE_URL = `postgres://${user}:${pass}@${host}:${port}/${name}`;
     return;
   }
 
@@ -30,7 +32,7 @@ async function ensureDatabaseUrl(): Promise<void> {
   const secret = JSON.parse(res.SecretString ?? "{}") as { username: string; password: string };
   const user = encodeURIComponent(secret.username);
   const pass = encodeURIComponent(secret.password);
-  process.env.DATABASE_URL = `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+  process.env.DATABASE_URL = `postgres://${user}:${pass}@${host}:${port}/${name}`;
 }
 
 let cached: Handler | undefined;

@@ -15,10 +15,12 @@ async function databaseUrl(): Promise<string> {
   const port = process.env.DB_PORT ?? "5432";
 
   // Preferred: discrete creds injected at deploy time (no Secrets Manager call).
+  // No sslmode in the URL: TLS is set via the pool's ssl option below (avoids pg
+  // overriding it and failing RDS cert verification as "self-signed").
   if (process.env.DB_USER && process.env.DB_PASSWORD && host && name) {
     const user = encodeURIComponent(process.env.DB_USER);
     const pass = encodeURIComponent(process.env.DB_PASSWORD);
-    return `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+    return `postgres://${user}:${pass}@${host}:${port}/${name}`;
   }
 
   // Fallback: fetch the RDS-managed secret (requires a Secrets Manager VPC endpoint).
@@ -29,7 +31,7 @@ async function databaseUrl(): Promise<string> {
   const s = JSON.parse(res.SecretString ?? "{}") as { username: string; password: string };
   const user = encodeURIComponent(s.username);
   const pass = encodeURIComponent(s.password);
-  return `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+  return `postgres://${user}:${pass}@${host}:${port}/${name}`;
 }
 
 export const handler: Handler = async () => {

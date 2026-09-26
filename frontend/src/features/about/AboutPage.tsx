@@ -32,17 +32,20 @@ export function AboutPage() {
       <section className="mx-auto max-w-5xl px-6 pb-16">
         <div className="grid items-center gap-8 rounded-[var(--radius-lg)] border border-border bg-surface p-8 md:grid-cols-[220px_1fr]">
           <div className="mx-auto">
-            <div className="size-44 rounded-full bg-linear-135 from-moss-300 to-clay-500 bg-cover bg-center"
-              style={{ backgroundImage: "url(https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80)" }} />
+            <div className="size-44 rounded-full bg-cover bg-center"
+              style={{ backgroundImage: "url(/ozgur.jpg)" }} />
           </div>
           <div>
             <div className="mb-1 text-xs font-semibold tracking-wider text-clay-600">KURUCU ÜYE</div>
             <h2 className="font-display text-2xl font-semibold">Özgür Gökdeniz</h2>
             <div className="mb-3 text-sm text-ink-500">🚜 Çiftlik sahibi · 📍 Fidanlar köyü, Akhisar / Manisa</div>
             <p className="text-[15px] text-ink-700">
-              Toprakla Yeniden fikrinin sahibi. Manisa Akhisar'daki Fidanlar köyünde kurduğu çiftlikte
-              sürdürülebilir tarım ve birlikte üretim üzerine çalışıyor. Kendi deneyiminden doğan bu topluluğu,
-              doğaya dönmek isteyenlerle bilgi ve emeği paylaşan herkesi buluşturmak için kurdu.
+              Merhaba, ben Özgür. Yıllar önce şehir hayatını geride bırakıp Manisa Akhisar'daki Fidanlar köyüne
+              yerleştim ve burada küçük bir çiftlik kurdum. Toprakla yeniden bağ kurmanın hayatımı nasıl
+              değiştirdiğini kendi ellerimle gördüm. Bu yolda öğrendiğim en değerli şey şu oldu: bilgiyi, emeği ve
+              deneyimi paylaştıkça her şey çoğalıyor. Toprakla Yeniden'i tam da bunun için kurdum — doğaya dönmek
+              isteyenlerle, kapısını açmaya hazır olanları bir araya getirmek için. Umarım sen de bu toplulukta
+              kendine bir yer bulursun.
             </p>
             <div className="mt-4">
               <Link to="/aktiviteler"><Button variant="outline" size="sm">🎥 Özgür ile podcast'i izle</Button></Link>
