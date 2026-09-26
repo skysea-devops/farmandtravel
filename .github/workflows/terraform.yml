@@ -1,4 +1,4 @@
-name: Terraform
+name: Terraform # deploy role hardcoded (OIDC)
 
 # Deploy yalnızca prod branch'ından.
 #   dev -> prod PR'ında: fmt + validate + plan.
