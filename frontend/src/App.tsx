@@ -10,8 +10,9 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
 import { PanelPage } from "@/features/app/PanelPage";
+import { KesfetPage } from "@/features/app/KesfetPage";
+import { MemberProfilePage } from "@/features/app/MemberProfilePage";
 import {
-  KesfetPage,
   BaglantilarPage,
   MesajlarPage,
   KaydedilenlerPage,
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<PanelPage />} />
         <Route path="kesfet" element={<KesfetPage />} />
+        <Route path="uye/:id" element={<MemberProfilePage />} />
         <Route path="baglantilar" element={<BaglantilarPage />} />
         <Route path="mesajlar" element={<MesajlarPage />} />
         <Route path="kaydedilenler" element={<KaydedilenlerPage />} />

@@ -35,6 +35,7 @@ export interface MatchCard {
   country: string | null;
   city: string | null;
   headline: string | null;
+  bio?: string | null;
   avatarKey: string | null;
   tags: MatchTag[];
   score: number;

@@ -11,7 +11,6 @@ function Stub({ title, note }: { title: string; note: string }) {
   );
 }
 
-export const KesfetPage = () => <Stub title="Keşfet" note="Üyeleri etiket ve konuma göre keşfetme yakında geliyor." />;
 export const BaglantilarPage = () => <Stub title="Bağlantılar" note="Bağlantı istekleri ve kabul akışı yakında geliyor." />;
 export const MesajlarPage = () => <Stub title="Mesajlar" note="Bağlantı kurduğun kişilerle mesajlaşma yakında geliyor." />;
 export const KaydedilenlerPage = () => <Stub title="Kaydedilenler" note="Kaydettiğin profiller burada listelenecek." />;
