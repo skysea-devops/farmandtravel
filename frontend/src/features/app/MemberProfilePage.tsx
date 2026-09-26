@@ -18,7 +18,7 @@ export function MemberProfilePage() {
 
   useEffect(() => {
     setLoading(true);
-    api.get<MatchCard>(`/members/${id}`)
+    api.getCached<MatchCard>(`/members/${id}`)
       .then(setM)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));

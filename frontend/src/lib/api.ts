@@ -22,8 +22,20 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   return data as T;
 }
 
+// Tiny in-memory GET cache so moving between app pages doesn't refetch every time.
+const cache = new Map<string, { at: number; data: unknown }>();
+
 export const api = {
   get: <T>(p: string) => req<T>("GET", p),
   post: <T>(p: string, b?: unknown) => req<T>("POST", p, b),
   put: <T>(p: string, b?: unknown) => req<T>("PUT", p, b),
+  // Cached GET: returns a fresh value within ttlMs, else fetches and stores.
+  getCached: async <T>(p: string, ttlMs = 60_000): Promise<T> => {
+    const hit = cache.get(p);
+    if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
+    const data = await req<T>("GET", p);
+    cache.set(p, { at: Date.now(), data });
+    return data;
+  },
+  invalidate: (p?: string) => (p ? cache.delete(p) : cache.clear()),
 };

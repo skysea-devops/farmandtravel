@@ -170,6 +170,27 @@ resource "aws_lambda_permission" "apigw" {
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }
 
+# --- Keep the API Lambda warm (cuts VPC cold starts) ---
+resource "aws_cloudwatch_event_rule" "warmup" {
+  name                = "${local.name}-warmup"
+  description         = "Ping the API Lambda to keep it warm"
+  schedule_expression = "rate(5 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "warmup" {
+  rule  = aws_cloudwatch_event_rule.warmup.name
+  arn   = aws_lambda_function.api.arn
+  input = jsonencode({ warmup = true })
+}
+
+resource "aws_lambda_permission" "warmup" {
+  statement_id  = "AllowEventBridgeWarmup"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.warmup.arn
+}
+
 # --- One-off DB migration runner ---
 # Same code bundle, different handler (migrate.handler). Not wired to API Gateway;
 # invoked on demand (CI or `aws lambda invoke`) to apply migrations + seed inside

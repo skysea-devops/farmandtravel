@@ -38,6 +38,19 @@ async function ensureDatabaseUrl(): Promise<void> {
 let cached: Handler | undefined;
 
 export const handler: Handler = async (event, context, callback) => {
+  // Warm-up ping (EventBridge): open the DB connection and return fast so the
+  // container + pg pool stay warm, avoiding cold starts for real requests.
+  if (event && (event as { warmup?: boolean }).warmup) {
+    await ensureDatabaseUrl();
+    try {
+      const { pool } = await import("./shared/db/pool.js");
+      await pool.query("SELECT 1");
+    } catch {
+      /* ignore */
+    }
+    return { warmed: true };
+  }
+
   if (!cached) {
     await ensureDatabaseUrl();
     const [{ handle }, { createApp }] = await Promise.all([
