@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
 
-const SITUATIONS = ["Bir yerim/çiftliğim var", "Bir projem/fikrim var", "Çiftlik hayatını deneyimlemek istiyorum", "Deneyim/gönüllülük arıyorum", "Uzmanlık sunuyorum", "Öğrenmek istiyorum"];
-const SEEK_PICKS = ["Gönüllü arıyorum", "Mentor arıyorum", "Bilgi öğrenmek istiyorum", "Ortak arıyorum", "Ekipman arıyorum", "Networking", "Finansal destekçi arıyorum", "Konaklama fırsatı arıyorum"];
+const SITUATIONS = ["Bir yerim/çiftliğim var", "Bir projem/fikrim var", "İleride kendi çiftliğimi kuracağım", "Deneyim/gönüllülük arıyorum", "Uzmanlık sunuyorum", "Öğrenmek istiyorum"];
+const SEEK_PICKS = ["Gönüllü arıyorum", "Mentor arıyorum", "Bilgi öğrenmek istiyorum", "Ortak arıyorum", "Ekipman arıyorum", "Networking", "Finansal destekçi arıyorum", "Konaklama fırsatı arıyorum", "Çiftlik hayatını deneyimlemek istiyorum"];
 const OFFER_PICKS = ["Yer & deneyim sunuyorum", "Gönüllü olmak istiyorum", "Uzmanlık sunuyorum", "Mentorluk yapabilirim", "Ortaklık kurabilirim", "Ekipman sağlayabilirim", "Finansal destek olabilirim"];
 const COUNTRIES = ["Türkiye", "Portekiz", "Almanya", "İspanya", "İtalya", "Hollanda", "Diğer"];
 const AXIS_LABEL: Record<Axis, string> = { situation: "Durumum", seek: "Aradıklarım", offer: "Sunduklarım", topic: "İlgi alanlarım" };
