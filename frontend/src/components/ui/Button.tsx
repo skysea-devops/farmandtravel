@@ -1,26 +1,36 @@
-import type { ButtonHTMLAttributes } from 'react'
-import { cn } from '@/lib/cn'
+import type { ButtonHTMLAttributes } from "react";
+import { cn } from "@/lib/cn";
 
-type Variant = 'primary' | 'outline' | 'ghost'
-
-const base =
-  'inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+type Variant = "primary" | "outline" | "ghost" | "onDark";
+type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-field text-paper hover:bg-field-dark',
-  outline: 'border border-field/30 text-ink hover:border-field hover:bg-field/5',
-  ghost: 'text-ink hover:bg-ink/5',
+  primary: "bg-forest-600 text-white hover:bg-forest-700 border border-transparent",
+  outline: "bg-transparent text-forest-700 border border-border-strong hover:bg-sand-100",
+  ghost: "bg-transparent text-forest-700 border border-transparent hover:bg-sand-100",
+  onDark: "bg-transparent text-white border border-white/50 hover:bg-white/10",
+};
+const sizes: Record<Size, string> = {
+  sm: "px-3.5 py-1.5 text-[13px]",
+  md: "px-[18px] py-2.5 text-sm",
+  lg: "px-6 py-3 text-[15px]",
+};
+
+interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
 }
 
-/** Shared classes so <Link> can look like a button without duplicating styles. */
-export function buttonClass(variant: Variant = 'primary', className?: string): string {
-  return cn(base, variants[variant], className)
-}
-
-export function Button({
-  variant = 'primary',
-  className,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
-  return <button className={buttonClass(variant, className)} {...props} />
+export function Button({ variant = "primary", size = "md", className, ...rest }: Props) {
+  return (
+    <button
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition cursor-pointer disabled:opacity-50",
+        variants[variant],
+        sizes[size],
+        className,
+      )}
+      {...rest}
+    />
+  );
 }

@@ -1,31 +1,41 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 /*
-  Farm & Travel — design tokens.
-  Direction: "field notebook / almanac". Grounded eco identity, deliberately
-  NOT the cream + terracotta + high-contrast-serif default. Palette drawn from
-  cultivated land: pine ink, forest surfaces, harvest gold, sage paper.
+  Toprakla Yeniden — design tokens (matches the approved Faz 0-C mockups).
+  Nature + modern: forest greens (identity/primary), clay (secondary), sand (surfaces).
 */
 @theme {
-  --color-paper: #eef0e6;      /* page background — sage-tinted off-white */
-  --color-surface: #f8f9f2;    /* cards / raised surfaces */
-  --color-ink: #1d3527;        /* primary text — deep pine, not black */
-  --color-ink-soft: #4a5c4f;   /* secondary text */
-  --color-field: #2c5a3f;      /* primary green (buttons, accents) */
-  --color-field-dark: #22462f; /* hover / deep panels */
-  --color-harvest: #c79328;    /* accent — harvest gold (yellower than terracotta) */
-  --color-harvest-soft: #e7d9a8;
-  --color-stone: #cbc9b6;      /* hairlines / muted borders */
-  --color-clay: #a8503a;       /* rare warm signal (alerts, "closed") */
+  --color-forest-900: #1c3126;
+  --color-forest-700: #2f5741;
+  --color-forest-600: #3a6b50;
+  --color-forest-500: #4a8462;
+  --color-moss-500: #6f9e5c;
+  --color-moss-300: #a9c99a;
+  --color-clay-600: #b4632f;
+  --color-clay-500: #c9773f;
+  --color-clay-300: #e6b48f;
+  --color-sand-100: #f6f1e7;
+  --color-sand-200: #ece3d2;
+  --color-sand-300: #ddd0b8;
+  --color-ink-900: #1f2420;
+  --color-ink-700: #3c433d;
+  --color-ink-500: #697168;
+  --color-ink-300: #9aa198;
+  --color-bg: #faf7f1;
+  --color-surface: #ffffff;
+  --color-border: #e5ddcd;
+  --color-border-strong: #d3c8b3;
+  /* semantic (tag directions / states) */
+  --color-offer: #3a7d44;
+  --color-offer-bg: #e7f1e4;
+  --color-seek: #3a6b7e;
+  --color-seek-bg: #e0edf1;
 
   --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* Nudge small/body text ~1px larger for readability.
-     Headings (text-lg and up) are left at their defaults. */
-  --text-xs: 0.8125rem; /* 13px (was 12) */
-  --text-sm: 0.9375rem; /* 15px (was 14) */
-  --text-base: 1.0625rem; /* 17px (was 16) */
+  --radius-lg: 18px;
 }
 
 @layer base {
@@ -34,21 +44,21 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    background-color: var(--color-paper);
-    color: var(--color-ink);
+    background-color: var(--color-bg);
+    color: var(--color-ink-900);
     font-family: var(--font-sans);
-    font-synthesis-weight: none;
+    line-height: 1.6;
   }
-  /* Fraunces optical sizing: let display faces breathe at large sizes */
   .font-display {
+    font-family: var(--font-display);
     font-optical-sizing: auto;
   }
   ::selection {
-    background: var(--color-harvest-soft);
-    color: var(--color-ink);
+    background: var(--color-sand-200);
+    color: var(--color-ink-900);
   }
   :focus-visible {
-    outline: 2px solid var(--color-field);
+    outline: 2px solid var(--color-forest-600);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -59,17 +69,6 @@
   }
 }
 
-/* Almanac hairline: a thin rule with a small centred seed glyph */
-.rule-seed {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--color-stone);
-}
-.rule-seed::before,
-.rule-seed::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: currentColor;
+@layer components {
+  .container-x { max-width: 1120px; margin-inline: auto; padding-inline: 24px; }
 }

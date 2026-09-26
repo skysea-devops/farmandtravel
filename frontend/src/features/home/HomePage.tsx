@@ -1,192 +1,173 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Eyebrow } from '@/components/ui/Eyebrow'
-import { Tag } from '@/components/ui/Tag'
-import { Stars } from '@/components/ui/Stars'
-import { buttonClass } from '@/components/ui/Button'
-import { HOSTS } from '@/data/mock'
-import { ACTIVITIES, activityLabel } from '@/config/taxonomy'
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/Button";
+import { Tag } from "@/components/ui/Tag";
+import { CATEGORIES } from "@/data/demo";
 
-const STEPS = [
-  { n: '01', title: 'Find a host', body: 'Browse farms and villages by country, what you’ll do, and season.' },
-  { n: '02', title: 'Apply', body: 'Send a short application. Hosts reply, and you agree the details together.' },
-  { n: '03', title: 'Stay & work', body: 'Trade a few hours of help a day for a bed, meals, and a season on the land.' },
-]
+const U = "https://images.unsplash.com/";
+
+const miniCards = [
+  { name: "Marta · 🇵🇹", role: "Permakültür çiftliği", photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", "yer & deneyim sunuyor"], ["seek", "gönüllü arıyor"]] },
+  { name: "Jonas · 🇩🇪", role: "Ekolog", photo: U + "photo-1507003211169-0a1dd7228f2d?w=160&q=80", tags: [["offer", "uzmanlık sunuyor"], ["topic", "ağaçlandırma"]] },
+  { name: "Elif · 🇹🇷", role: "Çiftlik hayali kuruyor", photo: U + "photo-1438761681033-6461ffad8d80?w=160&q=80", tags: [["seek", "mentor arıyor"], ["seek", "bilgi arıyor"]] },
+] as const;
+
+const steps = [
+  { n: 1, t: "Anlat", d: "Ne aradığını ve ne sunabildiğini kendi cümlelerinle yaz." },
+  { n: 2, t: "Eşleş", d: "Aradığın ile sunulanı akıllıca eşleştiriyoruz." },
+  { n: 3, t: "Bağlan", d: "İstek gönder; iki taraf da kabul edince iletişim açılır." },
+];
+
+const stripPhotos = [
+  U + "photo-1500382017468-9049fed747ef?w=600&q=80",
+  U + "photo-1441974231531-c6227db76b6e?w=600&q=80",
+  U + "photo-1449158743715-0a90ebb6d2d8?w=600&q=80",
+  U + "photo-1470071459604-3b5ec3a7fe05?w=600&q=80",
+];
+
+const perks = [
+  ["🗺️", "Haritada tüm topluluğu keşfet", "Yakınındaki ve dünyadaki destek sunan/arayan herkesi konumuyla gör, filtrele."],
+  ["🤝", "Sınırsız bağlantı kur", "Dilediğine bağlantı isteği gönder, sana gelenleri yönet. Doğru insanları bul."],
+  ["💬", "Güvenli mesajlaşma", "İki taraf da kabul edince iletişim açılır; sohbet platformda, güvende."],
+  ["✨", "Sana özel eşleşmeler", "Aradığın ile sunduğun, karşındakinin sunduğu/aradığıyla akıllıca eşleştirilir."],
+  ["🌱", "Profilini öne çıkar", "Çiftliğini, projeni ya da uzmanlığını galerin ve etiketlerinle sergile."],
+  ["🔒", "Gizlilik sende", "İletişim bilgin sen istemeden kimseye görünmez. Kontrol tamamen sende."],
+];
+
+const testimonials = [
+  { q: "Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", n: "Marta", r: "Permakültür çiftliği · 🇵🇹 Sintra", photo: U + "photo-1544005313-94ddf0286df2?w=600&q=80" },
+  { q: "Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", n: "Jonas", r: "Ekolog · 🇩🇪 Berlin", photo: U + "photo-1500648767791-00dcc994a43e?w=600&q=80" },
+  { q: "Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", n: "Elif", r: "Yeni çiftçi · 🇹🇷 İzmir", photo: U + "photo-1494790108377-be9c29b29330?w=600&q=80" },
+];
+
+const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
 
 export function HomePage() {
-  const [q, setQ] = useState('')
-  const navigate = useNavigate()
-
-  function search() {
-    navigate(q.trim() ? `/hosts?q=${encodeURIComponent(q.trim())}` : '/hosts')
-  }
-
-  const featured = HOSTS.slice(0, 3)
-
   return (
-    <div>
+    <>
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-5 pt-14 pb-10 sm:pt-20">
-        <div className="grid items-center gap-10 lg:grid-cols-2">
+      <section className="bg-linear-160 from-forest-900 to-forest-700 text-sand-100">
+        <div className="container-x grid items-center gap-10 py-16 md:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <Eyebrow>Farm &amp; village stays</Eyebrow>
-            <h1 className="mt-5 font-display text-5xl leading-[1.05] text-ink sm:text-6xl">
-              Work the land.
-              <br />
-              <span className="italic text-field">Live the village.</span>
+            <h1 className="font-display mb-4 text-4xl leading-[1.08] font-semibold md:text-5xl">
+              Toprakla yeniden buluşan insanları bir araya getiriyoruz.
             </h1>
-            <p className="mt-6 max-w-md text-lg text-ink-soft">
-              Spend a season on an organic farm, a mountain dairy, a food forest. Lend a few hours a
-              day; get a bed, real meals, and a way of life. No money changes hands — just a fair
-              exchange.
+            <p className="mb-7 max-w-lg text-[17px] text-moss-300">
+              Çiftliğinde birlikte üretecek insan arayan, bir projeye destek arayan ya da bilgisini paylaşmak isteyen — hepsi tek toplulukta.
             </p>
-
-            <div className="mt-8 flex max-w-md items-center gap-2 rounded-full border border-stone bg-surface p-1.5">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && search()}
-                placeholder="Try a country, region, or ‘olive harvest’…"
-                className="min-w-0 flex-1 bg-transparent px-4 py-2 text-ink placeholder:text-ink-soft/60 focus:outline-none"
-                aria-label="Search hosts"
-              />
-              <button className={buttonClass('primary')} onClick={search} type="button">
-                Search
-              </button>
+            <div className="flex flex-wrap gap-3">
+              <Button size="lg">Topluluğa katıl</Button>
+              <Link to="/kesfet"><Button variant="onDark" size="lg">Haritada keşfet →</Button></Link>
             </div>
-            <Link to="/hosts" className="mt-3 inline-block text-sm text-field hover:underline">
-              or browse all hosts →
-            </Link>
           </div>
-
-          {/* Framed hero image */}
-          <div className="relative">
-            <div className="overflow-hidden rounded-3xl border border-stone">
-              <img
-                src="/img/farmworker3.jpg"
-                alt="Two people working together in a green field"
-                className="aspect-[4/3] w-full object-cover"
-              />
-            </div>
-            <div className="absolute -bottom-4 left-6 rounded-full border border-stone bg-paper px-4 py-2 text-sm text-ink shadow-sm">
-              <span className="font-display italic text-harvest">A fair exchange</span> — hours for a home
+          <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px]">
+            <img src={U + "photo-1500382017468-9049fed747ef?w=900&q=80"} alt="" onError={hide}
+              className="mb-3.5 h-40 w-full rounded-xl object-cover" />
+            <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">TOPLULUKTAN</div>
+            <div className="flex flex-col gap-2.5">
+              {miniCards.map((m) => (
+                <div key={m.name} className="rounded-xl bg-surface p-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-10 shrink-0 rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${m.photo})`, backgroundColor: "#a9c99a" }} />
+                    <div>
+                      <div className="text-sm font-semibold text-ink-900">{m.name}</div>
+                      <div className="text-xs text-ink-500">{m.role}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {m.tags.map(([axis, label]) => <Tag key={label} axis={axis as any}>{label}</Tag>)}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Browse by what you'll do */}
-      <section className="mx-auto max-w-6xl px-5 pt-14">
-        <div className="rule-seed mb-6">
-          <Eyebrow className="text-stone">What you’ll do</Eyebrow>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {ACTIVITIES.slice(0, 9).map((a) => (
-            <Link
-              key={a.id}
-              to={`/hosts?activity=${a.id}`}
-              className="rounded-full border border-stone bg-surface px-4 py-2 text-sm text-ink transition-colors hover:border-field hover:bg-field/5"
-            >
-              {a.label}
-            </Link>
+      {/* Nasıl çalışır */}
+      <section className="container-x py-14">
+        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Nasıl çalışır?</h2>
+        <div className="grid gap-5 md:grid-cols-3">
+          {steps.map((s) => (
+            <div key={s.n} className="rounded-[var(--radius-lg)] border border-border bg-surface p-6 text-center">
+              <div className="font-display mx-auto mb-3.5 grid size-11 place-items-center rounded-full bg-sand-100 text-xl font-semibold text-forest-600">{s.n}</div>
+              <h3 className="mb-1.5 text-[17px] font-semibold">{s.t}</h3>
+              <p className="text-sm text-ink-500">{s.d}</p>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Featured hosts */}
-      <section className="mx-auto max-w-6xl px-5 pt-16">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h2 className="font-display text-3xl text-ink">Fresh on the land</h2>
-          <Link to="/hosts" className="text-sm text-field hover:underline">
-            See all →
-          </Link>
+      {/* Çiftlikte hayat bandı */}
+      <section className="relative flex min-h-[300px] items-end bg-cover bg-center"
+        style={{ backgroundImage: `linear-gradient(160deg,#2f5741,#6f9e5c)` }}>
+        <img src={U + "photo-1464226184884-fa280b87c399?w=1600&q=80"} alt="" onError={hide}
+          className="absolute inset-0 -z-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-linear-90 from-forest-900/70 to-forest-900/20" />
+        <div className="container-x relative py-8 text-white">
+          <h3 className="font-display text-2xl font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">Çiftlikte hayat, birlikte üretmek</h3>
+          <p className="max-w-xl text-[15px] text-sand-100 [text-shadow:0_1px_6px_rgba(0,0,0,.4)]">Toprakla uğraşan, öğrenen, paylaşan bir topluluğun parçası ol.</p>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((host) => (
-            <Link
-              key={host.id}
-              to={`/hosts/${host.id}`}
-              className="group overflow-hidden rounded-2xl border border-stone bg-surface transition-colors hover:border-field/50"
-            >
-              <div className="overflow-hidden">
-                <img
-                  src={host.photos[0]}
-                  alt={host.farmName}
-                  loading="lazy"
-                  className="aspect-[3/2] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                />
+      </section>
+
+      {/* Kategoriler */}
+      <section className="container-x py-14">
+        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Toprağın her hali</h2>
+        <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
+          {CATEGORIES.map((c) => (
+            <div key={c.label} className="relative h-40 overflow-hidden rounded-[var(--radius-lg)] bg-linear-135 from-moss-300 to-forest-500">
+              <img src={c.photo} alt="" onError={hide} className="h-full w-full object-cover transition duration-300 hover:scale-105" />
+              {c.addable && <span className="absolute top-2 right-2 rounded-full bg-clay-500 px-2 py-0.5 text-[10px] font-semibold text-white">Eklenebilir</span>}
+              <div className="font-display absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3.5 text-base font-semibold text-white">{c.label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-sm text-ink-500">…ve daha fazlası. Kategoriler topluluk büyüdükçe eklenir — at çiftliği, tiny house, hayvan barınağı, ağaçlandırma ve daha nicesi.</p>
+      </section>
+
+      {/* Çiftlikten kareler */}
+      <section className="container-x pb-14">
+        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Çiftlikten kareler</h2>
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          {stripPhotos.map((p, i) => (
+            <div key={i} className="h-[150px] rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${p})` }} />
+          ))}
+        </div>
+      </section>
+
+      {/* Seni neler bekliyor */}
+      <section className="bg-linear-160 from-forest-700 to-forest-900 text-sand-100">
+        <div className="container-x py-14">
+          <h2 className="font-display mb-1.5 text-center text-3xl font-semibold text-white">Seni neler bekliyor?</h2>
+          <p className="mx-auto mb-8 max-w-xl text-center text-moss-300">Toprakla Yeniden bir topluluk. Üyeliğinle bu topluluğun tüm kapıları sana açılır.</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {perks.map(([ic, t, d]) => (
+              <div key={t} className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[22px]">
+                <div className="mb-2.5 text-2xl">{ic}</div>
+                <h3 className="mb-1.5 text-base font-semibold text-white">{t}</h3>
+                <p className="text-sm text-moss-300">{d}</p>
               </div>
-              <div className="p-5">
-                <h3 className="font-display text-lg leading-snug text-ink">{host.farmName}</h3>
-                <div className="text-xs uppercase tracking-wider text-ink-soft">
-                  {host.region}, {host.country}
-                </div>
-                <div className="mt-2">
-                  <Stars rating={host.rating} count={host.reviewCount} />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {host.activities.slice(0, 3).map((a) => (
-                    <Tag key={a}>{activityLabel(a)}</Tag>
-                  ))}
-                </div>
-              </div>
-            </Link>
-          ))}
+            ))}
+          </div>
+          <div className="mt-8 text-center"><Button size="lg">Topluluğa katıl</Button></div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-5 pt-20">
-        <Eyebrow>How it works</Eyebrow>
-        <div className="mt-6 grid gap-8 sm:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n}>
-              <div className="font-display text-2xl text-harvest">{s.n}</div>
-              <h3 className="mt-2 font-display text-xl text-ink">{s.title}</h3>
-              <p className="mt-2 text-sm text-ink-soft">{s.body}</p>
+      {/* Topluluktan sesler */}
+      <section className="container-x py-14">
+        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Topluluktan sesler</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {testimonials.map((t) => (
+            <div key={t.n} className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+              <div className="h-40 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${t.photo})` }} />
+              <div className="p-[18px]">
+                <p className="mb-3.5 text-sm leading-relaxed text-ink-700">"{t.q}"</p>
+                <div className="text-sm font-semibold">{t.n}</div>
+                <div className="text-xs text-ink-500">{t.r}</div>
+              </div>
             </div>
           ))}
         </div>
-        <Link to="/how-it-works" className="mt-6 inline-block text-sm text-field hover:underline">
-          More on how it works →
-        </Link>
       </section>
-
-      {/* Membership note */}
-      <section className="mx-auto mt-20 max-w-6xl px-5">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="rounded-2xl border border-stone bg-surface p-6">
-            <div className="text-xs uppercase tracking-wider text-ink-soft">For Explorers</div>
-            <h3 className="mt-2 font-display text-xl text-ink">Experience Explorer</h3>
-            <div className="mt-1 text-sm text-harvest">€35 / year</div>
-            <p className="mt-3 text-sm text-ink-soft">Browse, favourite, apply, and message hosts.</p>
-          </div>
-          <div className="rounded-2xl border border-stone bg-surface p-6">
-            <div className="text-xs uppercase tracking-wider text-ink-soft">For hosts</div>
-            <h3 className="mt-2 font-display text-xl text-ink">Experience Host</h3>
-            <div className="mt-1 text-sm text-harvest">Free</div>
-            <p className="mt-3 text-sm text-ink-soft">Publish your farm, receive and manage applicants.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Close */}
-      <section className="mx-auto mt-20 max-w-6xl px-5">
-        <div className="flex flex-col items-start gap-5 rounded-3xl bg-field px-8 py-12 text-paper sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="max-w-md font-display text-3xl leading-tight">Find your season on the land.</h2>
-          <div className="flex gap-3">
-            <Link to="/hosts" className={buttonClass('primary', 'bg-paper text-field hover:bg-harvest-soft')}>
-              Browse hosts
-            </Link>
-            <Link
-              to="/pricing"
-              className={buttonClass('outline', 'border-paper/40 text-paper hover:border-paper hover:bg-paper/10')}
-            >
-              See membership
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
+    </>
+  );
 }
