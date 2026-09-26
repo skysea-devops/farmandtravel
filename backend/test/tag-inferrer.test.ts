@@ -10,28 +10,28 @@ const taxonomy: TaxonomyItem[] = [
 ];
 
 describe("StubTagInferrer", () => {
-  it("situation açık seçimden, seek/topic serbest metinden gelir", async () => {
+  it("etiketleri yalnız açık quick-pick seçimlerinden üretir", async () => {
     const inferrer = new StubTagInferrer();
     const res = await inferrer.infer(
       "Permakültür çiftliğim var, hasat için gönüllü arıyorum",
-      ["Bir yerim/çiftliğim var"],
+      ["Bir yerim/çiftliğim var", "Gönüllü arıyorum"],
       taxonomy,
     );
+    const keys = res.map((r) => `${r.axis}:${r.value}`).sort();
+    expect(keys).toEqual(["seek:volunteers", "situation:farm-owner"]);
+  });
+
+  it("serbest metinden otomatik etiket üretmez", async () => {
+    const inferrer = new StubTagInferrer();
+    const res = await inferrer.infer("çiftliklerde kalıp deneyim kazanmak istiyorum", [], taxonomy);
+    expect(res).toHaveLength(0);
+  });
+
+  it("yalnız taksonomide olan etiketleri döndürür", async () => {
+    const inferrer = new StubTagInferrer();
+    // 'Mentor arıyorum' -> seek:mentor, ama bu taksonomide yok -> elenmeli
+    const res = await inferrer.infer("", ["Uzmanlık sunuyorum", "Mentor arıyorum"], taxonomy);
     const keys = res.map((r) => `${r.axis}:${r.value}`);
-    expect(keys).toContain("situation:farm-owner"); // açık seçimden
-    expect(keys).toContain("seek:volunteers"); // serbest metinden
-    expect(keys).toContain("topic:permaculture"); // serbest metinden
-  });
-
-  it("serbest metin tek başına situation üretmez", async () => {
-    const inferrer = new StubTagInferrer();
-    const res = await inferrer.infer("ileride kendi çiftliğimi kuracağım", [], taxonomy);
-    expect(res.every((r) => r.axis !== "situation")).toBe(true);
-  });
-
-  it("yalnız taksonomideki etiketleri döndürür", async () => {
-    const inferrer = new StubTagInferrer();
-    const res = await inferrer.infer("uzmanlık sunuyorum", [], taxonomy);
-    expect(res.every((r) => taxonomy.some((t) => t.axis === r.axis && t.value === r.value))).toBe(true);
+    expect(keys).toEqual(["offer:expertise"]);
   });
 });
