@@ -66,10 +66,7 @@ TRUST_POLICY="$(cat <<JSON
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": { "${OIDC_HOST}:aud": "sts.amazonaws.com" },
-        "StringLike":   { "${OIDC_HOST}:sub": [
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/${DEPLOY_BRANCH}",
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request"
-        ] }
+        "StringLike":   { "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*" }
       }
     }
   ]
