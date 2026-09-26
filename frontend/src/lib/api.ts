@@ -1,33 +1,32 @@
-/**
- * Thin API client. Points at VITE_API_URL — the API Gateway HTTP API base.
- * That env var is unset until Sprint 1, so calls fail with a clear message
- * rather than a silent network error. Keeping all fetch logic behind this one
- * function means auth headers / error handling get wired in exactly one place.
- */
-const BASE = import.meta.env.VITE_API_URL ?? ''
+// API istemcisi. Base URL VITE_API_URL'den; boşsa lokal backend.
+// Dev auth: x-dev-sub header'ı ile kullanıcı taklidi (backend AUTH_MODE=dev).
+// Cognito'ya geçince buraya Authorization: Bearer <jwt> eklenecek.
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8787";
 
-export class ApiError extends Error {
-  status: number
-  constructor(status: number, message: string) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-  }
+function devSub(): string | null {
+  try { return localStorage.getItem("ty_dev_sub"); } catch { return null; }
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!BASE) {
-    throw new ApiError(
-      0,
-      'API not configured yet. Set VITE_API_URL once the backend is up (Sprint 1).',
-    )
-  }
+async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  const sub = devSub();
+  if (sub) headers["x-dev-sub"] = sub;
   const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
-  })
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
-    throw new ApiError(res.status, `Request failed with ${res.status}`)
+    const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    throw new Error(msg);
   }
-  return (await res.json()) as T
+  return data as T;
 }
+
+export const api = {
+  get: <T>(p: string) => req<T>("GET", p),
+  post: <T>(p: string, b?: unknown) => req<T>("POST", p, b),
+  put: <T>(p: string, b?: unknown) => req<T>("PUT", p, b),
+};

@@ -1,6 +1,7 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/lib/auth";
 
 const links = [
   { to: "/", label: "Ana sayfa", end: true },
@@ -10,6 +11,8 @@ const links = [
 ];
 
 export function Header() {
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
   return (
     <nav className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
       <div className="container-x flex items-center gap-4 py-3.5">
@@ -35,8 +38,17 @@ export function Header() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2.5">
-          <Button variant="ghost" size="sm" className="max-sm:hidden">Giriş yap</Button>
-          <Button size="sm">Başla</Button>
+          {user ? (
+            <>
+              <Link to="/profil"><Button variant="ghost" size="sm">Profilim</Button></Link>
+              <Button size="sm" variant="outline" onClick={() => { logout(); nav("/"); }}>Çıkış</Button>
+            </>
+          ) : (
+            <>
+              <Link to="/giris" className="max-sm:hidden"><Button variant="ghost" size="sm">Giriş yap</Button></Link>
+              <Link to="/kayit"><Button size="sm">Başla</Button></Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

@@ -61,7 +61,7 @@ export function HomePage() {
               Çiftliğinde birlikte üretecek insan arayan, bir projeye destek arayan ya da bilgisini paylaşmak isteyen — hepsi tek toplulukta.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg">Topluluğa katıl</Button>
+              <Link to="/kayit"><Button size="lg">Topluluğa katıl</Button></Link>
               <Link to="/kesfet"><Button variant="onDark" size="lg">Haritada keşfet →</Button></Link>
             </div>
           </div>
@@ -170,7 +170,7 @@ export function HomePage() {
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center"><Button size="lg">Topluluğa katıl</Button></div>
+          <div className="mt-8 text-center"><Link to="/kayit"><Button size="lg">Topluluğa katıl</Button></Link></div>
         </div>
       </section>
 
