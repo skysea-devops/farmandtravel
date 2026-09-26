@@ -25,5 +25,5 @@ export interface Profile {
   bio: string | null;
   avatarKey: string | null;
   profile: Record<string, unknown>;
-  tags: { axis: Axis; value: string }[];
+  tags: { axis: Axis; value: string; labelTr: string; labelEn: string }[];
 }
