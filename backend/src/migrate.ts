@@ -61,8 +61,9 @@ export const handler: Handler = async () => {
       applied.push(f);
     }
 
-    // Taxonomy seed (idempotent).
+    // Seeds (idempotent).
     await pool.query(readFileSync(join(dir, "seed_taxonomy.sql"), "utf8"));
+    await pool.query(readFileSync(join(dir, "seed_demo_members.sql"), "utf8"));
 
     const result = { ok: true, applied, skipped, seeded: true };
     console.log("migrate:", JSON.stringify(result));

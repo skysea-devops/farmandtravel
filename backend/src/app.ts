@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { AppError } from "./shared/errors/index.js";
 import { membersRoutes } from "./modules/members/interface/routes.js";
 import { tagsRoutes } from "./modules/tags/interface/routes.js";
+import { discoveryRoutes } from "./modules/discovery/routes.js";
 
 export function createApp() {
   const app = new Hono();
@@ -13,6 +14,7 @@ export function createApp() {
   // Feature modülleri
   app.route("/", membersRoutes);
   app.route("/", tagsRoutes);
+  app.route("/", discoveryRoutes);
 
   // Merkezî hata çevirici
   app.onError((err, c) => {

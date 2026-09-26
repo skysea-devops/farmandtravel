@@ -20,7 +20,7 @@ export function LoginPage() {
     setBusy(true); setErr(null);
     try {
       await login(email, pw);
-      nav("/profil");
+      nav("/app");
     } catch (e) {
       // Hesap doğrulanmamışsa kod adımına geç ve yeni kod gönder.
       if ((e as { code?: string }).code === "UserNotConfirmedException") {

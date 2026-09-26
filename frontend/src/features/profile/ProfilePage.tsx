@@ -54,7 +54,7 @@ export function ProfilePage() {
         if (tags.length === 0) return null;
         return (
           <Block key={axis} title={AXIS_LABEL[axis]}>
-            <div className="flex flex-wrap gap-2">{tags.map((t) => <Tag key={t.value} axis={t.axis}>{t.value}</Tag>)}</div>
+            <div className="flex flex-wrap gap-2">{tags.map((t) => <Tag key={t.value} axis={t.axis}>{t.labelTr}</Tag>)}</div>
           </Block>
         );
       })}

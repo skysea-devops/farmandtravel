@@ -4,11 +4,26 @@ import { canCompleteProfile } from "../domain/member.js";
 import type { MemberRepository, ProfilePatch } from "../domain/MemberRepository.js";
 
 async function loadTags(memberId: string): Promise<MemberTag[]> {
-  const r = await query<{ axis: MemberTag["axis"]; value: string }>(
-    "SELECT axis, value FROM member_tags WHERE member_id=$1 ORDER BY axis, value",
+  // Join taxonomy so the client gets human labels, not raw slugs.
+  const r = await query<{
+    axis: MemberTag["axis"];
+    value: string;
+    label_tr: string | null;
+    label_en: string | null;
+  }>(
+    `SELECT mt.axis, mt.value, tx.label_tr, tx.label_en
+       FROM member_tags mt
+       LEFT JOIN taxonomy tx ON tx.axis = mt.axis AND tx.value = mt.value
+      WHERE mt.member_id = $1
+      ORDER BY mt.axis, mt.value`,
     [memberId],
   );
-  return r.rows;
+  return r.rows.map((t) => ({
+    axis: t.axis,
+    value: t.value,
+    labelTr: t.label_tr ?? t.value,
+    labelEn: t.label_en ?? t.value,
+  }));
 }
 
 export class MemberRepositoryPg implements MemberRepository {
