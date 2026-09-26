@@ -139,8 +139,15 @@ resource "aws_apigatewayv2_route" "default" {
 }
 
 # Public routes (no auth): health, LS webhook, public taxonomy (teaser).
+# OPTIONS /{proxy+} is public so CORS preflight bypasses the JWT authorizer that the
+# $default route would otherwise apply (which makes the browser fail preflight).
 locals {
-  public_routes = ["GET /health", "POST /webhooks/lemonsqueezy", "GET /taxonomy"]
+  public_routes = [
+    "GET /health",
+    "POST /webhooks/lemonsqueezy",
+    "GET /taxonomy",
+    "OPTIONS /{proxy+}",
+  ]
 }
 resource "aws_apigatewayv2_route" "public" {
   for_each  = toset(local.public_routes)
