@@ -6,6 +6,7 @@ const links = [
   { to: "/", label: "Ana sayfa", end: true },
   { to: "/hakkimizda", label: "Biz kimiz" },
   { to: "/kesfet", label: "Keşfet" },
+  { to: "/aktiviteler", label: "Aktiviteler" },
 ];
 
 export function Header() {

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { CATEGORIES } from "@/data/demo";
+import { ACTIVITIES, youtubeThumb } from "@/data/activities";
 
 const U = "https://images.unsplash.com/";
 
@@ -17,12 +18,17 @@ const steps = [
   { n: 3, t: "Bağlan", d: "İstek gönder; iki taraf da kabul edince iletişim açılır." },
 ];
 
-const activities = [
-  { photo: U + "photo-1500382017468-9049fed747ef?w=600&q=80", cap: "Hasat günü", who: "Deniz · 🇹🇷 Konya" },
-  { photo: U + "photo-1441974231531-c6227db76b6e?w=600&q=80", cap: "Fidan dikimi", who: "Jonas · 🇩🇪 Berlin" },
-  { photo: U + "photo-1449158743715-0a90ebb6d2d8?w=600&q=80", cap: "Eco-village atölyesi", who: "Lucia · 🇪🇸 Valensiya" },
-  { photo: U + "photo-1470071459604-3b5ec3a7fe05?w=600&q=80", cap: "Off-grid kamp", who: "Marco · 🇮🇹 Torino" },
-];
+const homeActivities = ACTIVITIES.slice(0, 4).map((a) => ({
+  id: a.id,
+  cap: a.title,
+  who: a.author
+    ? `${a.author} · ${a.place ?? ""}`
+    : a.kind === "meeting"
+      ? (a.online ? "🟢 Online buluşma" : "📍 Yüz yüze buluşma")
+      : "📢 Duyuru",
+  img: a.kind === "video" && a.youtubeId ? youtubeThumb(a.youtubeId) : (a.image ?? U + "photo-1416879595882-3373a0480b5b?w=600&q=80"),
+  isVideo: a.kind === "video",
+}));
 
 const perks = [
   ["🗺️", "Haritada tüm topluluğu keşfet", "Yakınındaki ve dünyadaki destek sunan/arayan herkesi konumuyla gör, filtrele."],
@@ -128,18 +134,24 @@ export function HomePage() {
 
       {/* Topluluk aktiviteleri */}
       <section className="container-x pb-14">
-        <h2 className="font-display mb-2 text-center text-3xl font-semibold">Topluluktan son aktiviteler</h2>
-        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
-          Toprakla Yeniden topluluğu her gün üretiyor, öğreniyor, paylaşıyor. İşte son kareler.
-        </p>
+        <div className="mb-2 flex items-end justify-between">
+          <h2 className="font-display text-3xl font-semibold">Topluluktan son aktiviteler</h2>
+          <Link to="/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">Tümünü gör →</Link>
+        </div>
+        <p className="mb-8 max-w-xl text-ink-500">Podcast'ler, buluşmalar, paylaşımlar ve duyurular — topluluğun nabzı.</p>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          {activities.map((a, i) => (
-            <div key={i} className="relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.photo})` }}>
+          {homeActivities.map((a) => (
+            <Link key={a.id} to="/aktiviteler" className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
+              {a.isVideo && (
+                <span className="absolute inset-0 grid place-items-center bg-forest-900/25 transition group-hover:bg-forest-900/35">
+                  <span className="grid size-11 place-items-center rounded-full bg-white/90 text-lg text-forest-700 shadow">▶</span>
+                </span>
+              )}
               <div className="absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3 text-white">
-                <div className="text-sm font-semibold">{a.cap}</div>
-                <div className="text-xs text-sand-200">{a.who}</div>
+                <div className="line-clamp-1 text-sm font-semibold">{a.cap}</div>
+                <div className="line-clamp-1 text-xs text-sand-200">{a.who}</div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
