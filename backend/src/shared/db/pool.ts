@@ -2,11 +2,11 @@
 import pg from "pg";
 import { env } from "../config/env.js";
 
-// RDS forces TLS (DATABASE_URL carries sslmode=require). node-postgres needs an
-// explicit ssl option; the RDS CA isn't in the default trust store, so for MVP we
-// encrypt without CA verification (DB lives in a private subnet). Local Postgres
-// has no sslmode=require, so ssl stays off there.
-const useSsl = /sslmode=require/.test(env.DATABASE_URL);
+// TLS is controlled here (not via sslmode in the URL, which pg would parse and use to
+// override this option -> RDS cert fails verification as "self-signed"). We encrypt
+// without CA verification for MVP (DB is in a private subnet). Enabled for RDS hosts
+// (or DB_SSL=true); local Postgres stays plaintext.
+const useSsl = /\.rds\.amazonaws\.com/.test(env.DATABASE_URL) || process.env.DB_SSL === "true";
 
 export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
