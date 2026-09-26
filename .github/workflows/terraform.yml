@@ -1,11 +1,14 @@
 name: Terraform
 
-# PR'da: fmt + validate + plan.  dev'e push/merge'de: apply.
+# Deploy yalnızca prod branch'ından.
+#   dev -> prod PR'ında: fmt + validate + plan.
+#   prod'a merge/push'ta: apply.
 on:
   pull_request:
+    branches: [prod]
     paths: ["environments/**", "modules/**", ".github/workflows/terraform.yml"]
   push:
-    branches: [dev]
+    branches: [prod]
     paths: ["environments/**", "modules/**", ".github/workflows/terraform.yml"]
 
 permissions:
@@ -57,8 +60,8 @@ jobs:
         run: terraform plan -no-color -input=false
 
   apply:
-    name: apply (dev)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    name: apply (prod)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     needs: validate
     runs-on: ubuntu-latest
     # İstersen GitHub'da "prod" environment'ına manuel onay (required reviewers) ekle.

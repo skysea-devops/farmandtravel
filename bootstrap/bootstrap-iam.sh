@@ -22,7 +22,7 @@ set -euo pipefail
 PROJECT="farmandtravel"          # project slug (resource names + tags)
 GITHUB_ORG="skysea-devops"           # your GitHub org or username
 GITHUB_REPO="farmandtravel"          # the repo that runs Terraform
-DEPLOY_BRANCH="dev"             # only this branch may apply to prod (PRs may plan)
+DEPLOY_BRANCH="prod"            # only this branch may apply to prod (dev->prod PRs may plan)
 # ------------------------------------------------------------------------------
 
 OIDC_HOST="token.actions.githubusercontent.com"
