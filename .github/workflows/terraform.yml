@@ -45,6 +45,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Debug OIDC sub (geçici)
+        run: |
+          token=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          python3 - "$token" <<'PY'
+          import sys, base64, json
+          p = sys.argv[1].split('.')[1]; p += '=' * (-len(p) % 4)
+          c = json.loads(base64.urlsafe_b64decode(p))
+          print("SUB =", c.get("sub"))
+          print("AUD =", c.get("aud"))
+          print("repository =", c.get("repository"), "| ref =", c.get("ref"), "| event =", c.get("event_name"))
+          PY
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::191072269876:role/farmandtravel-prod-tf-deploy
