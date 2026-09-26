@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { RootLayout } from "@/components/layout/RootLayout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { HomePage } from "@/features/home/HomePage";
 import { AboutPage } from "@/features/about/AboutPage";
 import { ExplorePage } from "@/features/explore/ExplorePage";
@@ -8,12 +9,23 @@ import { SignUpPage } from "@/features/auth/SignUpPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
+import { PanelPage } from "@/features/app/PanelPage";
+import {
+  KesfetPage,
+  BaglantilarPage,
+  MesajlarPage,
+  KaydedilenlerPage,
+  BildirimlerPage,
+  AbonelikPage,
+  AyarlarPage,
+} from "@/features/app/stubs";
 import { NotFoundPage } from "@/features/misc/NotFoundPage";
 import { RequireAuth } from "@/components/RequireAuth";
 
 export default function App() {
   return (
     <Routes>
+      {/* Public marketing site */}
       <Route element={<RootLayout />}>
         <Route index element={<HomePage />} />
         <Route path="hakkimizda" element={<AboutPage />} />
@@ -22,8 +34,20 @@ export default function App() {
         <Route path="kayit" element={<SignUpPage />} />
         <Route path="giris" element={<LoginPage />} />
         <Route path="onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-        <Route path="profil" element={<RequireAuth><ProfilePage /></RequireAuth>} />
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+
+      {/* Member app (behind auth) */}
+      <Route path="app" element={<RequireAuth><AppLayout /></RequireAuth>}>
+        <Route index element={<PanelPage />} />
+        <Route path="kesfet" element={<KesfetPage />} />
+        <Route path="baglantilar" element={<BaglantilarPage />} />
+        <Route path="mesajlar" element={<MesajlarPage />} />
+        <Route path="kaydedilenler" element={<KaydedilenlerPage />} />
+        <Route path="bildirimler" element={<BildirimlerPage />} />
+        <Route path="profil" element={<ProfilePage />} />
+        <Route path="abonelik" element={<AbonelikPage />} />
+        <Route path="ayarlar" element={<AyarlarPage />} />
       </Route>
     </Routes>
   );

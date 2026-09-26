@@ -146,7 +146,7 @@ export function OnboardingPage() {
           <p className="mt-3 text-xs text-ink-500">Dev modu: ödeme (Lemon Squeezy) altyapı yayına alınınca bağlanacak. Şimdilik profilini görebilirsin.</p>
           <Actions>
             <span />
-            <Button onClick={() => nav("/profil")}>Profilime git →</Button>
+            <Button onClick={() => nav("/app")}>Panele git →</Button>
           </Actions>
         </Panel>
       )}

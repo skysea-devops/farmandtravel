@@ -54,7 +54,7 @@ export interface MemberContact {
   addressExact: string | null;
 }
 
-// Profil tamamlanma kuralı: fotoğraf + ad + ülke zorunlu.
-export function canCompleteProfile(m: Pick<MemberFull, "firstName" | "country" | "avatarKey">): boolean {
-  return Boolean(m.firstName && m.country && m.avatarKey);
+// Profil tamamlanma kuralı: ad + ülke yeterli (fotoğraf yükleme sonra eklenecek).
+export function canCompleteProfile(m: Pick<MemberFull, "firstName" | "country">): boolean {
+  return Boolean(m.firstName && m.country);
 }
