@@ -17,11 +17,11 @@ const steps = [
   { n: 3, t: "Bağlan", d: "İstek gönder; iki taraf da kabul edince iletişim açılır." },
 ];
 
-const stripPhotos = [
-  U + "photo-1500382017468-9049fed747ef?w=600&q=80",
-  U + "photo-1441974231531-c6227db76b6e?w=600&q=80",
-  U + "photo-1449158743715-0a90ebb6d2d8?w=600&q=80",
-  U + "photo-1470071459604-3b5ec3a7fe05?w=600&q=80",
+const activities = [
+  { photo: U + "photo-1500382017468-9049fed747ef?w=600&q=80", cap: "Hasat günü", who: "Deniz · 🇹🇷 Konya" },
+  { photo: U + "photo-1441974231531-c6227db76b6e?w=600&q=80", cap: "Fidan dikimi", who: "Jonas · 🇩🇪 Berlin" },
+  { photo: U + "photo-1449158743715-0a90ebb6d2d8?w=600&q=80", cap: "Eco-village atölyesi", who: "Lucia · 🇪🇸 Valensiya" },
+  { photo: U + "photo-1470071459604-3b5ec3a7fe05?w=600&q=80", cap: "Off-grid kamp", who: "Marco · 🇮🇹 Torino" },
 ];
 
 const perks = [
@@ -111,7 +111,10 @@ export function HomePage() {
 
       {/* Kategoriler */}
       <section className="container-x py-14">
-        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Toprağın her hali</h2>
+        <h2 className="font-display mb-2 text-center text-3xl font-semibold">Nasıl bir deneyim arıyorsun?</h2>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
+          Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına — keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.
+        </p>
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
           {CATEGORIES.map((c) => (
             <div key={c.label} className="relative h-40 overflow-hidden rounded-[var(--radius-lg)] bg-linear-135 from-moss-300 to-forest-500">
@@ -124,12 +127,20 @@ export function HomePage() {
         <p className="mt-4 text-center text-sm text-ink-500">…ve daha fazlası. Kategoriler topluluk büyüdükçe eklenir — at çiftliği, tiny house, hayvan barınağı, ağaçlandırma ve daha nicesi.</p>
       </section>
 
-      {/* Çiftlikten kareler */}
+      {/* Topluluk aktiviteleri */}
       <section className="container-x pb-14">
-        <h2 className="font-display mb-6 text-center text-3xl font-semibold">Çiftlikten kareler</h2>
+        <h2 className="font-display mb-2 text-center text-3xl font-semibold">Topluluktan son aktiviteler</h2>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
+          Toprakla Yeniden topluluğu her gün üretiyor, öğreniyor, paylaşıyor. İşte son kareler.
+        </p>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          {stripPhotos.map((p, i) => (
-            <div key={i} className="h-[150px] rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${p})` }} />
+          {activities.map((a, i) => (
+            <div key={i} className="relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.photo})` }}>
+              <div className="absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3 text-white">
+                <div className="text-sm font-semibold">{a.cap}</div>
+                <div className="text-xs text-sand-200">{a.who}</div>
+              </div>
+            </div>
           ))}
         </div>
       </section>
