@@ -1,16 +1,13 @@
 // API istemcisi. Base URL VITE_API_URL'den; boşsa lokal backend.
-// Dev auth: x-dev-sub header'ı ile kullanıcı taklidi (backend AUTH_MODE=dev).
-// Cognito'ya geçince buraya Authorization: Bearer <jwt> eklenecek.
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8787";
+// Auth: Cognito ID token'ı Authorization: Bearer ile gider (API Gateway JWT authorizer).
+import { getIdToken } from "@/lib/cognito";
 
-function devSub(): string | null {
-  try { return localStorage.getItem("ty_dev_sub"); } catch { return null; }
-}
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8787";
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { "content-type": "application/json" };
-  const sub = devSub();
-  if (sub) headers["x-dev-sub"] = sub;
+  const token = await getIdToken();
+  if (token) headers["authorization"] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
