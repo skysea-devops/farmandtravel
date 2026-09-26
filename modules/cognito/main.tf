@@ -82,9 +82,9 @@ resource "aws_cognito_user_pool_client" "web" {
     "ALLOW_USER_PASSWORD_AUTH",
   ]
 
-  access_token_validity  = 60   # minutes
-  id_token_validity      = 60   # minutes
-  refresh_token_validity = 30   # days
+  access_token_validity  = 60 # minutes
+  id_token_validity      = 60 # minutes
+  refresh_token_validity = 30 # days
   token_validity_units {
     access_token  = "minutes"
     id_token      = "minutes"
@@ -116,7 +116,7 @@ resource "aws_cognito_user_pool_client" "mobile" {
 
   access_token_validity  = 60
   id_token_validity      = 60
-  refresh_token_validity = 90   # mobile: longer-lived sessions
+  refresh_token_validity = 90 # mobile: longer-lived sessions
   token_validity_units {
     access_token  = "minutes"
     id_token      = "minutes"

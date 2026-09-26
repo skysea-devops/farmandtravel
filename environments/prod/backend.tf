@@ -1,8 +1,7 @@
 terraform {
   backend "s3" {
-    # Bucket is created by bootstrap/bootstrap-state.sh.
-    # Replace <ACCOUNT_ID> with your 12-digit account id (the script prints it).
-    bucket       = "farmandtravel-tfstate-<ACCOUNT_ID>"
+    # Bucket is created by bootstrap/bootstrap-state.sh (prod account 191072269876).
+    bucket       = "farmandtravel-tfstate-191072269876"
     key          = "prod/terraform.tfstate"
     region       = "eu-central-1"
     encrypt      = true
