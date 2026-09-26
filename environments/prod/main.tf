@@ -13,6 +13,9 @@ module "network" {
   vpc_cidr    = var.vpc_cidr
   az_count    = var.az_count
   azs         = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+
+  # Bedrock endpoint only when tag inference actually uses Bedrock.
+  enable_bedrock_endpoint = var.ai_mode == "bedrock"
 }
 
 module "observability" {

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/local.ts",
     "build": "tsc -p tsconfig.json",
+    "build:lambda": "node scripts/build-lambda.mjs",
     "migrate": "tsx src/shared/db/migrate.ts",
     "seed": "tsx src/shared/db/seed.ts",
     "typecheck": "tsc --noEmit",
@@ -24,6 +25,7 @@
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
+    "esbuild": "^0.24.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

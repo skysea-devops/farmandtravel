@@ -160,3 +160,43 @@ resource "aws_lambda_permission" "apigw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }
+
+# --- One-off DB migration runner ---
+# Same code bundle, different handler (migrate.handler). Not wired to API Gateway;
+# invoked on demand (CI or `aws lambda invoke`) to apply migrations + seed inside
+# the VPC. Idempotent, so re-invoking is safe.
+resource "aws_cloudwatch_log_group" "migrate" {
+  name              = "/aws/lambda/${local.name}-migrate"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_lambda_function" "migrate" {
+  function_name = "${local.name}-migrate"
+  role          = aws_iam_role.lambda.arn
+  runtime       = "nodejs20.x"
+  handler       = "migrate.handler"
+  filename      = data.archive_file.stub.output_path
+  memory_size   = 512
+  timeout       = 120
+
+  vpc_config {
+    subnet_ids         = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  }
+
+  environment {
+    variables = {
+      NODE_ENV      = "production"
+      DB_SECRET_ARN = var.db_secret_arn
+      DB_HOST       = var.db_host
+      DB_NAME       = var.db_name
+      DB_PORT       = "5432"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.migrate]
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+}

@@ -1,0 +1,85 @@
+name: Backend Deploy
+
+# Ships the backend code to the prod Lambdas and runs DB migrations.
+#   - push to prod (backend/** changes): deploy directly (infra already exists)
+#   - after a successful Terraform run on prod: deploy (covers the first rollout,
+#     where the migrate Lambda is created in that same apply)
+#   - manual: workflow_dispatch
+# The deploy is a no-op-safe skip until the target functions exist, so a run that
+# races an in-progress apply exits cleanly instead of failing.
+on:
+  push:
+    branches: [prod]
+    paths: ["backend/**", ".github/workflows/backend-deploy.yml"]
+  workflow_run:
+    workflows: ["Terraform"]
+    types: [completed]
+    branches: [prod]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-1
+  DEPLOY_ROLE: arn:aws:iam::191072269876:role/farmandtravel-prod-tf-deploy
+  API_FN: farmandtravel-prod-api
+  MIGRATE_FN: farmandtravel-prod-api-migrate
+
+jobs:
+  deploy:
+    name: build, deploy & migrate
+    # Skip when triggered by a failed Terraform run.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: build bundle
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build:lambda
+          cd dist-lambda && zip -qr "$GITHUB_WORKSPACE/lambda.zip" .
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: deploy code & run migrations
+        run: |
+          set -euo pipefail
+
+          if ! aws lambda get-function --function-name "$API_FN" >/dev/null 2>&1 \
+             || ! aws lambda get-function --function-name "$MIGRATE_FN" >/dev/null 2>&1; then
+            echo "Target Lambda(s) not present yet (Terraform apply not finished). Skipping."
+            exit 0
+          fi
+
+          echo "Updating $API_FN ..."
+          aws lambda update-function-code --function-name "$API_FN" \
+            --zip-file fileb://lambda.zip --publish >/dev/null
+          aws lambda wait function-updated --function-name "$API_FN"
+
+          echo "Updating $MIGRATE_FN ..."
+          aws lambda update-function-code --function-name "$MIGRATE_FN" \
+            --zip-file fileb://lambda.zip --publish >/dev/null
+          aws lambda wait function-updated --function-name "$MIGRATE_FN"
+
+          echo "Running migrations ..."
+          ERR=$(aws lambda invoke --function-name "$MIGRATE_FN" \
+            --cli-binary-format raw-in-base64-out --payload '{}' \
+            /tmp/migrate-out.json --query 'FunctionError' --output text)
+          echo "migrate response:"; cat /tmp/migrate-out.json; echo
+          if [ "$ERR" != "None" ]; then
+            echo "Migration failed (FunctionError=$ERR)"; exit 1
+          fi
+          echo "Backend deployed and migrations applied."

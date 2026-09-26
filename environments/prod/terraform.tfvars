@@ -15,5 +15,8 @@ web_callback_urls     = ["http://localhost:5173", "http://localhost:5173/callbac
 web_logout_urls       = ["http://localhost:5173"]
 mobile_callback_urls  = ["topraklayeniden://callback"]
 
-# Tag inference: "bedrock" in prod, "stub" if Bedrock access not yet enabled
-ai_mode = "bedrock"
+# Tag inference: "bedrock" in prod, "stub" if Bedrock access not yet enabled.
+# Kept "stub" for launch: onboarding works without Bedrock model access or the
+# extra interface-endpoint cost. Flip to "bedrock" once model access is granted
+# (that also turns on the bedrock-runtime VPC endpoint automatically).
+ai_mode = "stub"
