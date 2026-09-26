@@ -1,0 +1,80 @@
+name: Terraform
+
+# PR'da: fmt + validate + plan.  dev'e push/merge'de: apply.
+on:
+  pull_request:
+    paths: ["environments/**", "modules/**", ".github/workflows/terraform.yml"]
+  push:
+    branches: [dev]
+    paths: ["environments/**", "modules/**", ".github/workflows/terraform.yml"]
+
+permissions:
+  id-token: write      # OIDC ile AWS rolünü assume etmek için
+  contents: read
+  pull-requests: write # plan çıktısını PR'a yorum olarak yazmak için
+
+env:
+  TF_VERSION: "1.10.5"
+  WORKDIR: environments/prod
+  AWS_REGION: eu-central-1
+
+jobs:
+  validate:
+    name: fmt & validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: fmt
+        run: terraform fmt -check -recursive
+      - name: validate (no backend)
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  plan:
+    name: plan (PR)
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init
+      - name: plan
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform plan -no-color -input=false
+
+  apply:
+    name: apply (dev)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: validate
+    runs-on: ubuntu-latest
+    # İstersen GitHub'da "prod" environment'ına manuel onay (required reviewers) ekle.
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init
+      - name: apply
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform apply -auto-approve -input=false

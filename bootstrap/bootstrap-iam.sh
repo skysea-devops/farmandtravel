@@ -22,7 +22,7 @@ set -euo pipefail
 PROJECT="farmandtravel"          # project slug (resource names + tags)
 GITHUB_ORG="skysea-devops"           # your GitHub org or username
 GITHUB_REPO="farmandtravel"          # the repo that runs Terraform
-DEPLOY_BRANCH="main"             # only this branch may deploy to prod
+DEPLOY_BRANCH="dev"             # only this branch may apply to prod (PRs may plan)
 # ------------------------------------------------------------------------------
 
 OIDC_HOST="token.actions.githubusercontent.com"
@@ -66,7 +66,10 @@ TRUST_POLICY="$(cat <<JSON
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": { "${OIDC_HOST}:aud": "sts.amazonaws.com" },
-        "StringLike":   { "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/${DEPLOY_BRANCH}" }
+        "StringLike":   { "${OIDC_HOST}:sub": [
+          "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/${DEPLOY_BRANCH}",
+          "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request"
+        ] }
       }
     }
   ]
