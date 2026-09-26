@@ -22,3 +22,31 @@ output "rds_security_group_id" {
 output "app_log_group_name" {
   value = module.observability.app_log_group_name
 }
+
+# --- Auth ---
+output "cognito_user_pool_id" {
+  value = module.cognito.user_pool_id
+}
+output "cognito_web_client_id" {
+  value = module.cognito.web_client_id
+}
+output "cognito_mobile_client_id" {
+  value = module.cognito.mobile_client_id
+}
+output "cognito_hosted_ui_domain" {
+  value = module.cognito.hosted_ui_domain
+}
+
+# --- Data / compute ---
+output "rds_endpoint" {
+  value = module.rds.endpoint
+}
+output "media_bucket_name" {
+  value = module.storage.media_bucket_name
+}
+output "api_endpoint" {
+  value = module.api.api_endpoint
+}
+output "lambda_function_name" {
+  value = module.api.lambda_function_name
+}

@@ -44,3 +44,33 @@ variable "budget_alert_email" {
   description = "Email address that receives budget alerts. No default: must be set in terraform.tfvars."
   type        = string
 }
+
+variable "cognito_domain_prefix" {
+  description = "Globally-unique Cognito Hosted UI domain prefix."
+  type        = string
+  default     = "topraklayeniden-prod"
+}
+
+variable "web_callback_urls" {
+  description = "Web SPA OAuth callback URLs."
+  type        = list(string)
+  default     = ["http://localhost:5173", "http://localhost:5173/callback"]
+}
+
+variable "web_logout_urls" {
+  description = "Web SPA OAuth logout URLs."
+  type        = list(string)
+  default     = ["http://localhost:5173"]
+}
+
+variable "mobile_callback_urls" {
+  description = "Mobile app deep-link OAuth callback URLs."
+  type        = list(string)
+  default     = ["topraklayeniden://callback"]
+}
+
+variable "ai_mode" {
+  description = "Tag inference mode: bedrock (prod) or stub."
+  type        = string
+  default     = "bedrock"
+}
