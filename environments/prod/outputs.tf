@@ -50,3 +50,20 @@ output "api_endpoint" {
 output "lambda_function_name" {
   value = module.api.lambda_function_name
 }
+output "migrate_function_name" {
+  value = module.api.migrate_function_name
+}
+
+# --- Frontend hosting ---
+output "site_url" {
+  value = module.site.url
+}
+output "site_bucket" {
+  value = module.site.bucket_name
+}
+output "cloudfront_distribution_id" {
+  value = module.site.distribution_id
+}
+output "cloudfront_domain" {
+  value = module.site.distribution_domain
+}

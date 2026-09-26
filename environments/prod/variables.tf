@@ -74,3 +74,9 @@ variable "ai_mode" {
   type        = string
   default     = "bedrock"
 }
+
+variable "domain_name" {
+  description = "Public apex domain for the frontend."
+  type        = string
+  default     = "topraklayeniden.com"
+}

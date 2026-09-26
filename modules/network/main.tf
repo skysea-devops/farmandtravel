@@ -80,3 +80,8 @@ resource "aws_security_group" "rds" {
 
   tags = { Name = "${local.name}-rds-sg" }
 }
+
+# No interface VPC endpoints: the Lambda gets DB credentials injected as env vars at
+# deploy time (see api module + prod data source), so it makes no AWS API calls at
+# runtime. Lambda->RDS is intra-VPC and S3 uses the free gateway endpoint above.
+# (When AI_MODE=bedrock later, add a bedrock-runtime interface endpoint here.)

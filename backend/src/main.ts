@@ -6,10 +6,20 @@ import type { Handler } from "aws-lambda";
 
 async function ensureDatabaseUrl(): Promise<void> {
   if (process.env.DATABASE_URL) return;
-  const secretArn = process.env.DB_SECRET_ARN;
   const host = process.env.DB_HOST;
   const name = process.env.DB_NAME;
   const port = process.env.DB_PORT ?? "5432";
+
+  // Preferred: discrete creds injected at deploy time (no Secrets Manager call).
+  if (process.env.DB_USER && process.env.DB_PASSWORD && host && name) {
+    const user = encodeURIComponent(process.env.DB_USER);
+    const pass = encodeURIComponent(process.env.DB_PASSWORD);
+    process.env.DATABASE_URL = `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+    return;
+  }
+
+  // Fallback: fetch the RDS-managed secret (requires a Secrets Manager VPC endpoint).
+  const secretArn = process.env.DB_SECRET_ARN;
   if (!secretArn || !host || !name) return; // env.ts will surface a clear error
 
   const { SecretsManagerClient, GetSecretValueCommand } = await import(

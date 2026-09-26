@@ -1,51 +1,51 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import * as cognito from "@/lib/cognito";
 
-// DEV auth: gerçek Cognito gelene kadar oturumu localStorage'da tutar.
-// x-dev-sub header'ı (lib/api) buradaki sub ile backend'e gider.
-// Cognito'ya geçince: login/signup Cognito Hosted UI / SDK ile, sub = JWT sub.
+// Cognito-backed auth. `ready` is false until the stored session is restored on
+// first load, so guards don't bounce a signed-in user to /giris on refresh.
 interface User { sub: string; email: string; }
 interface AuthCtx {
   user: User | null;
-  signUp: (email: string) => void;
-  login: (email: string) => void;
+  ready: boolean;
+  signUp: (email: string, password: string) => Promise<void>;
+  confirmSignUp: (email: string, code: string) => Promise<void>;
+  resendCode: (email: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-function slug(email: string): string {
-  return "dev-" + email.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const sub = localStorage.getItem("ty_dev_sub");
-      const email = localStorage.getItem("ty_email");
-      if (sub && email) setUser({ sub, email });
-    } catch { /* ignore */ }
+    cognito.currentSession()
+      .then((session) => { if (session) setUser(cognito.userInfo(session)); })
+      .catch((e) => console.error(e))
+      .finally(() => setReady(true));
   }, []);
 
-  const set = (email: string) => {
-    const sub = slug(email);
-    try {
-      localStorage.setItem("ty_dev_sub", sub);
-      localStorage.setItem("ty_email", email);
-    } catch { /* ignore */ }
-    setUser({ sub, email });
+  const signUp = (email: string, password: string) => cognito.signUp(email, password);
+  const confirmSignUp = (email: string, code: string) => cognito.confirmSignUp(email, code);
+  const resendCode = (email: string) => cognito.resendCode(email);
+
+  const login = async (email: string, password: string) => {
+    const session = await cognito.signIn(email, password);
+    setUser(cognito.userInfo(session));
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem("ty_dev_sub");
-      localStorage.removeItem("ty_email");
-    } catch { /* ignore */ }
+    cognito.signOut();
     setUser(null);
   };
 
-  return <Ctx.Provider value={{ user, signUp: set, login: set, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, ready, signUp, confirmSignUp, resendCode, login, logout }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth(): AuthCtx {

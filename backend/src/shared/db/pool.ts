@@ -2,7 +2,17 @@
 import pg from "pg";
 import { env } from "../config/env.js";
 
-export const pool = new pg.Pool({ connectionString: env.DATABASE_URL, max: 5 });
+// RDS forces TLS (DATABASE_URL carries sslmode=require). node-postgres needs an
+// explicit ssl option; the RDS CA isn't in the default trust store, so for MVP we
+// encrypt without CA verification (DB lives in a private subnet). Local Postgres
+// has no sslmode=require, so ssl stays off there.
+const useSsl = /sslmode=require/.test(env.DATABASE_URL);
+
+export const pool = new pg.Pool({
+  connectionString: env.DATABASE_URL,
+  max: 5,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+});
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   text: string,
