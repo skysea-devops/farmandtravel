@@ -38,12 +38,14 @@ export function AboutPage() {
           <div>
             <div className="mb-1 text-xs font-semibold tracking-wider text-clay-600">KURUCU ÜYE</div>
             <h2 className="font-display text-2xl font-semibold">Özgür Gökdeniz</h2>
-            <div className="mb-3 text-sm text-ink-500">🚜 Çiftlik sahibi · 📍 Fidanlar köyü, Akhisar / Manisa</div>
+            <div className="mb-3 text-sm text-ink-500">🚜 Çiftlik sahibi · 📍 Demirtaş köyü, Kırkağaç / Manisa</div>
             <p className="text-[15px] text-ink-700">
-              Merhaba, ben Özgür. Yıllar önce şehir hayatını geride bırakıp Manisa Akhisar'daki Fidanlar köyüne
-              yerleştim ve burada küçük bir çiftlik kurdum. Toprakla yeniden bağ kurmanın hayatımı nasıl
-              değiştirdiğini kendi ellerimle gördüm. Bu yolda öğrendiğim en değerli şey şu oldu: bilgiyi, emeği ve
-              deneyimi paylaştıkça her şey çoğalıyor. Toprakla Yeniden'i tam da bunun için kurdum — doğaya dönmek
+              Merhaba, ben Özgür. Yıllar önce şehir hayatını geride bırakıp Manisa Kırkağaç'ın Demirtaş köyüne
+              yerleştim ve burada küçük bir çiftlik kurdum. Buradaki birinci amacım organik ve sağlıklı üretim
+              yaparak kendi yiyeceğimi, kendi gıdamı üretmek. Toprakla yeniden bağ kurmanın hayatımı nasıl
+              değiştirdiğini kendi ellerimle gördüm; şimdi öğrendiklerimi paylaşmak, bu yolda ilerlemek isteyenlere
+              öğretmek istiyorum. Çünkü bu yolculukta öğrendiğim en değerli şey şu: bilgiyi, emeği ve deneyimi
+              paylaştıkça her şey çoğalıyor. Toprakla Yeniden'i tam da bunun için kurdum — doğaya dönmek
               isteyenlerle, kapısını açmaya hazır olanları bir araya getirmek için. Umarım sen de bu toplulukta
               kendine bir yer bulursun.
             </p>
