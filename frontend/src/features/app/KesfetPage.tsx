@@ -19,7 +19,7 @@ export function KesfetPage() {
   const [active, setActive] = useState<string | null>(null); // `${axis}:${value}`
 
   useEffect(() => {
-    api.get<{ members: MatchCard[] }>("/members")
+    api.getCached<{ members: MatchCard[] }>("/members")
       .then((r) => setMembers(r.members))
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));

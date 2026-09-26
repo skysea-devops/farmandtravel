@@ -11,7 +11,7 @@ export function PanelPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<Dashboard>("/me/dashboard")
+    api.getCached<Dashboard>("/me/dashboard")
       .then(setD)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
