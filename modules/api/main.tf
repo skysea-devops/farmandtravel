@@ -67,7 +67,7 @@ resource "aws_lambda_function" "api" {
   runtime       = "nodejs20.x"
   handler       = "main.handler"
   filename      = data.archive_file.stub.output_path
-  memory_size   = 512
+  memory_size   = 1024 # more memory = more CPU = faster cold start + queries
   timeout       = 15
 
   vpc_config {
