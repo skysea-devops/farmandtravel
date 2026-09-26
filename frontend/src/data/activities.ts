@@ -50,13 +50,6 @@ export const ACTIVITIES: Activity[] = [
     image: U + "photo-1500382017468-9049fed747ef" + q,
   },
   {
-    id: "announce-aegean",
-    kind: "announcement",
-    title: "Yeni bölge: Ege'de 12 yeni çiftlik",
-    desc: "Topluluğumuz büyüyor — İzmir, Muğla ve çevresinde 12 yeni çiftlik aramıza katıldı.",
-    date: "1 hafta önce",
-  },
-  {
     id: "photo-planting",
     kind: "photo",
     title: "Fidan dikimi",
