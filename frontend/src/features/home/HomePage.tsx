@@ -119,12 +119,11 @@ export function HomePage() {
           {CATEGORIES.map((c) => (
             <div key={c.label} className="relative h-40 overflow-hidden rounded-[var(--radius-lg)] bg-linear-135 from-moss-300 to-forest-500">
               <img src={c.photo} alt="" onError={hide} className="h-full w-full object-cover transition duration-300 hover:scale-105" />
-              {c.addable && <span className="absolute top-2 right-2 rounded-full bg-clay-500 px-2 py-0.5 text-[10px] font-semibold text-white">Eklenebilir</span>}
               <div className="font-display absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3.5 text-base font-semibold text-white">{c.label}</div>
             </div>
           ))}
         </div>
-        <p className="mt-4 text-center text-sm text-ink-500">…ve daha fazlası. Kategoriler topluluk büyüdükçe eklenir — at çiftliği, tiny house, hayvan barınağı, ağaçlandırma ve daha nicesi.</p>
+        <p className="mt-4 text-center text-sm text-ink-500">…ve topluluk büyüdükçe çok daha fazlası sizleri bekliyor.</p>
       </section>
 
       {/* Topluluk aktiviteleri */}
