@@ -1,0 +1,29 @@
+{
+  "name": "farmandtravel-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Toprakla Yeniden / Farm & Travel — backend (Hono lambdalith, clean architecture)",
+  "scripts": {
+    "dev": "tsx watch src/local.ts",
+    "build": "tsc -p tsconfig.json",
+    "migrate": "tsx src/shared/db/migrate.ts",
+    "seed": "tsx src/shared/db/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1",
+    "@aws-sdk/client-bedrock-runtime": "^3.716.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

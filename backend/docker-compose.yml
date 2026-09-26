@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ft
+      POSTGRES_PASSWORD: ft
+      POSTGRES_DB: farmandtravel
+    ports:
+      - "5432:5432"
+    volumes:
+      - ft_pgdata:/var/lib/postgresql/data
+volumes:
+  ft_pgdata:
