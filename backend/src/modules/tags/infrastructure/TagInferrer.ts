@@ -50,41 +50,26 @@ const QUICKPICKS: Array<[string, Array<{ axis: Axis; value: string }>]> = [
 const QUICKPICK_MAP = new Map(QUICKPICKS.map(([k, v]) => [norm(k), v]));
 
 export class StubTagInferrer implements TagInferrer {
+  // Stub mode maps ONLY the explicit quick-pick selections to tags. Free text is
+  // NOT auto-tagged here: keyword matching can't tell intent direction (seek vs
+  // offer) and produced wrong tags. The user adds anything else via "+ ekle";
+  // real free-text understanding comes from Bedrock (AI_MODE=bedrock).
   async infer(
-    freeText: string,
+    _freeText: string,
     quickPicks: string[],
     taxonomy: TaxonomyItem[],
   ): Promise<InferredTag[]> {
     const valid = new Set(taxonomy.map((t) => `${t.axis}:${t.value}`));
     const seen = new Set<string>();
     const out: InferredTag[] = [];
-    const add = (axis: Axis, value: string, confidence: number) => {
-      const k = `${axis}:${value}`;
-      if (!valid.has(k) || seen.has(k)) return;
-      seen.add(k);
-      out.push({ axis, value, confidence });
-    };
-
-    // 1) Exact mapping from the known quick-pick labels.
     for (const qp of quickPicks) {
-      for (const h of QUICKPICK_MAP.get(norm(qp)) ?? []) add(h.axis, h.value, 0.9);
-    }
-
-    // 2) Fuzzy match on the free text — never for the situation axis, which must
-    //    come from an explicit pick (avoids "çiftlik" -> farm-owner false hits).
-    const hay = norm(freeText);
-    const words = hay.split(/[^a-z0-9]+/).filter(Boolean);
-    const stemHit = (needle: string): boolean => {
-      const n = norm(needle);
-      if (n.length < 3) return false;
-      if (hay.includes(n)) return true;
-      const stem = n.slice(0, Math.min(n.length, 5));
-      return words.some((w) => w.startsWith(stem) || stem.startsWith(w.slice(0, 5)));
-    };
-    for (const t of taxonomy) {
-      if (t.axis === "situation") continue;
-      const needles = [t.value.replace(/-/g, " "), t.labelTr, ...t.synonyms];
-      if (needles.some(stemHit)) add(t.axis, t.value, 0.7);
+      for (const h of QUICKPICK_MAP.get(norm(qp)) ?? []) {
+        const k = `${h.axis}:${h.value}`;
+        if (valid.has(k) && !seen.has(k)) {
+          seen.add(k);
+          out.push({ axis: h.axis, value: h.value, confidence: 0.9 });
+        }
+      }
     }
     return out;
   }
