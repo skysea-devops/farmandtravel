@@ -21,10 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    cognito.currentSession().then((session) => {
-      if (session) setUser(cognito.userInfo(session));
-      setReady(true);
-    });
+    cognito.currentSession()
+      .then((session) => { if (session) setUser(cognito.userInfo(session)); })
+      .catch((e) => console.error(e))
+      .finally(() => setReady(true));
   }, []);
 
   const signUp = (email: string, password: string) => cognito.signUp(email, password);
