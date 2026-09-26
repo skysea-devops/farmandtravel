@@ -8,7 +8,7 @@ import {
   InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import { env } from "../../../shared/config/env.js";
-import type { InferredTag, TagInferrer, TaxonomyItem } from "../domain/types.js";
+import type { Axis, InferredTag, TagInferrer, TaxonomyItem } from "../domain/types.js";
 
 function norm(s: string): string {
   return s
@@ -18,26 +18,73 @@ function norm(s: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
+// Deterministic map from the onboarding UI quick-pick labels to taxonomy tags.
+// This is exact (no fuzzy keyword matching), so e.g. "İleride kendi çiftliğimi
+// kuracağım" is never mistaken for "Çiftlik sahibi".
+const QUICKPICKS: Array<[string, Array<{ axis: Axis; value: string }>]> = [
+  // Durum (situation)
+  ["Bir yerim/çiftliğim var", [{ axis: "situation", value: "farm-owner" }]],
+  ["Bir projem/fikrim var", [{ axis: "situation", value: "has-idea" }]],
+  ["İleride kendi çiftliğimi kuracağım", [{ axis: "situation", value: "aspiring-farmer" }]],
+  ["Deneyim/gönüllülük arıyorum", [{ axis: "situation", value: "seeking-experience" }]],
+  ["Uzmanlık sunuyorum", [{ axis: "offer", value: "expertise" }]],
+  ["Öğrenmek istiyorum", [{ axis: "seek", value: "knowledge" }]],
+  // Aradıklarım (seek)
+  ["Gönüllü arıyorum", [{ axis: "seek", value: "volunteers" }]],
+  ["Mentor arıyorum", [{ axis: "seek", value: "mentor" }]],
+  ["Bilgi öğrenmek istiyorum", [{ axis: "seek", value: "knowledge" }]],
+  ["Ortak arıyorum", [{ axis: "seek", value: "partner" }]],
+  ["Ekipman arıyorum", [{ axis: "seek", value: "equipment" }]],
+  ["Networking", [{ axis: "seek", value: "networking" }]],
+  ["Finansal destekçi arıyorum", [{ axis: "seek", value: "funding" }]],
+  ["Konaklama fırsatı arıyorum", [{ axis: "seek", value: "hosting" }]],
+  ["Çiftlik hayatını deneyimlemek istiyorum", [{ axis: "seek", value: "hosting" }]],
+  // Sunduklarım (offer)
+  ["Yer & deneyim sunuyorum", [{ axis: "offer", value: "place-experience" }]],
+  ["Gönüllü olmak istiyorum", [{ axis: "offer", value: "volunteer-labor" }]],
+  ["Mentorluk yapabilirim", [{ axis: "offer", value: "mentoring" }]],
+  ["Ortaklık kurabilirim", [{ axis: "offer", value: "partnership" }]],
+  ["Ekipman sağlayabilirim", [{ axis: "offer", value: "equipment" }]],
+  ["Finansal destek olabilirim", [{ axis: "offer", value: "funding" }]],
+];
+const QUICKPICK_MAP = new Map(QUICKPICKS.map(([k, v]) => [norm(k), v]));
+
 export class StubTagInferrer implements TagInferrer {
   async infer(
     freeText: string,
     quickPicks: string[],
     taxonomy: TaxonomyItem[],
   ): Promise<InferredTag[]> {
-    const hay = norm([freeText, ...quickPicks].join(" "));
+    const valid = new Set(taxonomy.map((t) => `${t.axis}:${t.value}`));
+    const seen = new Set<string>();
+    const out: InferredTag[] = [];
+    const add = (axis: Axis, value: string, confidence: number) => {
+      const k = `${axis}:${value}`;
+      if (!valid.has(k) || seen.has(k)) return;
+      seen.add(k);
+      out.push({ axis, value, confidence });
+    };
+
+    // 1) Exact mapping from the known quick-pick labels.
+    for (const qp of quickPicks) {
+      for (const h of QUICKPICK_MAP.get(norm(qp)) ?? []) add(h.axis, h.value, 0.9);
+    }
+
+    // 2) Fuzzy match on the free text — never for the situation axis, which must
+    //    come from an explicit pick (avoids "çiftlik" -> farm-owner false hits).
+    const hay = norm(freeText);
     const words = hay.split(/[^a-z0-9]+/).filter(Boolean);
-    // Türkçe ek toleransı: kelime kökü (ilk 5 harf) önek eşleşmesi.
     const stemHit = (needle: string): boolean => {
       const n = norm(needle);
       if (n.length < 3) return false;
-      if (hay.includes(n)) return true; // birebir alt dize
+      if (hay.includes(n)) return true;
       const stem = n.slice(0, Math.min(n.length, 5));
       return words.some((w) => w.startsWith(stem) || stem.startsWith(w.slice(0, 5)));
     };
-    const out: InferredTag[] = [];
     for (const t of taxonomy) {
+      if (t.axis === "situation") continue;
       const needles = [t.value.replace(/-/g, " "), t.labelTr, ...t.synonyms];
-      if (needles.some(stemHit)) out.push({ axis: t.axis, value: t.value, confidence: 0.7 });
+      if (needles.some(stemHit)) add(t.axis, t.value, 0.7);
     }
     return out;
   }

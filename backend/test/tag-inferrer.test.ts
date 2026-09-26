@@ -10,17 +10,23 @@ const taxonomy: TaxonomyItem[] = [
 ];
 
 describe("StubTagInferrer", () => {
-  it("çiftlik sahibi + gönüllü arayan metni doğru etiketler", async () => {
+  it("situation açık seçimden, seek/topic serbest metinden gelir", async () => {
     const inferrer = new StubTagInferrer();
     const res = await inferrer.infer(
       "Permakültür çiftliğim var, hasat için gönüllü arıyorum",
-      [],
+      ["Bir yerim/çiftliğim var"],
       taxonomy,
     );
     const keys = res.map((r) => `${r.axis}:${r.value}`);
-    expect(keys).toContain("situation:farm-owner");
-    expect(keys).toContain("seek:volunteers");
-    expect(keys).toContain("topic:permaculture");
+    expect(keys).toContain("situation:farm-owner"); // açık seçimden
+    expect(keys).toContain("seek:volunteers"); // serbest metinden
+    expect(keys).toContain("topic:permaculture"); // serbest metinden
+  });
+
+  it("serbest metin tek başına situation üretmez", async () => {
+    const inferrer = new StubTagInferrer();
+    const res = await inferrer.infer("ileride kendi çiftliğimi kuracağım", [], taxonomy);
+    expect(res.every((r) => r.axis !== "situation")).toBe(true);
   });
 
   it("yalnız taksonomideki etiketleri döndürür", async () => {

@@ -3,6 +3,7 @@
 INSERT INTO taxonomy (axis, value, label_tr, label_en, synonyms) VALUES
 -- SITUATION (durum) — filtrelenebilir roller
 ('situation','farm-owner','Çiftlik sahibi','Farm owner','{çiftlik,farm,çiftçi,bağ,tarla,arazi sahibi}'),
+('situation','aspiring-farmer','İleride çiftlik kuracak','Aspiring farm owner','{ileride çiftlik,çiftlik kuracağım,kendi çiftliğimi kuracağım,çiftlik hayali}'),
 ('situation','has-idea','Fikir/proje aşamasında','Has an idea/project','{hayal,proje,fikir,girişim}'),
 ('situation','seeking-experience','Deneyim arıyor','Seeking experience','{gönüllülük,deneyim,gezgin}'),
 -- SEEK (arıyorum)
