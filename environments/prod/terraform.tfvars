@@ -20,3 +20,6 @@ mobile_callback_urls  = ["topraklayeniden://callback"]
 # extra interface-endpoint cost. Flip to "bedrock" once model access is granted
 # (that also turns on the bedrock-runtime VPC endpoint automatically).
 ai_mode = "stub"
+
+# Frontend public domain (Route 53 hosted zone already in this account)
+domain_name = "topraklayeniden.com"

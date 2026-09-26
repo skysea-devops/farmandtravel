@@ -56,6 +56,19 @@ module "storage" {
   environment = var.environment
 }
 
+# Frontend hosting — S3 + CloudFront + ACM + Route53 (topraklayeniden.com).
+module "site" {
+  source = "../../modules/site"
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  project     = var.project
+  environment = var.environment
+  domain_name = var.domain_name
+}
+
 # RDS-managed master credentials, read at deploy time and injected into the Lambda
 # env so it needs no Secrets Manager call (and no interface VPC endpoint) at runtime.
 data "aws_secretsmanager_secret_version" "db_master" {
