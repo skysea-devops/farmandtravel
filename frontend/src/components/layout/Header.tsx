@@ -40,7 +40,7 @@ export function Header() {
         <div className="ml-auto flex items-center gap-2.5">
           {user ? (
             <>
-              <Link to="/app"><Button variant="ghost" size="sm">Uygulamam</Button></Link>
+              <Link to="/app/profil"><Button variant="ghost" size="sm">Profilim</Button></Link>
               <Button size="sm" variant="outline" onClick={() => { logout(); nav("/"); }}>Çıkış</Button>
             </>
           ) : (

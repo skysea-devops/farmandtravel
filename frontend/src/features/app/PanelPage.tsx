@@ -82,7 +82,7 @@ function MatchCardView({ m }: { m: MatchCard }) {
         ))}
       </div>
       <div className="mt-auto flex items-center gap-2">
-        <Link to={`/app/kesfet`} className="flex-1"><Button size="sm" className="w-full">Profili gör</Button></Link>
+        <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">Profili gör</Button></Link>
       </div>
     </div>
   );
