@@ -8,9 +8,3 @@ variable "azs" {
   description = "List of AZ names to place subnets in (length must be >= az_count)."
   type        = list(string)
 }
-
-variable "enable_bedrock_endpoint" {
-  description = "Also create the bedrock-runtime interface endpoint (turn on when AI_MODE=bedrock)."
-  type        = bool
-  default     = false
-}

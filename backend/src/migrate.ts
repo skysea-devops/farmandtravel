@@ -10,10 +10,19 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 
 async function databaseUrl(): Promise<string> {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const arn = process.env.DB_SECRET_ARN;
   const host = process.env.DB_HOST;
   const name = process.env.DB_NAME;
   const port = process.env.DB_PORT ?? "5432";
+
+  // Preferred: discrete creds injected at deploy time (no Secrets Manager call).
+  if (process.env.DB_USER && process.env.DB_PASSWORD && host && name) {
+    const user = encodeURIComponent(process.env.DB_USER);
+    const pass = encodeURIComponent(process.env.DB_PASSWORD);
+    return `postgres://${user}:${pass}@${host}:${port}/${name}?sslmode=require`;
+  }
+
+  // Fallback: fetch the RDS-managed secret (requires a Secrets Manager VPC endpoint).
+  const arn = process.env.DB_SECRET_ARN;
   if (!arn || !host || !name) throw new Error("DB env eksik: DB_SECRET_ARN/DB_HOST/DB_NAME");
   const sm = new SecretsManagerClient({});
   const res = await sm.send(new GetSecretValueCommand({ SecretId: arn }));

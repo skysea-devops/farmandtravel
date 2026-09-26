@@ -81,45 +81,7 @@ resource "aws_security_group" "rds" {
   tags = { Name = "${local.name}-rds-sg" }
 }
 
-# --- Interface VPC endpoints -------------------------------------------------
-# The VPC is closed (no NAT). Lambda reaches AWS APIs through interface endpoints.
-# Secrets Manager is required (RDS-managed master password at cold start).
-# Bedrock is optional (only when AI_MODE=bedrock) to keep endpoint cost down.
-resource "aws_security_group" "endpoints" {
-  name        = "${local.name}-vpce-sg"
-  description = "Interface VPC endpoints - HTTPS from the Lambda SG"
-  vpc_id      = aws_vpc.this.id
-
-  ingress {
-    description     = "HTTPS from Lambda"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lambda.id]
-  }
-
-  tags = { Name = "${local.name}-vpce-sg" }
-}
-
-resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id              = aws_vpc.this.id
-  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.endpoints.id]
-  private_dns_enabled = true
-
-  tags = { Name = "${local.name}-secretsmanager-vpce" }
-}
-
-resource "aws_vpc_endpoint" "bedrock_runtime" {
-  count               = var.enable_bedrock_endpoint ? 1 : 0
-  vpc_id              = aws_vpc.this.id
-  service_name        = "com.amazonaws.${var.aws_region}.bedrock-runtime"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.endpoints.id]
-  private_dns_enabled = true
-
-  tags = { Name = "${local.name}-bedrock-runtime-vpce" }
-}
+# No interface VPC endpoints: the Lambda gets DB credentials injected as env vars at
+# deploy time (see api module + prod data source), so it makes no AWS API calls at
+# runtime. Lambda->RDS is intra-VPC and S3 uses the free gateway endpoint above.
+# (When AI_MODE=bedrock later, add a bedrock-runtime interface endpoint here.)

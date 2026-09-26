@@ -13,9 +13,6 @@ module "network" {
   vpc_cidr    = var.vpc_cidr
   az_count    = var.az_count
   azs         = slice(data.aws_availability_zones.available.names, 0, var.az_count)
-
-  # Bedrock endpoint only when tag inference actually uses Bedrock.
-  enable_bedrock_endpoint = var.ai_mode == "bedrock"
 }
 
 module "observability" {
@@ -59,6 +56,15 @@ module "storage" {
   environment = var.environment
 }
 
+# RDS-managed master credentials, read at deploy time and injected into the Lambda
+# env so it needs no Secrets Manager call (and no interface VPC endpoint) at runtime.
+data "aws_secretsmanager_secret_version" "db_master" {
+  secret_id = module.rds.master_secret_arn
+}
+locals {
+  db_creds = jsondecode(data.aws_secretsmanager_secret_version.db_master.secret_string)
+}
+
 # Compute — Lambda (lambdalith) + API Gateway HTTP API + Cognito JWT authorizer.
 module "api" {
   source = "../../modules/api"
@@ -75,6 +81,8 @@ module "api" {
   db_secret_arn     = module.rds.master_secret_arn
   db_host           = module.rds.address
   db_name           = module.rds.db_name
+  db_user           = local.db_creds.username
+  db_password       = local.db_creds.password
   media_bucket_arn  = module.storage.media_bucket_arn
   media_bucket_name = module.storage.media_bucket_name
 
