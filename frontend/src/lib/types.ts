@@ -25,10 +25,13 @@ export interface Profile {
   bio: string | null;
   avatarKey: string | null;
   profile: Record<string, unknown>;
+  avatarUrl?: string | null;
+  photos?: Photo[];
   tags: { axis: Axis; value: string; labelTr: string; labelEn: string }[];
 }
 
 export interface MatchTag { axis: Axis; value: string; labelTr: string; labelEn: string }
+export interface Photo { id: string; url: string | null; caption: string | null }
 export interface MatchCard {
   id: string;
   firstName: string | null;
@@ -37,6 +40,7 @@ export interface MatchCard {
   headline: string | null;
   bio?: string | null;
   avatarKey: string | null;
+  avatarUrl?: string | null;
   tags: MatchTag[];
   score: number;
   matched: MatchTag[];
@@ -45,7 +49,7 @@ export interface PendingRequest {
   connectionId: string;
   message: string | null;
   createdAt: string;
-  member: { id: string; firstName: string | null; country: string | null; city: string | null; headline: string | null; avatarKey: string | null };
+  member: { id: string; firstName: string | null; country: string | null; city: string | null; headline: string | null; avatarKey: string | null; avatarUrl?: string | null };
 }
 export interface Dashboard {
   stats: { matches: number; pendingConnections: number; connections?: number; unreadMessages: number; profileViews: number };
@@ -67,6 +71,7 @@ export interface ConnectionState {
   direction: "incoming" | "outgoing";
 }
 export interface MemberDetail extends MatchCard {
+  photos?: Photo[];
   connection: ConnectionState | null;
   contact: Contact | null;
 }
@@ -91,6 +96,7 @@ export interface MiniMember {
   city: string | null;
   headline: string | null;
   avatarKey: string | null;
+  avatarUrl?: string | null;
 }
 export interface Conversation {
   connectionId: string;

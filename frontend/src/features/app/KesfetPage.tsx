@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { Avatar } from "@/components/ui/Avatar";
 import { api } from "@/lib/api";
 import type { Axis, MatchCard } from "@/lib/types";
 
@@ -106,7 +107,7 @@ function Card({ m }: { m: MatchCard }) {
   return (
     <div className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5">
       <div className="mb-3 flex items-center gap-3">
-        <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+        <Avatar url={m.avatarUrl} className="size-11" />
         <div className="min-w-0">
           <div className="truncate font-semibold">{m.firstName}</div>
           <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { messages as msgApi } from "@/lib/api";
 import type { Conversation, Message, Thread } from "@/lib/types";
@@ -38,7 +39,7 @@ export function MesajlarPage() {
                   "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition",
                   connectionId === c.connectionId ? "border-forest-500 bg-sand-100" : "border-border bg-surface hover:bg-sand-100",
                 )}>
-                <div className="size-10 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+                <Avatar url={c.member.avatarUrl} className="size-10" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-semibold">{c.member.firstName}</span>
@@ -103,7 +104,7 @@ function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; on
     <div className="flex h-[70vh] flex-col rounded-[var(--radius-lg)] border border-border bg-surface">
       <div className="flex items-center gap-3 border-b border-border p-3.5">
         <button onClick={onBack} className="text-ink-500 md:hidden">←</button>
-        <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+        <Avatar url={t.other?.avatarUrl} className="size-9" />
         <div className="font-semibold">{t.other?.firstName ?? "Üye"}</div>
       </div>
 

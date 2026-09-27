@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
 import type { ConnItem, Connections } from "@/lib/types";
 
@@ -81,7 +82,7 @@ function Row({ c, children }: { c: ConnItem; children: React.ReactNode }) {
   const loc = [m.city, m.country].filter(Boolean).join(", ");
   return (
     <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
-      <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+      <Avatar url={m.avatarUrl} className="size-11" />
       <div className="min-w-0 flex-1">
         <Link to={`/app/uye/${m.id}`} className="font-semibold hover:underline">{m.firstName}</Link>
         <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>

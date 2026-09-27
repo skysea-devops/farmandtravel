@@ -2,6 +2,16 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
+import { safeUrl } from "../../shared/media/s3.js";
+
+async function signMembers(rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
+  return Promise.all(
+    rows.map(async (r) => {
+      const member = r.member as { avatarKey?: string | null } | null;
+      return member ? { ...r, member: { ...member, avatarUrl: await safeUrl(member.avatarKey) } } : r;
+    }),
+  );
+}
 
 export const connectionsRoutes = new Hono();
 
@@ -83,7 +93,11 @@ connectionsRoutes.get("/connections", auth, async (c) => {
     [memberId],
   );
 
-  return c.json({ incoming: incoming.rows, outgoing: outgoing.rows, accepted: accepted.rows });
+  return c.json({
+    incoming: await signMembers(incoming.rows),
+    outgoing: await signMembers(outgoing.rows),
+    accepted: await signMembers(accepted.rows),
+  });
 });
 
 async function respond(memberId: string, id: string, status: "accepted" | "rejected") {

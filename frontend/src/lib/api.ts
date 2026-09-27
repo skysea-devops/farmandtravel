@@ -29,6 +29,7 @@ export const api = {
   get: <T>(p: string) => req<T>("GET", p),
   post: <T>(p: string, b?: unknown) => req<T>("POST", p, b),
   put: <T>(p: string, b?: unknown) => req<T>("PUT", p, b),
+  del: <T>(p: string) => req<T>("DELETE", p),
   // Cached GET: returns a fresh value within ttlMs, else fetches and stores.
   getCached: async <T>(p: string, ttlMs = 60_000): Promise<T> => {
     const hit = cache.get(p);
@@ -50,6 +51,17 @@ export const connections = {
   accept: async (id: string) => { const r = await api.post(`/connections/${id}/accept`); api.invalidate(); return r; },
   reject: async (id: string) => { const r = await api.post(`/connections/${id}/reject`); api.invalidate(); return r; },
 };
+
+// Upload an image: get a presigned PUT URL, upload straight to S3, return the key.
+export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promise<string> {
+  const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
+    kind,
+    contentType: file.type,
+  });
+  const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": file.type }, body: file });
+  if (!res.ok) throw new Error("Yükleme başarısız");
+  return key;
+}
 
 export const messages = {
   list: <T>() => api.get<T>("/messages"),

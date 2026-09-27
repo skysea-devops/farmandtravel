@@ -82,6 +82,7 @@ resource "aws_lambda_function" "api" {
       AI_MODE          = var.ai_mode
       BEDROCK_REGION   = var.aws_region
       BEDROCK_MODEL_ID = var.bedrock_model_id
+      MEDIA_BUCKET     = var.media_bucket_name
       # DB creds injected at deploy time (no runtime Secrets Manager call / VPC endpoint).
       DB_SECRET_ARN = var.db_secret_arn
       DB_HOST       = var.db_host
