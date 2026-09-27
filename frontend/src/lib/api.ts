@@ -63,6 +63,15 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   return key;
 }
 
+export const reviews = {
+  list: <T>(memberId: string) => api.get<T>(`/members/${memberId}/reviews`),
+  submit: async (revieweeId: string, rating: number, comment?: string) => {
+    const r = await api.post("/reviews", { revieweeId, rating, comment });
+    api.invalidate();
+    return r;
+  },
+};
+
 export const messages = {
   list: <T>() => api.get<T>("/messages"),
   thread: <T>(connectionId: string) => api.get<T>(`/messages/${connectionId}`),

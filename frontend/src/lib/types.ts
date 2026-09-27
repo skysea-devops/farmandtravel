@@ -41,9 +41,24 @@ export interface MatchCard {
   bio?: string | null;
   avatarKey: string | null;
   avatarUrl?: string | null;
+  ratingAvg?: number;
+  ratingCount?: number;
   tags: MatchTag[];
   score: number;
   matched: MatchTag[];
+}
+
+export interface Review {
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  reviewer: { id: string; firstName: string | null; avatarUrl: string | null };
+}
+export interface ReviewsData {
+  summary: { avg: number; count: number };
+  reviews: Review[];
+  canReview: boolean;
+  myReview: { rating: number; comment: string | null } | null;
 }
 export interface PendingRequest {
   connectionId: string;

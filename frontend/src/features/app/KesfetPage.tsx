@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
+import { Stars } from "@/components/ui/Stars";
 import { api } from "@/lib/api";
 import type { Axis, MatchCard } from "@/lib/types";
 
@@ -111,6 +112,9 @@ function Card({ m }: { m: MatchCard }) {
         <div className="min-w-0">
           <div className="truncate font-semibold">{m.firstName}</div>
           <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>
+          {(m.ratingCount ?? 0) > 0 && (
+            <div className="flex items-center gap-1 text-[12px] text-ink-500"><Stars value={m.ratingAvg ?? 0} className="text-[11px]" /> {m.ratingAvg} ({m.ratingCount})</div>
+          )}
         </div>
         {m.score > 0 && <span className="ml-auto rounded-full bg-moss-500/15 px-2 py-0.5 text-[11px] font-semibold text-forest-700">%{Math.min(99, m.score * 40 + 20)} uyum</span>}
       </div>

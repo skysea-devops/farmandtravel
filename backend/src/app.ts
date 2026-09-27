@@ -7,6 +7,7 @@ import { discoveryRoutes } from "./modules/discovery/routes.js";
 import { connectionsRoutes } from "./modules/connections/routes.js";
 import { messagesRoutes } from "./modules/messages/routes.js";
 import { uploadsRoutes } from "./modules/uploads/routes.js";
+import { reviewsRoutes } from "./modules/reviews/routes.js";
 
 export function createApp() {
   const app = new Hono();
@@ -21,6 +22,7 @@ export function createApp() {
   app.route("/", connectionsRoutes);
   app.route("/", messagesRoutes);
   app.route("/", uploadsRoutes);
+  app.route("/", reviewsRoutes);
 
   // Merkezî hata çevirici
   app.onError((err, c) => {
