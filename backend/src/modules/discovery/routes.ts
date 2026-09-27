@@ -62,6 +62,28 @@ async function oneMember(id: string): Promise<CandidateRow | null> {
   return r.rows[0] ?? null;
 }
 
+async function connectionWith(me: string, other: string) {
+  const r = await query<{ id: string; status: string; requester_id: string }>(
+    `SELECT id, status, requester_id FROM connections
+      WHERE (requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1)
+      LIMIT 1`,
+    [me, other],
+  );
+  if (!r.rowCount || !r.rows[0]) return null;
+  const c = r.rows[0];
+  return { connectionId: c.id, status: c.status, direction: c.requester_id === me ? "outgoing" : "incoming" };
+}
+
+async function contactOf(id: string) {
+  const r = await query(
+    `SELECT last_name AS "lastName", contact_email AS "contactEmail", phone,
+            socials, employer, address_exact AS "addressExact"
+       FROM members WHERE id=$1`,
+    [id],
+  );
+  return r.rows[0] ?? null;
+}
+
 function publicMatch(cd: CandidateRow, score: number, matched: Tag[]) {
   return {
     id: cd.id,
@@ -90,15 +112,32 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score);
 
+  // Incoming pending connection requests.
+  const pending = await query(
+    `SELECT c.id AS "connectionId", c.message, c.created_at AS "createdAt",
+            json_build_object('id', o.id, 'firstName', o.first_name, 'country', o.country,
+                              'city', o.city, 'headline', o.headline, 'avatarKey', o.avatar_key) AS member
+       FROM connections c JOIN members o ON o.id = c.requester_id
+      WHERE c.addressee_id = $1 AND c.status = 'pending'
+      ORDER BY c.created_at DESC`,
+    [memberId],
+  );
+  const acceptedCount = await query<{ n: string }>(
+    `SELECT count(*)::int AS n FROM connections
+      WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
+    [memberId],
+  );
+
   return c.json({
     stats: {
       matches: scored.length,
-      pendingConnections: 0,
+      pendingConnections: pending.rowCount ?? 0,
+      connections: Number(acceptedCount.rows[0]?.n ?? 0),
       unreadMessages: 0,
       profileViews: 0,
     },
     matches: scored.slice(0, 12),
-    pendingRequests: [],
+    pendingRequests: pending.rows,
   });
 });
 
@@ -123,5 +162,7 @@ discoveryRoutes.get("/members/:id", auth, async (c) => {
   const cd = id ? await oneMember(id) : null;
   if (!cd) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
   const { score, matched } = scoreCandidate(await myTags(memberId), cd.tags);
-  return c.json(publicMatch(cd, score, matched));
+  const connection = await connectionWith(memberId, cd.id);
+  const contact = connection?.status === "accepted" ? await contactOf(cd.id) : null;
+  return c.json({ ...publicMatch(cd, score, matched), connection, contact });
 });

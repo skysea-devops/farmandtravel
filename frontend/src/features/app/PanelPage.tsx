@@ -2,20 +2,28 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
-import { api } from "@/lib/api";
+import { api, connections } from "@/lib/api";
 import type { Dashboard, MatchCard } from "@/lib/types";
 
 export function PanelPage() {
   const [d, setD] = useState<Dashboard | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.getCached<Dashboard>("/me/dashboard")
+  function load(cached = true) {
+    (cached ? api.getCached<Dashboard>("/me/dashboard") : api.get<Dashboard>("/me/dashboard"))
       .then(setD)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
-  }, []);
+  }
+  useEffect(() => load(), []);
+
+  async function act(id: string, kind: "accept" | "reject") {
+    setBusy(id);
+    try { await (kind === "accept" ? connections.accept(id) : connections.reject(id)); load(false); }
+    finally { setBusy(null); }
+  }
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
   if (err) return <div className="py-16 text-center text-ink-700">Panel yüklenemedi: {err}</div>;
@@ -56,10 +64,35 @@ export function PanelPage() {
       </section>
 
       <section>
-        <h2 className="font-display mb-3 text-xl font-semibold">Bekleyen istekler</h2>
-        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-ink-500">
-          Bekleyen bağlantı isteğin yok. (Bağlantılar özelliği yakında.)
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display text-xl font-semibold">Bekleyen istekler</h2>
+          <Link to="/app/baglantilar" className="text-sm text-forest-600 hover:underline">Tümü →</Link>
         </div>
+        {d.pendingRequests.length === 0 ? (
+          <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-ink-500">
+            Bekleyen bağlantı isteğin yok.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {d.pendingRequests.map((r) => {
+              const loc = [r.member.city, r.member.country].filter(Boolean).join(", ");
+              return (
+                <div key={r.connectionId} className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+                  <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+                  <div className="min-w-0 flex-1">
+                    <Link to={`/app/uye/${r.member.id}`} className="font-semibold hover:underline">{r.member.firstName}</Link>
+                    <div className="truncate text-[13px] text-ink-500">{loc}{r.member.headline ? ` · ${r.member.headline}` : ""}</div>
+                    {r.message && <div className="mt-1 text-[13px] italic text-ink-600">"{r.message}"</div>}
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "accept")}>Kabul et</Button>
+                    <Button size="sm" variant="outline" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "reject")}>Reddet</Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
     </>
   );

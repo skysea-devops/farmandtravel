@@ -41,8 +41,45 @@ export interface MatchCard {
   score: number;
   matched: MatchTag[];
 }
+export interface PendingRequest {
+  connectionId: string;
+  message: string | null;
+  createdAt: string;
+  member: { id: string; firstName: string | null; country: string | null; city: string | null; headline: string | null; avatarKey: string | null };
+}
 export interface Dashboard {
-  stats: { matches: number; pendingConnections: number; unreadMessages: number; profileViews: number };
+  stats: { matches: number; pendingConnections: number; connections?: number; unreadMessages: number; profileViews: number };
   matches: MatchCard[];
-  pendingRequests: unknown[];
+  pendingRequests: PendingRequest[];
+}
+
+export interface Contact {
+  lastName: string | null;
+  contactEmail: string | null;
+  phone: string | null;
+  socials: Record<string, unknown> | null;
+  employer: string | null;
+  addressExact: string | null;
+}
+export interface ConnectionState {
+  connectionId: string;
+  status: "pending" | "accepted" | "rejected";
+  direction: "incoming" | "outgoing";
+}
+export interface MemberDetail extends MatchCard {
+  connection: ConnectionState | null;
+  contact: Contact | null;
+}
+export interface ConnItem {
+  connectionId: string;
+  member: MatchCard;
+  message?: string | null;
+  createdAt?: string;
+  since?: string | null;
+  contact?: Contact;
+}
+export interface Connections {
+  incoming: ConnItem[];
+  outgoing: ConnItem[];
+  accepted: ConnItem[];
 }

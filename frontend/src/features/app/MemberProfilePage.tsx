@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
-import { api } from "@/lib/api";
-import type { Axis, MatchCard } from "@/lib/types";
+import { api, connections } from "@/lib/api";
+import type { Axis, MemberDetail } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = {
   situation: "Durumu", seek: "Aradıkları", offer: "Sundukları", topic: "İlgi alanları",
@@ -12,17 +12,30 @@ const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
 
 export function MemberProfilePage() {
   const { id } = useParams();
-  const [m, setM] = useState<MatchCard | null>(null);
+  const [m, setM] = useState<MemberDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  function load() {
     setLoading(true);
-    api.getCached<MatchCard>(`/members/${id}`)
+    api.get<MemberDetail>(`/members/${id}`)
       .then(setM)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
-  }, [id]);
+  }
+  useEffect(load, [id]);
+
+  async function connect() {
+    if (!id) return;
+    setBusy(true);
+    try { await connections.request(id); load(); } finally { setBusy(false); }
+  }
+  async function accept() {
+    if (!m?.connection) return;
+    setBusy(true);
+    try { await connections.accept(m.connection.connectionId); load(); } finally { setBusy(false); }
+  }
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
   if (err || !m) return (
@@ -47,10 +60,23 @@ export function MemberProfilePage() {
         </div>
       </div>
 
-      <div className="mb-5 flex gap-2">
-        <Button onClick={() => alert("Bağlantı isteği özelliği yakında (Adım 3).")}>🤝 Bağlantı kur</Button>
+      <div className="mb-5 flex flex-wrap gap-2">
+        <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
         <Button variant="outline" onClick={() => alert("Kaydetme özelliği yakında.")}>🔖 Kaydet</Button>
       </div>
+
+      {m.connection?.status === "accepted" && m.contact && (
+        <div className="mb-4 rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-5">
+          <h2 className="mb-2.5 text-[15px] font-semibold text-forest-700">✓ Bağlantı kuruldu — iletişim bilgileri</h2>
+          <div className="space-y-1 text-sm text-ink-700">
+            {m.contact.contactEmail && <div>✉️ {m.contact.contactEmail}</div>}
+            {m.contact.phone && <div>📞 {m.contact.phone}</div>}
+            {m.contact.addressExact && <div>📍 {m.contact.addressExact}</div>}
+            {m.contact.employer && <div>🏢 {m.contact.employer}</div>}
+            {!m.contact.contactEmail && !m.contact.phone && <div className="text-ink-500">Bu üye henüz iletişim bilgisi eklememiş.</div>}
+          </div>
+        </div>
+      )}
 
       {m.bio && (
         <Block title="Hakkında"><p className="text-sm text-ink-700">{m.bio}</p></Block>
@@ -77,6 +103,18 @@ export function MemberProfilePage() {
       </div>
     </div>
   );
+}
+
+function ConnectAction({ m, busy, onConnect, onAccept }: {
+  m: MemberDetail; busy: boolean; onConnect: () => void; onAccept: () => void;
+}) {
+  const conn = m.connection;
+  if (!conn) return <Button disabled={busy} onClick={onConnect}>🤝 Bağlantı kur</Button>;
+  if (conn.status === "accepted") return <Button variant="outline" disabled>✓ Bağlısınız</Button>;
+  if (conn.status === "rejected") return <Button variant="outline" disabled>İstek reddedildi</Button>;
+  // pending
+  if (conn.direction === "incoming") return <Button disabled={busy} onClick={onAccept}>🤝 İsteği kabul et</Button>;
+  return <Button variant="outline" disabled>⏳ İstek gönderildi</Button>;
 }
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
