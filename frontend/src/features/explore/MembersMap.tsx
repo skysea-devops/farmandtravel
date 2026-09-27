@@ -33,7 +33,8 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
   useEffect(() => {
     if (!boxRef.current || mapRef.current) return;
     const map = L.map(boxRef.current, { scrollWheelZoom: false, attributionControl: true }).setView([41, 20], 4);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      subdomains: ["a", "b", "c"],
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);

@@ -124,7 +124,7 @@ resource "aws_cloudfront_response_headers_policy" "security" {
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' data: https://fonts.gstatic.com",
-        "img-src 'self' data: blob: https://*.amazonaws.com https://*.tile.openstreetmap.org https://images.unsplash.com",
+        "img-src 'self' data: blob: https://*.amazonaws.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://images.unsplash.com",
         "connect-src 'self' https://*.amazonaws.com",
         "object-src 'none'",
         "base-uri 'self'",
