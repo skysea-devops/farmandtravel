@@ -52,13 +52,43 @@ export const connections = {
   reject: async (id: string) => { const r = await api.post(`/connections/${id}/reject`); api.invalidate(); return r; },
 };
 
-// Upload an image: get a presigned PUT URL, upload straight to S3, return the key.
+// Downscale + re-encode to JPEG in the browser so we don't upload multi-MB phone
+// photos (much faster upload + display). Falls back to the original on any failure.
+async function shrink(file: File, maxDim: number, quality = 0.82): Promise<Blob> {
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = url;
+    });
+    URL.revokeObjectURL(url);
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) throw new Error("encode failed");
+    return blob;
+  } catch {
+    return file; // fall back to original
+  }
+}
+
+// Upload an image: shrink it, get a presigned PUT URL, upload straight to S3, return the key.
 export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promise<string> {
+  const blob = await shrink(file, kind === "avatar" ? 512 : 1600);
+  const contentType = blob.type === "image/jpeg" || blob.type === "image/png" || blob.type === "image/webp"
+    ? blob.type : "image/jpeg";
   const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
     kind,
-    contentType: file.type,
+    contentType,
   });
-  const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": file.type }, body: file });
+  const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": contentType }, body: blob });
   if (!res.ok) throw new Error("Yükleme başarısız");
   return key;
 }

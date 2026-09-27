@@ -21,9 +21,14 @@ await build({
   target: "node20",
   format: "cjs",
   outdir: out,
-  // Bundle client-s3 + presigner (guarantee availability); the others are in the
-  // nodejs20 runtime so keep them external to stay small.
-  external: ["@aws-sdk/client-secrets-manager", "@aws-sdk/client-bedrock-runtime", "pg-native"],
+  // Keep the big AWS SDK clients external (they ship in the nodejs20 runtime);
+  // only s3-request-presigner is bundled (small, and not always in the runtime).
+  external: [
+    "@aws-sdk/client-secrets-manager",
+    "@aws-sdk/client-bedrock-runtime",
+    "@aws-sdk/client-s3",
+    "pg-native",
+  ],
   logLevel: "info",
 });
 
