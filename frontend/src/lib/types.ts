@@ -32,6 +32,21 @@ export interface Profile {
 }
 
 export interface MatchTag { axis: Axis; value: string; labelTr: string; labelEn: string }
+
+// Public (no-auth) teaser projection served by GET /public/members.
+export interface PublicMember {
+  id: string;
+  firstName: string | null;
+  country: string | null;
+  city: string | null;
+  headline: string | null;
+  avatarKey: string | null;
+  avatarUrl?: string | null;
+  ratingAvg: number;
+  ratingCount: number;
+  tags: MatchTag[];
+  dir: "offer" | "seek";
+}
 export interface Photo { id: string; url: string | null; caption: string | null }
 export interface MatchCard {
   id: string;

@@ -1,46 +1,81 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { Avatar } from "@/components/ui/Avatar";
+import { Stars } from "@/components/ui/Stars";
 import { useAuth } from "@/lib/auth";
-import { DEMO_MEMBERS, CITY_MAP, TOPICS } from "@/data/demo";
+import { api } from "@/lib/api";
+import type { PublicMember } from "@/lib/types";
+import { coordsFor } from "@/data/geo";
+import type { MapPin } from "./MembersMap";
+
+// Leaflet is heavy; load it only when this page renders (keeps it out of the app bundle).
+const MembersMap = lazy(() => import("./MembersMap"));
 
 type Dir = "all" | "offer" | "seek";
 
 export function ExplorePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  // Logged-in members go to the real discovery; visitors get the join prompt.
-  const gate = () => (user ? navigate("/app/kesfet") : setModal(true));
+  const [all, setAll] = useState<PublicMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [dir, setDir] = useState<Dir>("all");
-  const [farm, setFarm] = useState(false);
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [topic, setTopic] = useState("");
-  const [lang, setLang] = useState("");
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
-  const [hovered, setHovered] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<{ members: PublicMember[] }>("/public/members")
+      .then((r) => setAll(r.members))
+      .catch(() => setAll([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Clicking anyone: guests get the join prompt; members go to the real profile.
+  const open = (id: string) => (user ? navigate(`/app/uye/${id}`) : setModal(true));
+
+  // Filter option lists derived from real data.
+  const countries = useMemo(
+    () => [...new Set(all.map((m) => m.country).filter(Boolean))] as string[],
+    [all],
+  );
+  const cities = useMemo(
+    () => [...new Set(all.filter((m) => !country || m.country === country).map((m) => m.city).filter(Boolean))] as string[],
+    [all, country],
+  );
+  const topics = useMemo(() => {
+    const map = new Map<string, string>();
+    all.forEach((m) => m.tags.forEach((t) => { if (t.axis === "topic") map.set(t.value, t.labelTr); }));
+    return [...map.entries()].map(([value, label]) => ({ value, label }));
+  }, [all]);
 
   const results = useMemo(() => {
     const needle = q.toLocaleLowerCase("tr").trim();
-    return DEMO_MEMBERS.filter((m) => {
+    return all.filter((m) => {
       if (dir !== "all" && m.dir !== dir) return false;
-      if (farm && !m.farm) return false;
       if (country && m.country !== country) return false;
       if (city && m.city !== city) return false;
-      if (topic && m.topic !== topic) return false;
-      if (lang && m.lang !== lang) return false;
+      if (topic && !m.tags.some((t) => t.axis === "topic" && t.value === topic)) return false;
       if (needle) {
-        const hay = `${m.name} ${m.city} ${m.country} ${m.headline} ${m.tags.map((t) => t.label).join(" ")}`.toLocaleLowerCase("tr");
+        const hay = `${m.firstName ?? ""} ${m.city ?? ""} ${m.country ?? ""} ${m.headline ?? ""} ${m.tags.map((t) => t.labelTr).join(" ")}`.toLocaleLowerCase("tr");
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [dir, farm, country, city, topic, lang, q]);
+  }, [all, dir, country, city, topic, q]);
 
-  const visible = new Set(results.map((m) => m.id));
-  const countries = ["Türkiye", "Portekiz", "Almanya", "İspanya", "İtalya", "Hollanda"];
+  const pins = useMemo<MapPin[]>(() => {
+    const out: MapPin[] = [];
+    for (const m of results) {
+      const c = coordsFor(m.country, m.city, m.id);
+      if (c) out.push({ id: m.id, name: m.firstName ?? "Üye", city: m.city, dir: m.dir, lat: c[0], lng: c[1] });
+    }
+    return out;
+  }, [results]);
 
   return (
     <div className="mx-auto max-w-[1200px] px-6 py-7">
@@ -60,7 +95,7 @@ export function ExplorePage() {
       {/* arama */}
       <div className="mb-3 flex max-w-xl items-center gap-2 rounded-full border border-border-strong bg-surface px-[18px] py-2.5">
         <span>🔍</span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="İsim, uzmanlık, çiftlik, konu ara…"
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="İsim, uzmanlık, şehir, konu ara…"
           className="w-full border-none bg-transparent text-sm outline-none" />
       </div>
 
@@ -77,72 +112,48 @@ export function ExplorePage() {
           ))}
         </div>
         <Sel value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder="🌍 Tüm ülkeler" options={countries} />
-        <select disabled={!country} value={city} onChange={(e) => setCity(e.target.value)}
+        <select disabled={!cities.length} value={city} onChange={(e) => setCity(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700 disabled:opacity-60">
-          <option value="">{country ? "🏙️ Tüm şehirler" : "🏙️ Önce ülke seç"}</option>
-          {(CITY_MAP[country] ?? []).map((c) => <option key={c}>{c}</option>)}
+          <option value="">🏙️ Tüm şehirler</option>
+          {cities.map((c) => <option key={c}>{c}</option>)}
         </select>
         <select value={topic} onChange={(e) => setTopic(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700">
           <option value="">🌱 Tüm konular</option>
-          {TOPICS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          {topics.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
-        <Sel value={lang} onChange={setLang} placeholder="🗣️ Tüm diller" options={["Türkçe", "İngilizce"]} />
-        <button onClick={() => setFarm((f) => !f)}
-          className={`rounded-full border px-3.5 py-2 text-[13px] ${farm ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700"}`}>
-          🚜 Çiftlik sahipleri
-        </button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Harita */}
-        <div className="relative h-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[#cfe0e2]">
-          <button className="absolute top-3.5 right-3.5 z-10 rounded-full border border-border bg-white/95 px-3.5 py-2 text-[13px] font-semibold text-forest-700 shadow-sm">📍 Konumuma git</button>
-          <svg viewBox="0 0 820 560" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
-            <rect width="820" height="560" fill="#cfe0e2" />
-            <path d="M-20,120 C120,80 260,90 360,60 C500,20 640,60 840,40 L840,300 C700,280 560,320 420,300 C300,285 140,320 -20,300 Z" fill="#e8e2d0" />
-            <path d="M-20,300 C160,320 320,285 460,310 C620,338 740,300 840,320 L840,600 L-20,600 Z" fill="#dcd7c4" />
-            <text x="150" y="110" fontFamily="Inter" fontSize="13" fill="#8a8877">Avrupa</text>
-            <text x="600" y="250" fontFamily="Inter" fontSize="14" fill="#6b6a5c" fontWeight="600">Türkiye</text>
-          </svg>
-          {/* pins */}
-          {DEMO_MEMBERS.filter((m) => visible.has(m.id)).map((m) => (
-            <button key={m.id} onClick={gate}
-              onMouseEnter={() => setHovered(m.id)} onMouseLeave={() => setHovered(null)}
-              className="absolute -translate-x-1/2 -translate-y-full transition hover:-translate-y-[110%]"
-              style={{ left: `${m.x}%`, top: `${m.y}%` }} aria-label={m.name}>
-              <span className="block size-5 rounded-full rounded-bl-none border-2 border-white shadow"
-                style={{ background: m.dir === "offer" ? "#3a7d44" : "#3a6b7e", transform: "rotate(-45deg)" }} />
-              {hovered === m.id && (
-                <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded-md bg-forest-900 px-2.5 py-1.5 text-xs whitespace-nowrap text-white">
-                  {m.name} · {m.city}
-                </span>
-              )}
-            </button>
-          ))}
-          <div className="absolute bottom-3.5 left-3.5 rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
-            <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: "#3a7d44", transform: "rotate(-45deg)" }} /> Destek sunanlar</div>
-            <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: "#3a6b7e", transform: "rotate(-45deg)" }} /> Destek arayanlar</div>
-          </div>
-        </div>
+        <Suspense fallback={<div className="h-[560px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
+          <MembersMap pins={pins} onPinClick={open} />
+        </Suspense>
 
         {/* Liste */}
         <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
-          <div className="text-sm text-ink-500">{results.length} sonuç</div>
+          <div className="text-sm text-ink-500">{loading ? "Yükleniyor…" : `${results.length} sonuç`}</div>
           {results.map((m) => (
-            <button key={m.id} onClick={gate}
+            <button key={m.id} onClick={() => open(m.id)}
               className="flex gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-forest-500 hover:shadow-sm">
-              <div className="size-14 shrink-0 rounded-lg bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${m.photo})` }} />
+              <Avatar url={m.avatarUrl} className="size-14 rounded-lg" />
               <div>
-                <div className="text-sm font-semibold">{m.name} · {m.flag}</div>
-                <div className="mb-1.5 text-xs text-ink-500">{m.city}, {m.country} · {m.headline}</div>
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  {m.firstName}
+                  {m.ratingCount > 0 && <span className="flex items-center gap-1 text-xs font-normal text-ink-500"><Stars value={m.ratingAvg} className="text-[11px]" /> {m.ratingAvg}</span>}
+                </div>
+                <div className="mb-1.5 text-xs text-ink-500">{[m.city, m.country].filter(Boolean).join(", ")}{m.headline ? ` · ${m.headline}` : ""}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {m.tags.map((t) => <Tag key={t.label} axis={t.axis}>{t.label}</Tag>)}
+                  {m.tags.slice(0, 4).map((t) => <Tag key={`${t.axis}-${t.value}`} axis={t.axis}>{t.labelTr}</Tag>)}
                 </div>
               </div>
             </button>
           ))}
-          {results.length === 0 && <div className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-ink-500">Sonuç yok. Filtreleri gevşet.</div>}
+          {!loading && results.length === 0 && (
+            <div className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-ink-500">
+              {all.length === 0 ? "Henüz üye yok. İlk katılanlardan ol!" : "Sonuç yok. Filtreleri gevşet."}
+            </div>
+          )}
         </div>
       </div>
 
@@ -151,7 +162,7 @@ export function ExplorePage() {
       </div>
 
       {modal && (
-        <div onClick={() => setModal(false)} className="fixed inset-0 z-60 flex items-center justify-center bg-forest-900/50 p-5">
+        <div onClick={() => setModal(false)} className="fixed inset-0 z-[1000] flex items-center justify-center bg-forest-900/50 p-5">
           <div onClick={(e) => e.stopPropagation()} className="max-w-sm rounded-[var(--radius-lg)] bg-surface p-7 text-center shadow-xl">
             <div className="mb-2.5 text-4xl">🌿</div>
             <h3 className="font-display mb-2 text-2xl font-semibold">Bağlanmak için üye ol</h3>
