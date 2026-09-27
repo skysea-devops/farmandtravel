@@ -25,6 +25,7 @@ export function ExplorePage() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [topic, setTopic] = useState("");
+  const [farm, setFarm] = useState(false);
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
 
@@ -60,13 +61,14 @@ export function ExplorePage() {
       if (country && m.country !== country) return false;
       if (city && m.city !== city) return false;
       if (topic && !m.tags.some((t) => t.axis === "topic" && t.value === topic)) return false;
+      if (farm && !m.tags.some((t) => t.axis === "situation" && t.value === "farm-owner")) return false;
       if (needle) {
         const hay = `${m.firstName ?? ""} ${m.city ?? ""} ${m.country ?? ""} ${m.headline ?? ""} ${m.tags.map((t) => t.labelTr).join(" ")}`.toLocaleLowerCase("tr");
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [all, dir, country, city, topic, q]);
+  }, [all, dir, country, city, topic, farm, q]);
 
   const pins = useMemo<MapPin[]>(() => {
     const out: MapPin[] = [];
@@ -80,9 +82,7 @@ export function ExplorePage() {
   return (
     <div className="mx-auto max-w-[1200px] px-6 py-7">
       <div className="mb-4">
-        <h1 className="font-display text-[28px] font-semibold">
-          Keşfet <span className="ml-1 rounded-full bg-clay-500 px-3 py-1 align-middle text-xs font-semibold text-white">Önizleme · üye olmadan gör</span>
-        </h1>
+        <h1 className="font-display text-[28px] font-semibold">Keşfet</h1>
         <p className="text-sm text-ink-500">Ülkeye, şehre ve etiketlere göre destek sunanları ve arayanları haritada bul. Bağlanmak için üyelik gerekir.</p>
       </div>
 
@@ -122,6 +122,10 @@ export function ExplorePage() {
           <option value="">🌱 Tüm konular</option>
           {topics.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
+        <button onClick={() => setFarm((f) => !f)}
+          className={`rounded-full border px-3.5 py-2 text-[13px] ${farm ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700"}`}>
+          🚜 Çiftlik sahipleri
+        </button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
