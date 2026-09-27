@@ -1,0 +1,93 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/Button";
+import { api, connections } from "@/lib/api";
+import type { ConnItem, Connections } from "@/lib/types";
+
+export function BaglantilarPage() {
+  const [data, setData] = useState<Connections | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  function load() {
+    setLoading(true);
+    api.get<Connections>("/connections")
+      .then(setData)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  async function act(id: string, kind: "accept" | "reject") {
+    setBusy(id);
+    try { await (kind === "accept" ? connections.accept(id) : connections.reject(id)); load(); }
+    finally { setBusy(null); }
+  }
+
+  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
+  if (err || !data) return <div className="py-16 text-center text-ink-700">Yüklenemedi: {err}</div>;
+
+  return (
+    <>
+      <h1 className="font-display mb-5 text-2xl font-semibold">Bağlantılar</h1>
+
+      <Section title={`Gelen istekler${data.incoming.length ? ` (${data.incoming.length})` : ""}`}>
+        {data.incoming.length === 0 ? <Empty>Bekleyen gelen isteğin yok.</Empty> : data.incoming.map((c) => (
+          <Row key={c.connectionId} c={c}>
+            <div className="flex gap-2">
+              <Button size="sm" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "accept")}>Kabul et</Button>
+              <Button size="sm" variant="outline" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "reject")}>Reddet</Button>
+            </div>
+          </Row>
+        ))}
+      </Section>
+
+      <Section title="Gönderilen istekler">
+        {data.outgoing.length === 0 ? <Empty>Bekleyen gönderilmiş isteğin yok.</Empty> : data.outgoing.map((c) => (
+          <Row key={c.connectionId} c={c}><span className="text-xs text-ink-500">⏳ Yanıt bekleniyor</span></Row>
+        ))}
+      </Section>
+
+      <Section title={`Bağlantılarım${data.accepted.length ? ` (${data.accepted.length})` : ""}`}>
+        {data.accepted.length === 0 ? <Empty>Henüz bağlantın yok. Keşfet'ten insanlarla bağlantı kur.</Empty> : data.accepted.map((c) => (
+          <Row key={c.connectionId} c={c}>
+            <div className="text-right text-xs text-ink-600">
+              {c.contact?.contactEmail && <div>✉️ {c.contact.contactEmail}</div>}
+              {c.contact?.phone && <div>📞 {c.contact.phone}</div>}
+            </div>
+          </Row>
+        ))}
+      </Section>
+    </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-6">
+      <h2 className="font-display mb-3 text-lg font-semibold">{title}</h2>
+      <div className="space-y-2">{children}</div>
+    </section>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-ink-500">{children}</div>;
+}
+
+function Row({ c, children }: { c: ConnItem; children: React.ReactNode }) {
+  const m = c.member;
+  const loc = [m.city, m.country].filter(Boolean).join(", ");
+  return (
+    <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+      <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+      <div className="min-w-0 flex-1">
+        <Link to={`/app/uye/${m.id}`} className="font-semibold hover:underline">{m.firstName}</Link>
+        <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>
+        {c.message && <div className="mt-1 text-[13px] text-ink-600 italic">"{c.message}"</div>}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}

@@ -39,3 +39,14 @@ export const api = {
   },
   invalidate: (p?: string) => (p ? cache.delete(p) : cache.clear()),
 };
+
+// Connection actions. Each mutation clears the GET cache so lists refresh.
+export const connections = {
+  request: async (toId: string, message?: string) => {
+    const r = await api.post("/connections", { toId, message });
+    api.invalidate();
+    return r;
+  },
+  accept: async (id: string) => { const r = await api.post(`/connections/${id}/accept`); api.invalidate(); return r; },
+  reject: async (id: string) => { const r = await api.post(`/connections/${id}/reject`); api.invalidate(); return r; },
+};

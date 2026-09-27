@@ -12,8 +12,8 @@ import { ProfilePage } from "@/features/profile/ProfilePage";
 import { PanelPage } from "@/features/app/PanelPage";
 import { KesfetPage } from "@/features/app/KesfetPage";
 import { MemberProfilePage } from "@/features/app/MemberProfilePage";
+import { BaglantilarPage } from "@/features/app/BaglantilarPage";
 import {
-  BaglantilarPage,
   MesajlarPage,
   KaydedilenlerPage,
   BildirimlerPage,
