@@ -18,7 +18,7 @@ export function ProfilePage() {
   const galleryInput = useRef<HTMLInputElement>(null);
 
   function load() {
-    api.get<Profile>("/profile/me")
+    api.getCached<Profile>("/profile/me")
       .then(setP)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));

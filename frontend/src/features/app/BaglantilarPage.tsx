@@ -13,7 +13,7 @@ export function BaglantilarPage() {
 
   function load() {
     setLoading(true);
-    api.get<Connections>("/connections")
+    api.getCached<Connections>("/connections")
       .then(setData)
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
