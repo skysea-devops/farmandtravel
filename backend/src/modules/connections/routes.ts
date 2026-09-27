@@ -3,6 +3,7 @@ import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
+import { notify } from "../notifications/service.js";
 
 async function signMembers(rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
   return Promise.all(
@@ -59,6 +60,7 @@ connectionsRoutes.post("/connections", auth, async (c) => {
     `INSERT INTO connections (requester_id, addressee_id, message) VALUES ($1,$2,$3) RETURNING *`,
     [memberId, toId, message ?? null],
   );
+  await notify(toId, memberId, "connection_request", { connectionId: ins.rows[0]!.id });
   return c.json({ status: "pending", connectionId: ins.rows[0]!.id, direction: "outgoing" });
 });
 
@@ -114,6 +116,7 @@ connectionsRoutes.post("/connections/:id/accept", auth, async (c) => {
   const id = c.req.param("id");
   const updated = id ? await respond(memberId, id, "accepted") : null;
   if (!updated) return c.json({ error: "not_found", message: "İstek bulunamadı" }, 404);
+  await notify(updated.requester_id, memberId, "connection_accepted", { connectionId: updated.id });
   return c.json({ status: "accepted", connectionId: updated.id });
 });
 

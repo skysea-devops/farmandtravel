@@ -11,7 +11,5 @@ function Stub({ title, note }: { title: string; note: string }) {
   );
 }
 
-export const KaydedilenlerPage = () => <Stub title="Kaydedilenler" note="Kaydettiğin profiller burada listelenecek." />;
-export const BildirimlerPage = () => <Stub title="Bildirimler" note="Bildirimlerin burada görünecek." />;
 export const AbonelikPage = () => <Stub title="Abonelik" note="Üyelik ve ödeme yönetimi yakında geliyor." />;
 export const AyarlarPage = () => <Stub title="Ayarlar" note="Hesap ve gizlilik ayarları yakında geliyor." />;

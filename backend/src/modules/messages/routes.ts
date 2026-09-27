@@ -3,6 +3,7 @@ import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
+import { notify } from "../notifications/service.js";
 
 export const messagesRoutes = new Hono();
 
@@ -98,5 +99,6 @@ messagesRoutes.post("/messages/:connectionId", auth, async (c) => {
       RETURNING id, sender_id AS "senderId", body, created_at AS "createdAt"`,
     [cid, memberId, body],
   );
+  await notify(other, memberId, "message", { connectionId: cid });
   return c.json(r.rows[0]);
 });

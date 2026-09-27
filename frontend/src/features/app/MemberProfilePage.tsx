@@ -3,8 +3,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
-import { api, connections } from "@/lib/api";
-import type { Axis, MemberDetail, Photo } from "@/lib/types";
+import { Stars } from "@/components/ui/Stars";
+import { api, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
+import type { Axis, MemberDetail, Photo, ReviewsData } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = {
   situation: "Durumu", seek: "Aradıkları", offer: "Sundukları", topic: "İlgi alanları",
@@ -38,6 +39,14 @@ export function MemberProfilePage() {
     setBusy(true);
     try { await connections.accept(m.connection.connectionId); load(); } finally { setBusy(false); }
   }
+  async function toggleSaved() {
+    if (!id || !m) return;
+    setBusy(true);
+    try {
+      if (m.saved) await savedApi.remove(id); else await savedApi.add(id);
+      setM({ ...m, saved: !m.saved });
+    } finally { setBusy(false); }
+  }
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
   if (err || !m) return (
@@ -58,7 +67,12 @@ export function MemberProfilePage() {
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-semibold">{m.firstName}</h1>
           <div className="text-sm text-ink-500">{loc || "Konum belirtilmedi"}{m.headline ? ` · ${m.headline}` : ""}</div>
-          {m.score > 0 && <span className="mt-1 inline-block rounded-full bg-moss-500/15 px-2 py-0.5 text-[11px] font-semibold text-forest-700">Seninle uyumlu</span>}
+          <div className="mt-1 flex items-center gap-2">
+            {(m.ratingCount ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-[13px] text-ink-600"><Stars value={m.ratingAvg ?? 0} /> {m.ratingAvg} ({m.ratingCount})</span>
+            )}
+            {m.score > 0 && <span className="rounded-full bg-moss-500/15 px-2 py-0.5 text-[11px] font-semibold text-forest-700">Seninle uyumlu</span>}
+          </div>
         </div>
       </div>
 
@@ -67,7 +81,7 @@ export function MemberProfilePage() {
         {m.connection?.status === "accepted" && (
           <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>💬 Mesaj gönder</Button>
         )}
-        <Button variant="outline" onClick={() => alert("Kaydetme özelliği yakında.")}>🔖 Kaydet</Button>
+        <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? "🔖 Kaydedildi" : "🔖 Kaydet"}</Button>
       </div>
 
       {m.connection?.status === "accepted" && m.contact && (
@@ -115,10 +129,94 @@ export function MemberProfilePage() {
         );
       })}
 
+      <ReviewsSection memberId={m.id} name={m.firstName ?? "Bu üye"} />
+
       <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
         👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı kabul edildikten sonra görünür.
       </div>
     </div>
+  );
+}
+
+function ReviewsSection({ memberId, name }: { memberId: string; name: string }) {
+  const [data, setData] = useState<ReviewsData | null>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  function load() {
+    reviewsApi.list<ReviewsData>(memberId).then((d) => {
+      setData(d);
+      if (d.myReview) { setRating(d.myReview.rating); setComment(d.myReview.comment ?? ""); }
+    }).catch(() => {});
+  }
+  useEffect(load, [memberId]);
+
+  async function submit() {
+    if (!rating) return;
+    setSaving(true);
+    try { await reviewsApi.submit(memberId, rating, comment.trim() || undefined); setOpen(false); load(); }
+    finally { setSaving(false); }
+  }
+
+  if (!data) return null;
+
+  return (
+    <Block title={`Değerlendirmeler${data.summary.count ? ` (${data.summary.count})` : ""}`}>
+      {data.summary.count > 0 && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-ink-600">
+          <Stars value={data.summary.avg} className="text-base" />
+          <span className="font-semibold">{data.summary.avg}</span>
+          <span className="text-ink-500">/ 5 · {data.summary.count} değerlendirme</span>
+        </div>
+      )}
+
+      {data.canReview && (
+        <div className="mb-4">
+          {!open ? (
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+              {data.myReview ? "★ Değerlendirmeni düzenle" : "★ Değerlendir"}
+            </Button>
+          ) : (
+            <div className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
+              <div className="mb-2 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <button key={i} onClick={() => setRating(i)}
+                    className={`text-2xl leading-none ${i <= rating ? "text-clay-500" : "text-border-strong"}`}>★</button>
+                ))}
+              </div>
+              <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3}
+                placeholder={`${name} ile deneyimini birkaç cümleyle anlat…`}
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" disabled={saving || !rating} onClick={submit}>{saving ? "Kaydediliyor…" : "Gönder"}</Button>
+                <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Vazgeç</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {data.reviews.length === 0 ? (
+        <p className="text-sm text-ink-500">Henüz değerlendirme yok.</p>
+      ) : (
+        <div className="space-y-3">
+          {data.reviews.map((r, i) => (
+            <div key={i} className="flex gap-3">
+              <Avatar url={r.reviewer.avatarUrl} className="size-9" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{r.reviewer.firstName}</span>
+                  <Stars value={r.rating} />
+                </div>
+                {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Block>
   );
 }
 
