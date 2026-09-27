@@ -84,6 +84,11 @@ resource "aws_lambda_function" "api" {
       BEDROCK_MODEL_ID = var.bedrock_model_id
       MEDIA_BUCKET     = var.media_bucket_name
       ALLOWED_ORIGINS  = join(",", var.allowed_origins)
+      # Lemon Squeezy billing (empty until configured → checkout returns 503).
+      LS_STORE          = var.ls_store
+      LS_VARIANT_TR     = var.ls_variant_tr
+      LS_VARIANT_INTL   = var.ls_variant_intl
+      LS_WEBHOOK_SECRET = var.ls_webhook_secret
       # DB creds injected at deploy time (no runtime Secrets Manager call / VPC endpoint).
       DB_SECRET_ARN = var.db_secret_arn
       DB_HOST       = var.db_host

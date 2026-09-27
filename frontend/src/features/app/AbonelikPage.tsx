@@ -1,57 +1,83 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { api } from "@/lib/api";
+import { api, billing } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 
 export function AbonelikPage() {
+  const { t, market } = useI18n();
   const [p, setP] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
+  const price = market === "intl" ? t("$40 / yıl", "$40 / year") : t("$20 / yıl", "$20 / year");
+
+  async function subscribe() {
+    setBusy(true); setNote(null);
+    try {
+      const { url } = await billing.checkout(market);
+      window.location.href = url;
+    } catch {
+      setNote(t("Ödeme altyapısı çok yakında eklenecek.", "Payments are coming very soon."));
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
 
   const plan = p?.plan ?? "none";
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display mb-5 text-2xl font-semibold">Abonelik</h1>
+      <h1 className="font-display mb-5 text-2xl font-semibold">{t("Abonelik", "Membership")}</h1>
 
       {plan === "frontier" && (
         <div className="rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-6">
           <div className="mb-1 text-3xl">🌱</div>
-          <h2 className="font-display text-xl font-semibold text-forest-700">Frontier üyelik · Ücretsiz</h2>
+          <h2 className="font-display text-xl font-semibold text-forest-700">{t("Frontier üyelik · Ücretsiz", "Frontier membership · Free")}</h2>
           <p className="mt-2 text-sm text-ink-700">
-            Topluluğun ilk üyelerindensin (Frontier). Erişimin <b>ömür boyu ücretsiz</b> — hiçbir ödeme yapman
-            gerekmez. Tüm özellikler (keşfet, bağlantı, mesaj, değerlendirme) açık.
+            {t(
+              "Topluluğun ilk üyelerindensin (Frontier). Erişimin ömür boyu ücretsiz — hiçbir ödeme yapman gerekmez. Tüm özellikler (keşfet, bağlantı, mesaj, değerlendirme) açık.",
+              "You're one of the community's first members (Frontier). Your access is free for life — no payment needed. Everything (explore, connect, message, review) is open.",
+            )}
           </p>
         </div>
       )}
 
       {plan === "active" && (
         <div className="rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-6">
-          <h2 className="font-display text-xl font-semibold text-forest-700">Aktif abonelik ✓</h2>
-          <p className="mt-2 text-sm text-ink-700">Üyeliğin aktif. Tüm özellikler açık.</p>
+          <h2 className="font-display text-xl font-semibold text-forest-700">{t("Aktif abonelik ✓", "Active membership ✓")}</h2>
+          <p className="mt-2 text-sm text-ink-700">{t("Üyeliğin aktif. Tüm özellikler açık.", "Your membership is active. Everything is open.")}</p>
         </div>
       )}
 
       {plan === "none" && (
         <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
-          <h2 className="font-display text-xl font-semibold">Üyeliğini başlat</h2>
+          <h2 className="font-display text-xl font-semibold">{t("Üyeliğini başlat", "Start your membership")}</h2>
           <p className="mt-2 text-sm text-ink-700">
-            Topluluğa tam erişim için üyelik gerekir: profilleri gör, bağlantı kur, mesajlaş.
+            {t(
+              "Topluluğa tam erişim için üyelik gerekir: profilleri gör, bağlantı kur, mesajlaş.",
+              "Full access requires a membership: view profiles, connect and message.",
+            )}
           </p>
-          <div className="mt-4">
-            <Button disabled title="Ödeme yakında">Abone ol (yakında)</Button>
+          <div className="mt-4 flex items-center gap-3">
+            <span className="font-display text-2xl font-semibold text-forest-700">{price}</span>
+            <Button onClick={subscribe} disabled={busy}>{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
           </div>
-          <p className="mt-3 text-xs text-ink-500">Ödeme altyapısı çok yakında eklenecek.</p>
+          {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
         </div>
       )}
 
       <p className="mt-4 text-xs text-ink-500">
-        3 Ekim 2026'ya kadar katılan herkes <b>Frontier</b> üye olarak ücretsizdir.
+        {t(
+          "3 Ekim 2026'ya kadar katılan herkes Frontier üye olarak ücretsizdir.",
+          "Everyone who joins before 3 October 2026 is a free Frontier member.",
+        )}
       </p>
     </div>
   );

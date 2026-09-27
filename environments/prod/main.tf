@@ -50,8 +50,10 @@ module "rds" {
 
 # Media storage — private bucket, presigned uploads.
 locals {
-  # Real web origins allowed to call the API and PUT to media (CORS).
-  web_origins = ["https://${var.domain_name}", "https://www.${var.domain_name}"]
+  # All apex domains this deployment serves (primary + optional secondary market).
+  site_domains = var.secondary_domain == "" ? [var.domain_name] : [var.domain_name, var.secondary_domain]
+  # Real web origins allowed to call the API and PUT to media (CORS): apex + www of each.
+  web_origins = flatten([for d in local.site_domains : ["https://${d}", "https://www.${d}"]])
 }
 
 module "storage" {
@@ -70,9 +72,10 @@ module "site" {
     aws.us_east_1 = aws.us_east_1
   }
 
-  project     = var.project
-  environment = var.environment
-  domain_name = var.domain_name
+  project          = var.project
+  environment      = var.environment
+  domain_name      = var.domain_name
+  secondary_domain = var.secondary_domain
 }
 
 # RDS-managed master credentials, read at deploy time and injected into the Lambda
@@ -105,6 +108,11 @@ module "api" {
   media_bucket_arn  = module.storage.media_bucket_arn
   media_bucket_name = module.storage.media_bucket_name
   allowed_origins   = local.web_origins
+
+  ls_store          = var.ls_store
+  ls_variant_tr     = var.ls_variant_tr
+  ls_variant_intl   = var.ls_variant_intl
+  ls_webhook_secret = var.ls_webhook_secret
 
   ai_mode            = var.ai_mode
   log_retention_days = var.log_retention_days

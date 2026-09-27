@@ -39,6 +39,25 @@ variable "allowed_origins" {
   default     = ["*"]
 }
 
+# --- Lemon Squeezy billing (empty until configured) ---
+variable "ls_store" {
+  type    = string
+  default = ""
+}
+variable "ls_variant_tr" {
+  type    = string
+  default = ""
+}
+variable "ls_variant_intl" {
+  type    = string
+  default = ""
+}
+variable "ls_webhook_secret" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
 variable "ai_mode" {
   type    = string
   default = "bedrock"
