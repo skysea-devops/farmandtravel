@@ -50,3 +50,13 @@ export const connections = {
   accept: async (id: string) => { const r = await api.post(`/connections/${id}/accept`); api.invalidate(); return r; },
   reject: async (id: string) => { const r = await api.post(`/connections/${id}/reject`); api.invalidate(); return r; },
 };
+
+export const messages = {
+  list: <T>() => api.get<T>("/messages"),
+  thread: <T>(connectionId: string) => api.get<T>(`/messages/${connectionId}`),
+  send: async (connectionId: string, body: string) => {
+    const r = await api.post(`/messages/${connectionId}`, { body });
+    api.invalidate("/me/dashboard");
+    return r;
+  },
+};
