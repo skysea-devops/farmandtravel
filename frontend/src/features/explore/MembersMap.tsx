@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useI18n } from "@/lib/i18n";
 
 export interface MapPin {
   id: string;
@@ -25,6 +26,7 @@ function pinIcon(dir: "offer" | "seek") {
 // Real OpenStreetMap map with member pins. Clicking a pin calls onPinClick(id)
 // (the page decides: guests get the join prompt, members go to the profile).
 function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: string) => void }) {
+  const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
@@ -72,11 +74,11 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
       <div ref={boxRef} className="h-full w-full" />
       <button onClick={locate}
         className="absolute top-3.5 right-3.5 z-[500] rounded-full border border-border bg-white/95 px-3.5 py-2 text-[13px] font-semibold text-forest-700 shadow-sm">
-        📍 Konumuma git
+        {t("📍 Konumuma git", "📍 Go to my location")}
       </button>
       <div className="absolute bottom-3.5 left-3.5 z-[500] rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.offer, transform: "rotate(-45deg)" }} /> Destek sunanlar</div>
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.seek, transform: "rotate(-45deg)" }} /> Destek arayanlar</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.offer, transform: "rotate(-45deg)" }} /> {t("Destek sunanlar", "Offering support")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.seek, transform: "rotate(-45deg)" }} /> {t("Destek arayanlar", "Seeking support")}</div>
       </div>
     </div>
   );

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 
 export function LoginPage() {
   const { login, confirmSignUp, resendCode } = useAuth();
+  const { t } = useI18n();
   const nav = useNavigate();
   const [phase, setPhase] = useState<"login" | "confirm">("login");
   const [email, setEmail] = useState("");
@@ -25,7 +27,7 @@ export function LoginPage() {
       // Hesap doğrulanmamışsa kod adımına geç ve yeni kod gönder.
       if ((e as { code?: string }).code === "UserNotConfirmedException") {
         try { await resendCode(email); } catch { /* ignore */ }
-        setInfo(`Hesabın doğrulanmamış. ${email} adresine yeni kod gönderdik.`);
+        setInfo(t(`Hesabın doğrulanmamış. ${email} adresine yeni kod gönderdik.`, `Your account isn't verified. We sent a new code to ${email}.`));
         setPhase("confirm");
       } else {
         setErr(msg(e));
@@ -49,37 +51,37 @@ export function LoginPage() {
       <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8">
         {phase === "login" ? (
           <>
-            <h1 className="font-display mb-1 text-2xl font-semibold">Giriş yap</h1>
-            <p className="mb-5 text-sm text-ink-500">Tekrar hoş geldin.</p>
+            <h1 className="font-display mb-1 text-2xl font-semibold">{t("Giriş yap", "Log in")}</h1>
+            <p className="mb-5 text-sm text-ink-500">{t("Tekrar hoş geldin.", "Welcome back.")}</p>
             {err && <Alert>{err}</Alert>}
             <form onSubmit={submitLogin}>
               <div className="mb-4">
-                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">E-posta</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">{t("E-posta", "Email")}</label>
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inp} placeholder="ornek@eposta.com" />
               </div>
               <div className="mb-4">
-                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">Şifre</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">{t("Şifre", "Password")}</label>
                 <input type="password" required value={pw} onChange={(e) => setPw(e.target.value)} className={inp} placeholder="••••••••" />
               </div>
-              <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Giriş yapılıyor…" : "Giriş yap"}</Button>
+              <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? t("Giriş yapılıyor…", "Logging in…") : t("Giriş yap", "Log in")}</Button>
             </form>
-            <p className="mt-4 text-center text-sm text-ink-500">Hesabın yok mu? <Link to="/kayit" className="text-forest-600 underline">Hesap oluştur</Link></p>
+            <p className="mt-4 text-center text-sm text-ink-500">{t("Hesabın yok mu?", "No account yet?")} <Link to="/kayit" className="text-forest-600 underline">{t("Hesap oluştur", "Create account")}</Link></p>
           </>
         ) : (
           <>
-            <h1 className="font-display mb-1 text-2xl font-semibold">E-postanı doğrula</h1>
-            <p className="mb-5 text-sm text-ink-500"><b>{email}</b> adresine gönderilen kodu gir.</p>
+            <h1 className="font-display mb-1 text-2xl font-semibold">{t("E-postanı doğrula", "Verify your email")}</h1>
+            <p className="mb-5 text-sm text-ink-500">{t("adresine gönderilen kodu gir.", "Enter the code sent to")} <b>{email}</b></p>
             {info && <Alert kind="info">{info}</Alert>}
             {err && <Alert>{err}</Alert>}
             <form onSubmit={submitCode}>
               <div className="mb-4">
-                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">Doğrulama kodu</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">{t("Doğrulama kodu", "Verification code")}</label>
                 <input inputMode="numeric" required value={code} onChange={(e) => setCode(e.target.value)} className={inp} placeholder="123456" />
               </div>
-              <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Doğrulanıyor…" : "Doğrula ve giriş yap →"}</Button>
+              <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? t("Doğrulanıyor…", "Verifying…") : t("Doğrula ve giriş yap →", "Verify and log in →")}</Button>
             </form>
             <div className="mt-4 text-center text-sm">
-              <button onClick={() => setPhase("login")} className="text-ink-500 hover:text-ink-900">← Girişe dön</button>
+              <button onClick={() => setPhase("login")} className="text-ink-500 hover:text-ink-900">{t("← Girişe dön", "← Back to login")}</button>
             </div>
           </>
         )}
