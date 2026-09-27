@@ -52,9 +52,9 @@ export function BaglantilarPage() {
       <Section title={`Bağlantılarım${data.accepted.length ? ` (${data.accepted.length})` : ""}`}>
         {data.accepted.length === 0 ? <Empty>Henüz bağlantın yok. Keşfet'ten insanlarla bağlantı kur.</Empty> : data.accepted.map((c) => (
           <Row key={c.connectionId} c={c}>
-            <div className="text-right text-xs text-ink-600">
-              {c.contact?.contactEmail && <div>✉️ {c.contact.contactEmail}</div>}
-              {c.contact?.phone && <div>📞 {c.contact.phone}</div>}
+            <div className="flex flex-col items-end gap-1.5">
+              <Link to={`/app/mesajlar/${c.connectionId}`}><Button size="sm" variant="outline">💬 Mesaj</Button></Link>
+              {c.contact?.contactEmail && <div className="text-xs text-ink-500">{c.contact.contactEmail}</div>}
             </div>
           </Row>
         ))}

@@ -127,13 +127,20 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
       WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
     [memberId],
   );
+  const unread = await query<{ n: string }>(
+    `SELECT count(*)::int AS n FROM messages msg
+       JOIN connections c ON c.id = msg.connection_id
+      WHERE msg.sender_id <> $1 AND msg.read_at IS NULL
+        AND (c.requester_id = $1 OR c.addressee_id = $1)`,
+    [memberId],
+  );
 
   return c.json({
     stats: {
       matches: scored.length,
       pendingConnections: pending.rowCount ?? 0,
       connections: Number(acceptedCount.rows[0]?.n ?? 0),
-      unreadMessages: 0,
+      unreadMessages: Number(unread.rows[0]?.n ?? 0),
       profileViews: 0,
     },
     matches: scored.slice(0, 12),

@@ -83,3 +83,32 @@ export interface Connections {
   outgoing: ConnItem[];
   accepted: ConnItem[];
 }
+
+export interface MiniMember {
+  id: string;
+  firstName: string | null;
+  country: string | null;
+  city: string | null;
+  headline: string | null;
+  avatarKey: string | null;
+}
+export interface Conversation {
+  connectionId: string;
+  member: MiniMember;
+  lastBody: string | null;
+  lastAt: string | null;
+  lastSender: string | null;
+  unread: number;
+}
+export interface Message {
+  id: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+}
+export interface Thread {
+  connectionId: string;
+  me: string;
+  other: MiniMember | null;
+  messages: Message[];
+}

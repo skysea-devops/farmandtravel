@@ -13,8 +13,8 @@ import { PanelPage } from "@/features/app/PanelPage";
 import { KesfetPage } from "@/features/app/KesfetPage";
 import { MemberProfilePage } from "@/features/app/MemberProfilePage";
 import { BaglantilarPage } from "@/features/app/BaglantilarPage";
+import { MesajlarPage } from "@/features/app/MesajlarPage";
 import {
-  MesajlarPage,
   KaydedilenlerPage,
   BildirimlerPage,
   AbonelikPage,
@@ -45,6 +45,7 @@ export default function App() {
         <Route path="uye/:id" element={<MemberProfilePage />} />
         <Route path="baglantilar" element={<BaglantilarPage />} />
         <Route path="mesajlar" element={<MesajlarPage />} />
+        <Route path="mesajlar/:connectionId" element={<MesajlarPage />} />
         <Route path="kaydedilenler" element={<KaydedilenlerPage />} />
         <Route path="bildirimler" element={<BildirimlerPage />} />
         <Route path="profil" element={<ProfilePage />} />

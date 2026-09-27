@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { api, connections } from "@/lib/api";
@@ -12,6 +12,7 @@ const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
 
 export function MemberProfilePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [m, setM] = useState<MemberDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,6 +63,9 @@ export function MemberProfilePage() {
 
       <div className="mb-5 flex flex-wrap gap-2">
         <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
+        {m.connection?.status === "accepted" && (
+          <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>💬 Mesaj gönder</Button>
+        )}
         <Button variant="outline" onClick={() => alert("Kaydetme özelliği yakında.")}>🔖 Kaydet</Button>
       </div>
 
