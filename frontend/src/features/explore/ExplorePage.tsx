@@ -1,11 +1,17 @@
 import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { useAuth } from "@/lib/auth";
 import { DEMO_MEMBERS, CITY_MAP, TOPICS } from "@/data/demo";
 
 type Dir = "all" | "offer" | "seek";
 
 export function ExplorePage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  // Logged-in members go to the real discovery; visitors get the join prompt.
+  const gate = () => (user ? navigate("/app/kesfet") : setModal(true));
   const [dir, setDir] = useState<Dir>("all");
   const [farm, setFarm] = useState(false);
   const [country, setCountry] = useState("");
@@ -101,7 +107,7 @@ export function ExplorePage() {
           </svg>
           {/* pins */}
           {DEMO_MEMBERS.filter((m) => visible.has(m.id)).map((m) => (
-            <button key={m.id} onClick={() => setModal(true)}
+            <button key={m.id} onClick={gate}
               onMouseEnter={() => setHovered(m.id)} onMouseLeave={() => setHovered(null)}
               className="absolute -translate-x-1/2 -translate-y-full transition hover:-translate-y-[110%]"
               style={{ left: `${m.x}%`, top: `${m.y}%` }} aria-label={m.name}>
@@ -124,7 +130,7 @@ export function ExplorePage() {
         <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
           <div className="text-sm text-ink-500">{results.length} sonuç</div>
           {results.map((m) => (
-            <button key={m.id} onClick={() => setModal(true)}
+            <button key={m.id} onClick={gate}
               className="flex gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-forest-500 hover:shadow-sm">
               <div className="size-14 shrink-0 rounded-lg bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${m.photo})` }} />
               <div>
@@ -150,7 +156,8 @@ export function ExplorePage() {
             <div className="mb-2.5 text-4xl">🌿</div>
             <h3 className="font-display mb-2 text-2xl font-semibold">Bağlanmak için üye ol</h3>
             <p className="mb-5 text-sm text-ink-500">Haritayı keşfetmek ücretsiz. Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.</p>
-            <Button className="w-full" size="lg">Üye ol</Button>
+            <Link to="/kayit"><Button className="w-full" size="lg">Üye ol</Button></Link>
+            <p className="mt-3 text-sm text-ink-500">Zaten üye misin? <Link to="/giris" className="text-forest-600 underline">Giriş yap</Link></p>
             <Button variant="ghost" className="mt-2 w-full" onClick={() => setModal(false)}>Sonra</Button>
           </div>
         </div>

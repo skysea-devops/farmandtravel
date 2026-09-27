@@ -11,5 +11,4 @@ function Stub({ title, note }: { title: string; note: string }) {
   );
 }
 
-export const AbonelikPage = () => <Stub title="Abonelik" note="Üyelik ve ödeme yönetimi yakında geliyor." />;
 export const AyarlarPage = () => <Stub title="Ayarlar" note="Hesap ve gizlilik ayarları yakında geliyor." />;

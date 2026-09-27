@@ -17,6 +17,7 @@ export interface InferResponse {
 export interface Profile {
   id: string;
   status: "onboarding" | "profile_complete" | "active" | "suspended";
+  plan?: "none" | "frontier" | "active";
   firstName: string | null;
   country: string | null;
   city: string | null;

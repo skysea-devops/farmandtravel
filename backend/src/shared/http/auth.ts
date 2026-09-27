@@ -8,12 +8,17 @@ import { Unauthorized } from "../errors/index.js";
 
 export type AuthUser = { memberId: string; sub: string };
 
+// Everyone who joins before this date is grandfathered as a free "frontier" member
+// (the initial community). Later sign-ups start on 'none' and must subscribe.
+const FRONTIER_CUTOFF = Date.parse("2026-10-03T00:00:00+03:00");
+
 async function ensureMember(sub: string): Promise<string> {
   const found = await query<{ id: string }>("SELECT id FROM members WHERE cognito_sub=$1", [sub]);
   if (found.rowCount && found.rows[0]) return found.rows[0].id;
+  const plan = Date.now() < FRONTIER_CUTOFF ? "frontier" : "none";
   const created = await query<{ id: string }>(
-    "INSERT INTO members (cognito_sub, status) VALUES ($1,'onboarding') RETURNING id",
-    [sub],
+    "INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2) RETURNING id",
+    [sub, plan],
   );
   return created.rows[0]!.id;
 }

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ACTIVITIES, youtubeThumb, type Activity } from "@/data/activities";
+import { useAuth } from "@/lib/auth";
 
 const kindLabel: Record<Activity["kind"], string> = {
   video: "🎥 Podcast",
@@ -9,6 +11,10 @@ const kindLabel: Record<Activity["kind"], string> = {
 };
 
 export function ActivitiesPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  // Podcast (video) is open to everyone; other activities prompt sign-up.
+  const gate = () => navigate(user ? "/app" : "/kayit");
   const featured = ACTIVITIES.find((a) => a.kind === "video") ?? ACTIVITIES[0];
   const rest = ACTIVITIES.filter((a) => a.id !== featured.id);
 
@@ -24,7 +30,7 @@ export function ActivitiesPage() {
 
       {/* Akış */}
       <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {rest.map((a) => <ActivityCard key={a.id} a={a} />)}
+        {rest.map((a) => <ActivityCard key={a.id} a={a} onClick={gate} />)}
       </div>
     </div>
   );
@@ -62,12 +68,15 @@ function FeaturedVideo({ activity }: { activity: Activity }) {
   );
 }
 
-function ActivityCard({ a }: { a: Activity }) {
+function ActivityCard({ a, onClick }: { a: Activity; onClick: () => void }) {
   return (
-    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+    <button onClick={onClick} className="group block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface text-left transition hover:border-forest-500 hover:shadow-sm">
       {a.image && <div className="h-44 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
       <div className="p-5">
-        <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</span>
+          <span className="text-xs text-ink-400 opacity-0 transition group-hover:opacity-100">🔒 Üye ol</span>
+        </div>
         <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
         <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>
         {a.kind === "meeting" && (
@@ -79,6 +88,6 @@ function ActivityCard({ a }: { a: Activity }) {
           {a.author ? `${a.author} · ${a.place} · ` : ""}{a.date}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

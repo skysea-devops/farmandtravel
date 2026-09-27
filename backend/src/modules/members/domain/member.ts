@@ -13,6 +13,7 @@ export interface MemberTag {
 export interface MemberFull {
   id: string;
   status: MemberStatus;
+  plan: string;
   firstName: string | null;
   country: string | null;
   city: string | null;
