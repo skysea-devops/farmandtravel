@@ -3,6 +3,7 @@ import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
+import { notify } from "../notifications/service.js";
 
 export const reviewsRoutes = new Hono();
 
@@ -36,6 +37,7 @@ reviewsRoutes.post("/reviews", auth, async (c) => {
        DO UPDATE SET rating=EXCLUDED.rating, comment=EXCLUDED.comment, updated_at=now()`,
     [memberId, revieweeId, rating, comment ?? null],
   );
+  await notify(revieweeId, memberId, "review", {});
   return c.json({ ok: true });
 });
 

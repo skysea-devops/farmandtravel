@@ -1,6 +1,8 @@
-import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth";
+import { notifications as notifApi } from "@/lib/api";
 
 const nav = [
   { to: "/app", label: "Panel", icon: "🏠", end: true },
@@ -19,6 +21,13 @@ const navBottom = [
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [unread, setUnread] = useState(0);
+
+  // Refresh the bell badge on navigation (cheap, cached 30s).
+  useEffect(() => {
+    notifApi.unread<{ unread: number }>().then((r) => setUnread(r.unread)).catch(() => {});
+  }, [location.pathname]);
 
   const item = ({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) => (
     <NavLink
@@ -33,7 +42,10 @@ export function AppLayout() {
       }
     >
       <span className="text-base">{icon}</span>
-      {label}
+      <span className="flex-1">{label}</span>
+      {to === "/app/bildirimler" && unread > 0 && (
+        <span className="rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{unread}</span>
+      )}
     </NavLink>
   );
 

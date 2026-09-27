@@ -89,6 +89,27 @@ export interface MemberDetail extends MatchCard {
   photos?: Photo[];
   connection: ConnectionState | null;
   contact: Contact | null;
+  saved?: boolean;
+}
+
+export interface SavedCard {
+  id: string;
+  firstName: string | null;
+  country: string | null;
+  city: string | null;
+  headline: string | null;
+  avatarKey?: string | null;
+  avatarUrl?: string | null;
+  tags: MatchTag[];
+}
+
+export interface AppNotification {
+  id: string;
+  type: "connection_request" | "connection_accepted" | "message" | "review";
+  data: { connectionId?: string };
+  createdAt: string;
+  read: boolean;
+  actor: { id: string; firstName: string | null; avatarUrl: string | null } | null;
 }
 export interface ConnItem {
   connectionId: string;

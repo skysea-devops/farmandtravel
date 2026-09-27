@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
-import { api, connections, reviews as reviewsApi } from "@/lib/api";
+import { api, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import type { Axis, MemberDetail, Photo, ReviewsData } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = {
@@ -38,6 +38,14 @@ export function MemberProfilePage() {
     if (!m?.connection) return;
     setBusy(true);
     try { await connections.accept(m.connection.connectionId); load(); } finally { setBusy(false); }
+  }
+  async function toggleSaved() {
+    if (!id || !m) return;
+    setBusy(true);
+    try {
+      if (m.saved) await savedApi.remove(id); else await savedApi.add(id);
+      setM({ ...m, saved: !m.saved });
+    } finally { setBusy(false); }
   }
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
@@ -73,7 +81,7 @@ export function MemberProfilePage() {
         {m.connection?.status === "accepted" && (
           <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>💬 Mesaj gönder</Button>
         )}
-        <Button variant="outline" onClick={() => alert("Kaydetme özelliği yakında.")}>🔖 Kaydet</Button>
+        <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? "🔖 Kaydedildi" : "🔖 Kaydet"}</Button>
       </div>
 
       {m.connection?.status === "accepted" && m.contact && (

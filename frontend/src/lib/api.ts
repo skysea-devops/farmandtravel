@@ -93,6 +93,17 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   return key;
 }
 
+export const saved = {
+  list: <T>() => api.get<T>("/saved"),
+  add: async (memberId: string) => { const r = await api.post("/saved", { memberId }); api.invalidate(); return r; },
+  remove: async (memberId: string) => { const r = await api.del(`/saved/${memberId}`); api.invalidate(); return r; },
+};
+
+export const notifications = {
+  list: <T>() => api.get<T>("/notifications"),
+  unread: <T>() => api.getCached<T>("/notifications/unread", 30_000),
+};
+
 export const reviews = {
   list: <T>(memberId: string) => api.get<T>(`/members/${memberId}/reviews`),
   submit: async (revieweeId: string, rating: number, comment?: string) => {

@@ -186,6 +186,17 @@ discoveryRoutes.get("/members/:id", auth, async (c) => {
   const { score, matched } = scoreCandidate(await myTags(memberId), cd.tags);
   const connection = await connectionWith(memberId, cd.id);
   const contact = connection?.status === "accepted" ? await contactOf(cd.id) : null;
-  const [avatarUrl, photos] = await Promise.all([safeUrl(cd.avatar_key), loadPhotos(cd.id)]);
-  return c.json({ ...publicMatch(cd, score, matched), avatarUrl, photos, connection, contact });
+  const [avatarUrl, photos, savedRow] = await Promise.all([
+    safeUrl(cd.avatar_key),
+    loadPhotos(cd.id),
+    query("SELECT 1 FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, cd.id]),
+  ]);
+  return c.json({
+    ...publicMatch(cd, score, matched),
+    avatarUrl,
+    photos,
+    connection,
+    contact,
+    saved: (savedRow.rowCount ?? 0) > 0,
+  });
 });
