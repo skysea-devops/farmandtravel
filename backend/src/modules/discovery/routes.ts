@@ -183,6 +183,29 @@ discoveryRoutes.get("/members", auth, async (c) => {
   return c.json({ members: await withAvatarUrls(members) });
 });
 
+// PUBLIC teaser (no auth): safe projection of eligible members for the marketing
+// Keşfet page. No contact, no cognito_sub, no match score — just enough to browse
+// and be enticed to sign up. Registered as a public route in API Gateway.
+discoveryRoutes.get("/public/members", async (c) => {
+  const rows = (await candidates("00000000-0000-0000-0000-000000000000")).map((cd) => {
+    const tags = cd.tags ?? [];
+    const dir: "offer" | "seek" = tags.some((t) => t.axis === "offer") ? "offer" : "seek";
+    return {
+      id: cd.id,
+      firstName: cd.first_name,
+      country: cd.country,
+      city: cd.city,
+      headline: cd.headline,
+      avatarKey: cd.avatar_key,
+      ratingAvg: Number(cd.rating_avg ?? 0),
+      ratingCount: Number(cd.rating_count ?? 0),
+      tags,
+      dir,
+    };
+  });
+  return c.json({ members: await withAvatarUrls(rows) });
+});
+
 // Single member public view (contact stays hidden until an accepted connection).
 discoveryRoutes.get("/members/:id", auth, async (c) => {
   const { memberId } = currentUser(c);

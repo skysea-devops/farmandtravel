@@ -148,6 +148,7 @@ locals {
     "GET /health",
     "POST /webhooks/lemonsqueezy",
     "GET /taxonomy",
+    "GET /public/members",
     "OPTIONS /{proxy+}",
   ]
 }
