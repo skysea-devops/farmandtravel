@@ -22,20 +22,52 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   return data as T;
 }
 
-// Tiny in-memory GET cache so moving between app pages doesn't refetch every time.
-// Entries are keyed by the current user's sub, and the whole cache is cleared whenever
-// the user changes (login/logout), so a logout→login as another account can never
-// serve the previous user's data.
-const cache = new Map<string, { at: number; data: unknown }>();
+// GET cache. Two layers:
+//  - in-memory: instant within a session while the tab is open.
+//  - localStorage: survives full page reloads, so re-opening an app page shows the
+//    last data instantly (stale-while-revalidate) instead of waiting on a cold API.
+// Entries are keyed by the current user's sub so accounts never see each other's data.
+type Entry = { at: number; data: unknown };
+const cache = new Map<string, Entry>();
 let scope = "anon";
 
+const LS = "ty:cache:";
+const PERSIST_MAX = 24 * 60 * 60_000; // ignore persisted data older than a day
+
+function lsGet(key: string): Entry | null {
+  try {
+    const v = localStorage.getItem(LS + key);
+    return v ? (JSON.parse(v) as Entry) : null;
+  } catch {
+    return null;
+  }
+}
+function lsSet(key: string, e: Entry) {
+  try {
+    localStorage.setItem(LS + key, JSON.stringify(e));
+  } catch { /* quota / private mode */ }
+}
+function lsDel(key: string) {
+  try {
+    localStorage.removeItem(LS + key);
+  } catch { /* ignore */ }
+}
+function lsClearAll() {
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith(LS)) localStorage.removeItem(k);
+  } catch { /* ignore */ }
+}
+
 // Called by the auth layer when the signed-in user changes (including to null).
+// Only a real user switch / logout wipes persisted data; the initial anon→user
+// restore on page load keeps it, so reloads stay instant.
 export function setCacheScope(sub: string | null) {
   const next = sub ?? "anon";
-  if (next !== scope) {
-    cache.clear();
-    scope = next;
-  }
+  if (next === scope) return;
+  const wasReal = scope !== "anon";
+  cache.clear();
+  if (wasReal) lsClearAll();
+  scope = next;
 }
 const scoped = (p: string) => `${scope}::${p}`;
 
@@ -44,16 +76,25 @@ export const api = {
   post: <T>(p: string, b?: unknown) => req<T>("POST", p, b),
   put: <T>(p: string, b?: unknown) => req<T>("PUT", p, b),
   del: <T>(p: string) => req<T>("DELETE", p),
-  // Cached GET: returns a fresh value within ttlMs, else fetches and stores.
+  // Cached GET with stale-while-revalidate: fresh mem hit → return it; else return
+  // persisted data instantly and refresh in the background; else fetch.
   getCached: async <T>(p: string, ttlMs = 60_000): Promise<T> => {
     const k = scoped(p);
     const hit = cache.get(k);
     if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
-    const data = await req<T>("GET", p);
-    cache.set(k, { at: Date.now(), data });
-    return data;
+    const store = (data: T) => { const e = { at: Date.now(), data }; cache.set(k, e); lsSet(k, e); return data; };
+    const persisted = lsGet(k);
+    if (persisted && Date.now() - persisted.at < PERSIST_MAX) {
+      cache.set(k, persisted); // seed mem so quick re-navigation is instant
+      void req<T>("GET", p).then(store).catch(() => {}); // refresh in background
+      return persisted.data as T;
+    }
+    return store(await req<T>("GET", p));
   },
-  invalidate: (p?: string) => (p ? cache.delete(scoped(p)) : cache.clear()),
+  invalidate: (p?: string) => {
+    if (p) { cache.delete(scoped(p)); lsDel(scoped(p)); }
+    else { cache.clear(); lsClearAll(); }
+  },
 };
 
 // Connection actions. Each mutation clears the GET cache so lists refresh.
@@ -109,7 +150,7 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
 }
 
 export const saved = {
-  list: <T>() => api.get<T>("/saved"),
+  list: <T>() => api.getCached<T>("/saved", 60_000),
   add: async (memberId: string) => { const r = await api.post("/saved", { memberId }); api.invalidate(); return r; },
   remove: async (memberId: string) => { const r = await api.del(`/saved/${memberId}`); api.invalidate(); return r; },
 };
@@ -129,7 +170,7 @@ export const reviews = {
 };
 
 export const messages = {
-  list: <T>() => api.get<T>("/messages"),
+  list: <T>() => api.getCached<T>("/messages", 30_000),
   thread: <T>(connectionId: string) => api.get<T>(`/messages/${connectionId}`),
   send: async (connectionId: string, body: string) => {
     const r = await api.post(`/messages/${connectionId}`, { body });
