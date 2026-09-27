@@ -155,7 +155,7 @@ export function ExplorePage() {
           <div onClick={(e) => e.stopPropagation()} className="max-w-sm rounded-[var(--radius-lg)] bg-surface p-7 text-center shadow-xl">
             <div className="mb-2.5 text-4xl">🌿</div>
             <h3 className="font-display mb-2 text-2xl font-semibold">Bağlanmak için üye ol</h3>
-            <p className="mb-5 text-sm text-ink-500">Haritayı keşfetmek ücretsiz. Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.</p>
+            <p className="mb-5 text-sm text-ink-500">Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.</p>
             <Link to="/kayit"><Button className="w-full" size="lg">Üye ol</Button></Link>
             <p className="mt-3 text-sm text-ink-500">Zaten üye misin? <Link to="/giris" className="text-forest-600 underline">Giriş yap</Link></p>
             <Button variant="ghost" className="mt-2 w-full" onClick={() => setModal(false)}>Sonra</Button>

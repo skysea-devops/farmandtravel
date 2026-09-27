@@ -67,7 +67,7 @@ resource "aws_lambda_function" "api" {
   runtime       = "nodejs20.x"
   handler       = "main.handler"
   filename      = data.archive_file.stub.output_path
-  memory_size   = 1024 # more memory = more CPU = faster cold start + queries
+  memory_size   = 1536 # more memory = more CPU = faster cold start + queries
   timeout       = 15
 
   vpc_config {
@@ -176,7 +176,7 @@ resource "aws_lambda_permission" "apigw" {
 resource "aws_cloudwatch_event_rule" "warmup" {
   name                = "${local.name}-warmup"
   description         = "Ping the API Lambda to keep it warm"
-  schedule_expression = "rate(5 minutes)"
+  schedule_expression = "rate(2 minutes)"
 }
 
 resource "aws_cloudwatch_event_target" "warmup" {
