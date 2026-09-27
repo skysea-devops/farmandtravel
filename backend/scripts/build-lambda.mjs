@@ -2,7 +2,7 @@
 // - main.js  (handler: main.handler)    — the API (Hono lambdalith)
 // - migrate.js (handler: migrate.handler) — one-off DB migrate + seed
 // - migrations/                          — .sql files read at runtime
-// AWS SDK v3 ships in the nodejs20.x runtime, so it's marked external (smaller zip).
+// AWS SDK v3 ships in the nodejs22.x runtime, so it's marked external (smaller zip).
 import { build } from "esbuild";
 import { mkdirSync, rmSync, cpSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -18,10 +18,10 @@ await build({
   entryPoints: [join(root, "src/main.ts"), join(root, "src/migrate.ts")],
   bundle: true,
   platform: "node",
-  target: "node20",
+  target: "node22",
   format: "cjs",
   outdir: out,
-  // Keep the big AWS SDK clients external (they ship in the nodejs20 runtime);
+  // Keep the big AWS SDK clients external (they ship in the nodejs22 runtime);
   // only s3-request-presigner is bundled (small, and not always in the runtime).
   external: [
     "@aws-sdk/client-secrets-manager",
@@ -32,7 +32,7 @@ await build({
   logLevel: "info",
 });
 
-// The bundle is CommonJS; mark the folder so nodejs20.x loads .js as CJS
+// The bundle is CommonJS; mark the folder so nodejs22.x loads .js as CJS
 // (the backend package is "type":"module", which must not leak into the zip).
 writeFileSync(join(out, "package.json"), JSON.stringify({ type: "commonjs" }) + "\n");
 
