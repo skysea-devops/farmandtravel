@@ -21,7 +21,9 @@ await build({
   target: "node20",
   format: "cjs",
   outdir: out,
-  external: ["@aws-sdk/*", "pg-native"],
+  // Bundle client-s3 + presigner (guarantee availability); the others are in the
+  // nodejs20 runtime so keep them external to stay small.
+  external: ["@aws-sdk/client-secrets-manager", "@aws-sdk/client-bedrock-runtime", "pg-native"],
   logLevel: "info",
 });
 

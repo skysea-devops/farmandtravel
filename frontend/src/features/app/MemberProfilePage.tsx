@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
-import type { Axis, MemberDetail } from "@/lib/types";
+import type { Axis, MemberDetail, Photo } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = {
   situation: "Durumu", seek: "Aradıkları", offer: "Sundukları", topic: "İlgi alanları",
@@ -53,7 +54,7 @@ export function MemberProfilePage() {
       <Link to="/app/kesfet" className="mb-4 inline-block text-sm text-forest-600 hover:underline">← Keşfet</Link>
 
       <div className="mb-5 flex items-center gap-4">
-        <div className="size-20 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+        <Avatar url={m.avatarUrl} className="size-20" />
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-semibold">{m.firstName}</h1>
           <div className="text-sm text-ink-500">{loc || "Konum belirtilmedi"}{m.headline ? ` · ${m.headline}` : ""}</div>
@@ -84,6 +85,18 @@ export function MemberProfilePage() {
 
       {m.bio && (
         <Block title="Hakkında"><p className="text-sm text-ink-700">{m.bio}</p></Block>
+      )}
+
+      {m.photos && m.photos.length > 0 && (
+        <Block title="Fotoğraflar">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {m.photos.map((ph: Photo) => ph.url && (
+              <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+                <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+              </a>
+            ))}
+          </div>
+        </Block>
       )}
 
       {AXES.map((axis) => {

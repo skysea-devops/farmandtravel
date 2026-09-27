@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
+import { safeUrl, withAvatarUrls } from "../../shared/media/s3.js";
+import { loadPhotos } from "../members/interface/routes.js";
 import { scoreCandidate, type Tag } from "./matchmaker.js";
 
 export const discoveryRoutes = new Hono();
@@ -135,6 +137,13 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
     [memberId],
   );
 
+  const pendingWithAvatar = await Promise.all(
+    pending.rows.map(async (r: Record<string, unknown>) => ({
+      ...r,
+      member: { ...(r.member as Record<string, unknown>), avatarUrl: await safeUrl((r.member as { avatarKey?: string | null }).avatarKey) },
+    })),
+  );
+
   return c.json({
     stats: {
       matches: scored.length,
@@ -143,8 +152,8 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
       unreadMessages: Number(unread.rows[0]?.n ?? 0),
       profileViews: 0,
     },
-    matches: scored.slice(0, 12),
-    pendingRequests: pending.rows,
+    matches: await withAvatarUrls(scored.slice(0, 12)),
+    pendingRequests: pendingWithAvatar,
   });
 });
 
@@ -159,7 +168,7 @@ discoveryRoutes.get("/members", auth, async (c) => {
       return publicMatch(cd, score, matched);
     })
     .sort((a, b) => b.score - a.score || (a.firstName ?? "").localeCompare(b.firstName ?? "", "tr"));
-  return c.json({ members });
+  return c.json({ members: await withAvatarUrls(members) });
 });
 
 // Single member public view (contact stays hidden until an accepted connection).
@@ -171,5 +180,6 @@ discoveryRoutes.get("/members/:id", auth, async (c) => {
   const { score, matched } = scoreCandidate(await myTags(memberId), cd.tags);
   const connection = await connectionWith(memberId, cd.id);
   const contact = connection?.status === "accepted" ? await contactOf(cd.id) : null;
-  return c.json({ ...publicMatch(cd, score, matched), connection, contact });
+  const [avatarUrl, photos] = await Promise.all([safeUrl(cd.avatar_key), loadPhotos(cd.id)]);
+  return c.json({ ...publicMatch(cd, score, matched), avatarUrl, photos, connection, contact });
 });

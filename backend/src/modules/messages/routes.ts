@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser } from "../../shared/http/auth.js";
+import { safeUrl } from "../../shared/media/s3.js";
 
 export const messagesRoutes = new Hono();
 
@@ -39,14 +40,19 @@ messagesRoutes.get("/messages", auth, async (c) => {
       ORDER BY lm.created_at DESC NULLS LAST`,
     [memberId],
   );
-  const conversations = r.rows.map((row: Record<string, unknown>) => ({
-    connectionId: row.connectionId,
-    member: row.member,
-    lastBody: row.lastBody ?? null,
-    lastAt: row.lastAt ?? null,
-    lastSender: row.lastSender ?? null,
-    unread: Number(row.unread ?? 0),
-  }));
+  const conversations = await Promise.all(
+    r.rows.map(async (row: Record<string, unknown>) => {
+      const member = row.member as { avatarKey?: string | null };
+      return {
+        connectionId: row.connectionId,
+        member: { ...member, avatarUrl: await safeUrl(member?.avatarKey) },
+        lastBody: row.lastBody ?? null,
+        lastAt: row.lastAt ?? null,
+        lastSender: row.lastSender ?? null,
+        unread: Number(row.unread ?? 0),
+      };
+    }),
+  );
   return c.json({ conversations });
 });
 
@@ -68,12 +74,15 @@ messagesRoutes.get("/messages/:connectionId", auth, async (c) => {
        FROM messages WHERE connection_id=$1 ORDER BY created_at ASC`,
     [cid],
   );
-  const om = await query(
+  const om = await query<{ avatarKey: string | null }>(
     `SELECT id, first_name AS "firstName", country, city, headline, avatar_key AS "avatarKey"
        FROM members WHERE id=$1`,
     [other],
   );
-  return c.json({ connectionId: cid, me: memberId, other: om.rows[0] ?? null, messages: r.rows });
+  const otherRow = om.rows[0]
+    ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) }
+    : null;
+  return c.json({ connectionId: cid, me: memberId, other: otherRow, messages: r.rows });
 });
 
 // Send a message.

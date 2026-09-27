@@ -13,6 +13,8 @@ const schema = z.object({
   AI_MODE: z.enum(["stub", "bedrock"]).default("stub"),
   BEDROCK_REGION: z.string().default("eu-central-1"),
   BEDROCK_MODEL_ID: z.string().default("anthropic.claude-3-haiku-20240307-v1:0"),
+  AWS_REGION: z.string().default("eu-central-1"),
+  MEDIA_BUCKET: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

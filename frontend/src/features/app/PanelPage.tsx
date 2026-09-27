@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
 import type { Dashboard, MatchCard } from "@/lib/types";
 
@@ -78,7 +79,7 @@ export function PanelPage() {
               const loc = [r.member.city, r.member.country].filter(Boolean).join(", ");
               return (
                 <div key={r.connectionId} className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
-                  <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+                  <Avatar url={r.member.avatarUrl} className="size-11" />
                   <div className="min-w-0 flex-1">
                     <Link to={`/app/uye/${r.member.id}`} className="font-semibold hover:underline">{r.member.firstName}</Link>
                     <div className="truncate text-[13px] text-ink-500">{loc}{r.member.headline ? ` · ${r.member.headline}` : ""}</div>
@@ -103,7 +104,7 @@ function MatchCardView({ m }: { m: MatchCard }) {
   return (
     <div className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5">
       <div className="mb-3 flex items-center gap-3">
-        <div className="size-11 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+        <Avatar url={m.avatarUrl} className="size-11" />
         <div className="min-w-0">
           <div className="truncate font-semibold">{m.firstName}</div>
           <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>
