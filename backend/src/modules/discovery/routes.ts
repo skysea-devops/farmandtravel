@@ -7,6 +7,9 @@ import { scoreCandidate, type Tag } from "./matchmaker.js";
 
 export const discoveryRoutes = new Hono();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (s: string | undefined): s is string => !!s && UUID_RE.test(s);
+
 interface CandidateRow {
   id: string;
   first_name: string | null;
@@ -120,28 +123,31 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  // Incoming pending connection requests.
-  const pending = await query(
-    `SELECT c.id AS "connectionId", c.message, c.created_at AS "createdAt",
-            json_build_object('id', o.id, 'firstName', o.first_name, 'country', o.country,
-                              'city', o.city, 'headline', o.headline, 'avatarKey', o.avatar_key) AS member
-       FROM connections c JOIN members o ON o.id = c.requester_id
-      WHERE c.addressee_id = $1 AND c.status = 'pending'
-      ORDER BY c.created_at DESC`,
-    [memberId],
-  );
-  const acceptedCount = await query<{ n: string }>(
-    `SELECT count(*)::int AS n FROM connections
-      WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
-    [memberId],
-  );
-  const unread = await query<{ n: string }>(
-    `SELECT count(*)::int AS n FROM messages msg
-       JOIN connections c ON c.id = msg.connection_id
-      WHERE msg.sender_id <> $1 AND msg.read_at IS NULL
-        AND (c.requester_id = $1 OR c.addressee_id = $1)`,
-    [memberId],
-  );
+  // These three are independent — run them in parallel instead of serially.
+  const [pending, acceptedCount, unread] = await Promise.all([
+    // Incoming pending connection requests.
+    query(
+      `SELECT c.id AS "connectionId", c.message, c.created_at AS "createdAt",
+              json_build_object('id', o.id, 'firstName', o.first_name, 'country', o.country,
+                                'city', o.city, 'headline', o.headline, 'avatarKey', o.avatar_key) AS member
+         FROM connections c JOIN members o ON o.id = c.requester_id
+        WHERE c.addressee_id = $1 AND c.status = 'pending'
+        ORDER BY c.created_at DESC`,
+      [memberId],
+    ),
+    query<{ n: string }>(
+      `SELECT count(*)::int AS n FROM connections
+        WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
+      [memberId],
+    ),
+    query<{ n: string }>(
+      `SELECT count(*)::int AS n FROM messages msg
+         JOIN connections c ON c.id = msg.connection_id
+        WHERE msg.sender_id <> $1 AND msg.read_at IS NULL
+          AND (c.requester_id = $1 OR c.addressee_id = $1)`,
+      [memberId],
+    ),
+  ]);
 
   const pendingWithAvatar = await Promise.all(
     pending.rows.map(async (r: Record<string, unknown>) => ({
@@ -181,7 +187,9 @@ discoveryRoutes.get("/members", auth, async (c) => {
 discoveryRoutes.get("/members/:id", auth, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
-  const cd = id ? await oneMember(id) : null;
+  // Reject malformed ids up front — a non-UUID would otherwise blow up the pg query.
+  if (!isUuid(id)) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
+  const cd = await oneMember(id);
   if (!cd) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
   const { score, matched } = scoreCandidate(await myTags(memberId), cd.tags);
   const connection = await connectionWith(memberId, cd.id);

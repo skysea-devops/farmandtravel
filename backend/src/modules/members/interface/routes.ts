@@ -4,8 +4,16 @@ import { z } from "zod";
 import { auth, currentUser } from "../../../shared/http/auth.js";
 import { query } from "../../../shared/db/pool.js";
 import { safeUrl, deleteObject } from "../../../shared/media/s3.js";
+import { Forbidden } from "../../../shared/errors/index.js";
 import { MemberRepositoryPg } from "../infrastructure/MemberRepositoryPg.js";
 import { GetMyProfile, SaveOnboardingDraft, UpdateProfile } from "../application/profile.js";
+
+// Uploaded keys are minted as `${kind}/${memberId}/${uuid}.ext` by /uploads/presign.
+// Before we store a key against a member we re-check the prefix so nobody can attach
+// (and later delete) another member's S3 object by passing a foreign key.
+function assertOwnsKey(memberId: string, kind: "avatar" | "gallery", key: string) {
+  if (!key.startsWith(`${kind}/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
+}
 
 const repo = new MemberRepositoryPg();
 const getMyProfile = new GetMyProfile(repo);
@@ -51,6 +59,7 @@ const addPhotoSchema = z.object({ key: z.string().min(1), caption: z.string().ma
 membersRoutes.post("/profile/photos", auth, async (c) => {
   const { memberId } = currentUser(c);
   const { key, caption } = addPhotoSchema.parse(await c.req.json());
+  assertOwnsKey(memberId, "gallery", key);
   const count = await query<{ n: string }>(
     "SELECT count(*)::int AS n FROM member_photos WHERE member_id=$1",
     [memberId],
@@ -99,6 +108,7 @@ const profileSchema = z.object({
 membersRoutes.put("/profile", auth, async (c) => {
   const { memberId } = currentUser(c);
   const patch = profileSchema.parse(await c.req.json());
+  if (patch.avatarKey) assertOwnsKey(memberId, "avatar", patch.avatarKey);
   const updated = await updateProfile.execute(memberId, patch);
   return c.json(updated);
 });

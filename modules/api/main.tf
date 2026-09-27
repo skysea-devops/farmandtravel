@@ -83,6 +83,7 @@ resource "aws_lambda_function" "api" {
       BEDROCK_REGION   = var.aws_region
       BEDROCK_MODEL_ID = var.bedrock_model_id
       MEDIA_BUCKET     = var.media_bucket_name
+      ALLOWED_ORIGINS  = join(",", var.allowed_origins)
       # DB creds injected at deploy time (no runtime Secrets Manager call / VPC endpoint).
       DB_SECRET_ARN = var.db_secret_arn
       DB_HOST       = var.db_host
@@ -106,7 +107,7 @@ resource "aws_apigatewayv2_api" "http" {
   name          = local.name
   protocol_type = "HTTP"
   cors_configuration {
-    allow_origins = ["*"] # tighten to real domains in prod
+    allow_origins = var.allowed_origins
     allow_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     allow_headers = ["content-type", "authorization", "x-dev-sub"]
   }

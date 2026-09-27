@@ -4,7 +4,7 @@
 import type { Context, Next } from "hono";
 import { env } from "../config/env.js";
 import { query } from "../db/pool.js";
-import { Unauthorized } from "../errors/index.js";
+import { Unauthorized, Forbidden } from "../errors/index.js";
 
 export type AuthUser = { memberId: string; sub: string };
 
@@ -12,15 +12,18 @@ export type AuthUser = { memberId: string; sub: string };
 // (the initial community). Later sign-ups start on 'none' and must subscribe.
 const FRONTIER_CUTOFF = Date.parse("2026-10-03T00:00:00+03:00");
 
-async function ensureMember(sub: string): Promise<string> {
-  const found = await query<{ id: string }>("SELECT id FROM members WHERE cognito_sub=$1", [sub]);
-  if (found.rowCount && found.rows[0]) return found.rows[0].id;
+// Idempotent get-or-create for the member row keyed by cognito_sub. Uses an upsert
+// (not SELECT-then-INSERT) so two parallel first requests from a brand-new user
+// can't both try to INSERT and hit the unique(cognito_sub) violation.
+async function ensureMember(sub: string): Promise<{ id: string; status: string }> {
   const plan = Date.now() < FRONTIER_CUTOFF ? "frontier" : "none";
-  const created = await query<{ id: string }>(
-    "INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2) RETURNING id",
+  const r = await query<{ id: string; status: string }>(
+    `INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2)
+       ON CONFLICT (cognito_sub) DO UPDATE SET cognito_sub = EXCLUDED.cognito_sub
+     RETURNING id, status`,
     [sub, plan],
   );
-  return created.rows[0]!.id;
+  return r.rows[0]!;
 }
 
 export async function auth(c: Context, next: Next) {
@@ -37,8 +40,10 @@ export async function auth(c: Context, next: Next) {
   }
 
   if (!sub) throw Unauthorized();
-  const memberId = await ensureMember(sub);
-  c.set("user", { memberId, sub } satisfies AuthUser);
+  const member = await ensureMember(sub);
+  // Suspended members are blocked at the door for every authenticated route.
+  if (member.status === "suspended") throw Forbidden("Hesabın askıya alındı");
+  c.set("user", { memberId: member.id, sub } satisfies AuthUser);
   await next();
 }
 
