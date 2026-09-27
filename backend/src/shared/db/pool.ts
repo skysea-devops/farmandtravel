@@ -12,6 +12,20 @@ export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
   max: 5,
   ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  // --- Lambda tuning (avoids the "long wait / never opens" symptom) ---
+  // TCP keepalive so a warm container's DB connection isn't silently dropped by the
+  // VPC/NAT while the container is frozen between invocations (a dropped-but-reused
+  // socket is what hangs the first query for tens of seconds).
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10_000,
+  // Keep the connection around long enough that the 2-min warmup ping keeps it hot,
+  // so real requests on a warm container skip the reconnect handshake entirely.
+  idleTimeoutMillis: 240_000,
+  // Fail fast instead of hanging if a connection can't be established.
+  connectionTimeoutMillis: 8_000,
+  // Never let a runaway query hold a request open past the Lambda timeout.
+  statement_timeout: 12_000,
+  query_timeout: 12_000,
 });
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
