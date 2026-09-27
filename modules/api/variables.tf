@@ -33,6 +33,12 @@ variable "db_password" {
 variable "media_bucket_arn" { type = string }
 variable "media_bucket_name" { type = string }
 
+variable "allowed_origins" {
+  description = "Web origins allowed for CORS (API Gateway + Lambda). Defaults permissive."
+  type        = list(string)
+  default     = ["*"]
+}
+
 variable "ai_mode" {
   type    = string
   default = "bedrock"

@@ -49,11 +49,17 @@ module "rds" {
 }
 
 # Media storage — private bucket, presigned uploads.
+locals {
+  # Real web origins allowed to call the API and PUT to media (CORS).
+  web_origins = ["https://${var.domain_name}", "https://www.${var.domain_name}"]
+}
+
 module "storage" {
   source = "../../modules/storage"
 
-  project     = var.project
-  environment = var.environment
+  project              = var.project
+  environment          = var.environment
+  cors_allowed_origins = local.web_origins
 }
 
 # Frontend hosting — S3 + CloudFront + ACM + Route53 (topraklayeniden.com).
@@ -98,6 +104,7 @@ module "api" {
   db_password       = local.db_creds.password
   media_bucket_arn  = module.storage.media_bucket_arn
   media_bucket_name = module.storage.media_bucket_name
+  allowed_origins   = local.web_origins
 
   ai_mode            = var.ai_mode
   log_retention_days = var.log_retention_days

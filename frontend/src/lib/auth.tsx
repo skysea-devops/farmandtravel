@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as cognito from "@/lib/cognito";
+import { setCacheScope } from "@/lib/api";
 
 // Cognito-backed auth. `ready` is false until the stored session is restored on
 // first load, so guards don't bounce a signed-in user to /giris on refresh.
@@ -22,7 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     cognito.currentSession()
-      .then((session) => { if (session) setUser(cognito.userInfo(session)); })
+      .then((session) => {
+        if (session) {
+          const u = cognito.userInfo(session);
+          setCacheScope(u.sub);
+          setUser(u);
+        }
+      })
       .catch((e) => console.error(e))
       .finally(() => setReady(true));
   }, []);
@@ -33,11 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const session = await cognito.signIn(email, password);
-    setUser(cognito.userInfo(session));
+    const u = cognito.userInfo(session);
+    setCacheScope(u.sub); // fresh user → drop any cached data from a previous session
+    setUser(u);
   };
 
   const logout = () => {
     cognito.signOut();
+    setCacheScope(null); // clears the in-memory GET cache
     setUser(null);
   };
 

@@ -23,7 +23,21 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 }
 
 // Tiny in-memory GET cache so moving between app pages doesn't refetch every time.
+// Entries are keyed by the current user's sub, and the whole cache is cleared whenever
+// the user changes (login/logout), so a logout→login as another account can never
+// serve the previous user's data.
 const cache = new Map<string, { at: number; data: unknown }>();
+let scope = "anon";
+
+// Called by the auth layer when the signed-in user changes (including to null).
+export function setCacheScope(sub: string | null) {
+  const next = sub ?? "anon";
+  if (next !== scope) {
+    cache.clear();
+    scope = next;
+  }
+}
+const scoped = (p: string) => `${scope}::${p}`;
 
 export const api = {
   get: <T>(p: string) => req<T>("GET", p),
@@ -32,13 +46,14 @@ export const api = {
   del: <T>(p: string) => req<T>("DELETE", p),
   // Cached GET: returns a fresh value within ttlMs, else fetches and stores.
   getCached: async <T>(p: string, ttlMs = 60_000): Promise<T> => {
-    const hit = cache.get(p);
+    const k = scoped(p);
+    const hit = cache.get(k);
     if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
     const data = await req<T>("GET", p);
-    cache.set(p, { at: Date.now(), data });
+    cache.set(k, { at: Date.now(), data });
     return data;
   },
-  invalidate: (p?: string) => (p ? cache.delete(p) : cache.clear()),
+  invalidate: (p?: string) => (p ? cache.delete(scoped(p)) : cache.clear()),
 };
 
 // Connection actions. Each mutation clears the GET cache so lists refresh.

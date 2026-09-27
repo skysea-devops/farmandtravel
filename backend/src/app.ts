@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { env } from "./shared/config/env.js";
 import { AppError } from "./shared/errors/index.js";
 import { membersRoutes } from "./modules/members/interface/routes.js";
 import { tagsRoutes } from "./modules/tags/interface/routes.js";
@@ -11,9 +12,23 @@ import { reviewsRoutes } from "./modules/reviews/routes.js";
 import { savedRoutes } from "./modules/saved/routes.js";
 import { notificationsRoutes } from "./modules/notifications/routes.js";
 
+// Allowed web origins. In prod ALLOWED_ORIGINS is set to the real domains; locally
+// it's unset, so we stay permissive (any origin) for dev convenience.
+const ALLOWED = (env.ALLOWED_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+
 export function createApp() {
   const app = new Hono();
-  app.use("*", cors());
+  app.use(
+    "*",
+    cors({
+      origin: (origin) => {
+        if (ALLOWED.length === 0) return origin ?? "*"; // dev: echo any origin
+        return ALLOWED.includes(origin) ? origin : ALLOWED[0]; // prod: only our domains
+      },
+      allowHeaders: ["content-type", "authorization", "x-dev-sub"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    }),
+  );
 
   app.get("/health", (c) => c.json({ ok: true, service: "farmandtravel-backend" }));
 

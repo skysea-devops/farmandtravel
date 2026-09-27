@@ -34,6 +34,7 @@ export class MemberRepositoryPg implements MemberRepository {
     return {
       id: m.id,
       status: m.status,
+      plan: m.plan ?? "none",
       firstName: m.first_name,
       country: m.country,
       city: m.city,
