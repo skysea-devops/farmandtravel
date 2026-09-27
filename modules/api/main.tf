@@ -64,7 +64,7 @@ resource "aws_cloudwatch_log_group" "lambda" {
 resource "aws_lambda_function" "api" {
   function_name = local.name
   role          = aws_iam_role.lambda.arn
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs22.x"
   handler       = "main.handler"
   filename      = data.archive_file.stub.output_path
   memory_size   = 1536 # more memory = more CPU = faster cold start + queries
@@ -206,7 +206,7 @@ resource "aws_cloudwatch_log_group" "migrate" {
 resource "aws_lambda_function" "migrate" {
   function_name = "${local.name}-migrate"
   role          = aws_iam_role.lambda.arn
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs22.x"
   handler       = "migrate.handler"
   filename      = data.archive_file.stub.output_path
   memory_size   = 512
