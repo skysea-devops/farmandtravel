@@ -5,6 +5,7 @@ import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PublicMember } from "@/lib/types";
 import { coordsFor } from "@/data/geo";
@@ -15,8 +16,12 @@ const MembersMap = lazy(() => import("./MembersMap"));
 
 type Dir = "all" | "offer" | "seek";
 
+// Static (non-scrolling) photo strip for the Keşfet banner.
+const BANNER_IMAGES = ["/community/s1.jpg", "/community/s7.jpg", "/community/s4.jpg", "/community/s6.jpg"];
+
 export function ExplorePage() {
   const { user } = useAuth();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [all, setAll] = useState<PublicMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +55,9 @@ export function ExplorePage() {
   );
   const topics = useMemo(() => {
     const map = new Map<string, string>();
-    all.forEach((m) => m.tags.forEach((t) => { if (t.axis === "topic") map.set(t.value, t.labelTr); }));
+    all.forEach((m) => m.tags.forEach((tag) => { if (tag.axis === "topic") map.set(tag.value, lang === "en" ? tag.labelEn : tag.labelTr); }));
     return [...map.entries()].map(([value, label]) => ({ value, label }));
-  }, [all]);
+  }, [all, lang]);
 
   const results = useMemo(() => {
     const needle = q.toLocaleLowerCase("tr").trim();
@@ -82,20 +87,28 @@ export function ExplorePage() {
   return (
     <div className="mx-auto max-w-[1200px] px-6 py-7">
       <div className="mb-4">
-        <h1 className="font-display text-[28px] font-semibold">Keşfet</h1>
-        <p className="text-sm text-ink-500">Ülkeye, şehre ve etiketlere göre destek sunanları ve arayanları haritada bul. Bağlanmak için üyelik gerekir.</p>
+        <h1 className="font-display text-[28px] font-semibold">{t("Keşfet", "Explore")}</h1>
+        <p className="text-sm text-ink-500">{t("Ülkeye, şehre ve etiketlere göre destek sunanları ve arayanları haritada bul. Bağlanmak için üyelik gerekir.", "Find people offering and seeking support on the map, by country, city and tags. Membership is required to connect.")}</p>
       </div>
 
-      {/* çalışan-insan bandı */}
-      <div className="mb-4 flex h-44 items-end overflow-hidden rounded-[var(--radius-lg)] bg-cover bg-center bg-linear-135 from-moss-500 to-forest-700"
-        style={{ backgroundImage: `linear-gradient(90deg,rgba(28,49,38,.55),rgba(28,49,38,.15)), url(https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1600&q=80)` }}>
-        <div className="font-display p-5 text-xl font-semibold text-white [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">Toprakla uğraşan bir topluluk seni bekliyor</div>
+      {/* çalışan-insan bandı — sabit fotoğraf şeridi (kaymaz) */}
+      <div className="relative mb-4 h-44 overflow-hidden rounded-[var(--radius-lg)] bg-forest-900">
+        <div className="absolute inset-0 flex">
+          {BANNER_IMAGES.map((src) => (
+            <div key={src} className="relative h-full flex-1 overflow-hidden">
+              <div className="absolute inset-0 scale-110 bg-cover bg-center opacity-50 blur-lg" style={{ backgroundImage: `url(${src})` }} />
+              <img src={src} alt="" className="relative h-full w-full object-contain" />
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-0 bg-linear-90 from-forest-900/75 to-forest-900/15" />
+        <div className="absolute bottom-0 left-0 font-display p-5 text-xl font-semibold text-white [text-shadow:0_1px_8px_rgba(0,0,0,.5)]">{t("Toprakla uğraşan bir topluluk seni bekliyor", "A community that works the land is waiting for you")}</div>
       </div>
 
       {/* arama */}
       <div className="mb-3 flex max-w-xl items-center gap-2 rounded-full border border-border-strong bg-surface px-[18px] py-2.5">
         <span>🔍</span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="İsim, uzmanlık, şehir, konu ara…"
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("İsim, uzmanlık, şehir, konu ara…", "Search name, expertise, city, topic…")}
           className="w-full border-none bg-transparent text-sm outline-none" />
       </div>
 
@@ -107,24 +120,24 @@ export function ExplorePage() {
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold ${dir === d ? "bg-surface shadow-sm" : "text-ink-700"}`}>
               {d === "offer" && <span className="size-2.5 rounded-full bg-offer" />}
               {d === "seek" && <span className="size-2.5 rounded-full bg-seek" />}
-              {d === "all" ? "Tümü" : d === "offer" ? "Destek sunanlar" : "Destek arayanlar"}
+              {d === "all" ? t("Tümü", "All") : d === "offer" ? t("Destek sunanlar", "Offering support") : t("Destek arayanlar", "Seeking support")}
             </button>
           ))}
         </div>
-        <Sel value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder="🌍 Tüm ülkeler" options={countries} />
+        <Sel value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder={t("🌍 Tüm ülkeler", "🌍 All countries")} options={countries} />
         <select disabled={!cities.length} value={city} onChange={(e) => setCity(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700 disabled:opacity-60">
-          <option value="">🏙️ Tüm şehirler</option>
+          <option value="">{t("🏙️ Tüm şehirler", "🏙️ All cities")}</option>
           {cities.map((c) => <option key={c}>{c}</option>)}
         </select>
         <select value={topic} onChange={(e) => setTopic(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700">
-          <option value="">🌱 Tüm konular</option>
-          {topics.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          <option value="">{t("🌱 Tüm konular", "🌱 All topics")}</option>
+          {topics.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
         </select>
         <button onClick={() => setFarm((f) => !f)}
           className={`rounded-full border px-3.5 py-2 text-[13px] ${farm ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700"}`}>
-          🚜 Çiftlik sahipleri
+          {t("🚜 Çiftlik sahipleri", "🚜 Farm owners")}
         </button>
       </div>
 
@@ -136,7 +149,7 @@ export function ExplorePage() {
 
         {/* Liste */}
         <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
-          <div className="text-sm text-ink-500">{loading ? "Yükleniyor…" : `${results.length} sonuç`}</div>
+          <div className="text-sm text-ink-500">{loading ? t("Yükleniyor…", "Loading…") : t(`${results.length} sonuç`, `${results.length} results`)}</div>
           {results.map((m) => (
             <button key={m.id} onClick={() => open(m.id)}
               className="flex gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-forest-500 hover:shadow-sm">
@@ -148,32 +161,32 @@ export function ExplorePage() {
                 </div>
                 <div className="mb-1.5 text-xs text-ink-500">{[m.city, m.country].filter(Boolean).join(", ")}{m.headline ? ` · ${m.headline}` : ""}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {m.tags.slice(0, 4).map((t) => <Tag key={`${t.axis}-${t.value}`} axis={t.axis}>{t.labelTr}</Tag>)}
+                  {m.tags.slice(0, 4).map((tag) => <Tag key={`${tag.axis}-${tag.value}`} axis={tag.axis}>{lang === "en" ? tag.labelEn : tag.labelTr}</Tag>)}
                 </div>
               </div>
             </button>
           ))}
           {!loading && results.length === 0 && (
             <div className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-ink-500">
-              {all.length === 0 ? "Henüz üye yok. İlk katılanlardan ol!" : "Sonuç yok. Filtreleri gevşet."}
+              {all.length === 0 ? t("Henüz üye yok. İlk katılanlardan ol!", "No members yet. Be one of the first to join!") : t("Sonuç yok. Filtreleri gevşet.", "No results. Try loosening the filters.")}
             </div>
           )}
         </div>
       </div>
 
       <div className="mt-3.5 flex items-center gap-2.5 rounded-xl border border-dashed border-border-strong bg-sand-100 px-4 py-3.5 text-[13.5px] text-ink-700">
-        <span>🔒</span> Profilleri görmek ve bağlantı kurmak için üyelik gerekir. Haritayı ve kimlerin olduğunu üye olmadan görebilirsin.
+        <span>🔒</span> {t("Profilleri görmek ve bağlantı kurmak için üyelik gerekir. Haritayı ve kimlerin olduğunu üye olmadan görebilirsin.", "Membership is required to view profiles and connect. You can see the map and who's here without signing up.")}
       </div>
 
       {modal && (
         <div onClick={() => setModal(false)} className="fixed inset-0 z-[1000] flex items-center justify-center bg-forest-900/50 p-5">
           <div onClick={(e) => e.stopPropagation()} className="max-w-sm rounded-[var(--radius-lg)] bg-surface p-7 text-center shadow-xl">
             <div className="mb-2.5 text-4xl">🌿</div>
-            <h3 className="font-display mb-2 text-2xl font-semibold">Bağlanmak için üye ol</h3>
-            <p className="mb-5 text-sm text-ink-500">Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.</p>
-            <Link to="/kayit"><Button className="w-full" size="lg">Üye ol</Button></Link>
-            <p className="mt-3 text-sm text-ink-500">Zaten üye misin? <Link to="/giris" className="text-forest-600 underline">Giriş yap</Link></p>
-            <Button variant="ghost" className="mt-2 w-full" onClick={() => setModal(false)}>Sonra</Button>
+            <h3 className="font-display mb-2 text-2xl font-semibold">{t("Bağlanmak için üye ol", "Join to connect")}</h3>
+            <p className="mb-5 text-sm text-ink-500">{t("Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.", "Start your membership to view profiles and connect.")}</p>
+            <Link to="/kayit"><Button className="w-full" size="lg">{t("Üye ol", "Join")}</Button></Link>
+            <p className="mt-3 text-sm text-ink-500">{t("Zaten üye misin?", "Already a member?")} <Link to="/giris" className="text-forest-600 underline">{t("Giriş yap", "Log in")}</Link></p>
+            <Button variant="ghost" className="mt-2 w-full" onClick={() => setModal(false)}>{t("Sonra", "Later")}</Button>
           </div>
         </div>
       )}

@@ -11,15 +11,25 @@ terraform {
 }
 
 locals {
-  name    = "${var.project}-${var.environment}-site"
-  apex    = var.domain_name
-  www     = "www.${var.domain_name}"
-  aliases = [var.domain_name, "www.${var.domain_name}"]
+  name = "${var.project}-${var.environment}-site"
+  apex = var.domain_name
+  # One or two apex domains (primary + optional secondary market).
+  domains = var.secondary_domain == "" ? [var.domain_name] : [var.domain_name, var.secondary_domain]
+  # Every hostname the distribution serves: apex + www for each domain.
+  all_names = flatten([for d in local.domains : [d, "www.${d}"]])
+  aliases   = local.all_names
 }
 
-data "aws_route53_zone" "this" {
-  name         = "${var.domain_name}."
+# Hosted zone per apex domain (each domain has its own zone in Route53).
+data "aws_route53_zone" "z" {
+  for_each     = toset(local.domains)
+  name         = "${each.value}."
   private_zone = false
+}
+
+# Pick the apex whose zone a given hostname belongs to (suffix match).
+locals {
+  zone_domain_for = { for n in local.all_names : n => [for d in local.domains : d if endswith(n, d)][0] }
 }
 
 # --- S3 bucket (private; only CloudFront reads it via OAC) ---
@@ -51,7 +61,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
 resource "aws_acm_certificate" "cert" {
   provider                  = aws.us_east_1
   domain_name               = local.apex
-  subject_alternative_names = [local.www]
+  subject_alternative_names = [for n in local.all_names : n if n != local.apex]
   validation_method         = "DNS"
 
   lifecycle { create_before_destroy = true }
@@ -63,9 +73,11 @@ resource "aws_route53_record" "cert_validation" {
       name   = dvo.resource_record_name
       type   = dvo.resource_record_type
       record = dvo.resource_record_value
+      # Validation record goes in the zone of the domain it validates.
+      zone = [for d in local.domains : d if endswith(dvo.domain_name, d)][0]
     }
   }
-  zone_id         = data.aws_route53_zone.this.zone_id
+  zone_id         = data.aws_route53_zone.z[each.value.zone].zone_id
   name            = each.value.name
   type            = each.value.type
   records         = [each.value.record]
@@ -92,7 +104,7 @@ resource "aws_cloudfront_function" "redirect" {
   runtime = "cloudfront-js-2.0"
   comment = "301 www -> apex"
   publish = true
-  code    = templatefile("${path.module}/redirect.js", { apex = local.apex })
+  code    = file("${path.module}/redirect.js")
 }
 
 # --- Security response headers (HSTS, CSP, anti-clickjacking, etc.) ---
@@ -219,11 +231,12 @@ resource "aws_s3_bucket_policy" "site" {
   policy = data.aws_iam_policy_document.s3.json
 }
 
-# --- DNS: apex + www -> CloudFront ---
-resource "aws_route53_record" "apex_a" {
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.apex
-  type    = "A"
+# --- DNS: apex + www of every domain -> CloudFront (A + AAAA) ---
+resource "aws_route53_record" "a" {
+  for_each = toset(local.all_names)
+  zone_id  = data.aws_route53_zone.z[local.zone_domain_for[each.value]].zone_id
+  name     = each.value
+  type     = "A"
   alias {
     name                   = aws_cloudfront_distribution.site.domain_name
     zone_id                = aws_cloudfront_distribution.site.hosted_zone_id
@@ -231,32 +244,11 @@ resource "aws_route53_record" "apex_a" {
   }
 }
 
-resource "aws_route53_record" "apex_aaaa" {
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.apex
-  type    = "AAAA"
-  alias {
-    name                   = aws_cloudfront_distribution.site.domain_name
-    zone_id                = aws_cloudfront_distribution.site.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "www_a" {
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.www
-  type    = "A"
-  alias {
-    name                   = aws_cloudfront_distribution.site.domain_name
-    zone_id                = aws_cloudfront_distribution.site.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "www_aaaa" {
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.www
-  type    = "AAAA"
+resource "aws_route53_record" "aaaa" {
+  for_each = toset(local.all_names)
+  zone_id  = data.aws_route53_zone.z[local.zone_domain_for[each.value]].zone_id
+  name     = each.value
+  type     = "AAAA"
   alias {
     name                   = aws_cloudfront_distribution.site.domain_name
     zone_id                = aws_cloudfront_distribution.site.hosted_zone_id

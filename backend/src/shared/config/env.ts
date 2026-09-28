@@ -17,6 +17,12 @@ const schema = z.object({
   MEDIA_BUCKET: z.string().optional(),
   // Comma-separated allowed web origins for CORS. Empty/unset = permissive (local dev).
   ALLOWED_ORIGINS: z.string().optional(),
+  // --- Lemon Squeezy billing (empty until configured → checkout returns 503) ---
+  // Uses hosted "buy links" (no outbound API call, works in a no-egress VPC).
+  LS_STORE: z.string().optional(), // store subdomain, e.g. "toprakla" → toprakla.lemonsqueezy.com
+  LS_VARIANT_TR: z.string().optional(), // $20/yr Toprak variant id (topraklayeniden.com)
+  LS_VARIANT_INTL: z.string().optional(), // $40/yr Return variant id (reconnectwithsoil.com)
+  LS_WEBHOOK_SECRET: z.string().optional(), // signing secret for webhook verification
 });
 
 export const env = schema.parse(process.env);

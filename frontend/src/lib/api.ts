@@ -149,6 +149,11 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   return key;
 }
 
+export const billing = {
+  // Returns the hosted checkout URL to redirect to (or throws on 503 when unconfigured).
+  checkout: (market: "tr" | "intl") => api.post<{ url: string }>("/billing/checkout", { market }),
+};
+
 export const saved = {
   list: <T>() => api.getCached<T>("/saved", 60_000),
   add: async (memberId: string) => { const r = await api.post("/saved", { memberId }); api.invalidate(); return r; },

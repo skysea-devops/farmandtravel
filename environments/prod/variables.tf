@@ -80,3 +80,32 @@ variable "domain_name" {
   type        = string
   default     = "topraklayeniden.com"
 }
+
+variable "secondary_domain" {
+  description = "Second apex domain served by the same site (English market). Its Route53 zone must exist in this account. Set to reconnectwithsoil.com to enable; empty keeps a single domain so a missing zone can't block deploys."
+  type        = string
+  default     = ""
+}
+
+# --- Lemon Squeezy billing (set via tfvars / CI secret when ready; empty disables checkout) ---
+variable "ls_store" {
+  description = "Lemon Squeezy store subdomain (e.g. 'toprakla')."
+  type        = string
+  default     = ""
+}
+variable "ls_variant_tr" {
+  description = "LS variant id for the $20/yr Toprak plan."
+  type        = string
+  default     = ""
+}
+variable "ls_variant_intl" {
+  description = "LS variant id for the $40/yr Return plan."
+  type        = string
+  default     = ""
+}
+variable "ls_webhook_secret" {
+  description = "LS webhook signing secret."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
