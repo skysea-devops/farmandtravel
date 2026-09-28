@@ -16,6 +16,9 @@ const MembersMap = lazy(() => import("./MembersMap"));
 
 type Dir = "all" | "offer" | "seek";
 
+// Static (non-scrolling) photo strip for the Keşfet banner.
+const BANNER_IMAGES = ["/community/s1.jpg", "/community/s7.jpg", "/community/s4.jpg", "/community/s6.jpg"];
+
 export function ExplorePage() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
@@ -88,10 +91,18 @@ export function ExplorePage() {
         <p className="text-sm text-ink-500">{t("Ülkeye, şehre ve etiketlere göre destek sunanları ve arayanları haritada bul. Bağlanmak için üyelik gerekir.", "Find people offering and seeking support on the map, by country, city and tags. Membership is required to connect.")}</p>
       </div>
 
-      {/* çalışan-insan bandı */}
-      <div className="mb-4 flex h-44 items-end overflow-hidden rounded-[var(--radius-lg)] bg-cover bg-center bg-linear-135 from-moss-500 to-forest-700"
-        style={{ backgroundImage: `linear-gradient(90deg,rgba(28,49,38,.55),rgba(28,49,38,.15)), url(https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1600&q=80)` }}>
-        <div className="font-display p-5 text-xl font-semibold text-white [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">{t("Toprakla uğraşan bir topluluk seni bekliyor", "A community that works the land is waiting for you")}</div>
+      {/* çalışan-insan bandı — sabit fotoğraf şeridi (kaymaz) */}
+      <div className="relative mb-4 h-44 overflow-hidden rounded-[var(--radius-lg)] bg-forest-900">
+        <div className="absolute inset-0 flex">
+          {BANNER_IMAGES.map((src) => (
+            <div key={src} className="relative h-full flex-1 overflow-hidden">
+              <div className="absolute inset-0 scale-110 bg-cover bg-center opacity-50 blur-lg" style={{ backgroundImage: `url(${src})` }} />
+              <img src={src} alt="" className="relative h-full w-full object-contain" />
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-0 bg-linear-90 from-forest-900/75 to-forest-900/15" />
+        <div className="absolute bottom-0 left-0 font-display p-5 text-xl font-semibold text-white [text-shadow:0_1px_8px_rgba(0,0,0,.5)]">{t("Toprakla uğraşan bir topluluk seni bekliyor", "A community that works the land is waiting for you")}</div>
       </div>
 
       {/* arama */}
