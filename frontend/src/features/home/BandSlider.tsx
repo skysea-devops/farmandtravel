@@ -1,27 +1,25 @@
-import { useEffect, useState } from "react";
-
-// Auto-rotating crossfade background for the "life on the farm" band. All images are
-// stacked; only the active one is opaque. Pauses nothing, respects reduced motion.
-export function BandSlider({ images, intervalMs = 4500 }: { images: string[]; intervalMs?: number }) {
-  const [i, setI] = useState(0);
-
-  useEffect(() => {
-    if (images.length < 2) return;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const id = setInterval(() => setI((n) => (n + 1) % images.length), intervalMs);
-    return () => clearInterval(id);
-  }, [images.length, intervalMs]);
-
+// Horizontal marquee for the "life on the farm" band: a row of photos (3–4 visible)
+// sliding continuously to the left, looping seamlessly. Text overlay sits on top.
+// Duplicating the list once lets the -50% translate loop without a visible jump.
+export function BandSlider({ images }: { images: string[] }) {
+  const loop = [...images, ...images];
   return (
-    <div className="absolute inset-0 -z-0">
-      {images.map((src, idx) => (
-        <div
-          key={src}
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{ backgroundImage: `url(${src})`, opacity: idx === i ? 1 : 0 }}
-        />
-      ))}
+    <div className="absolute inset-0 -z-0 overflow-hidden">
+      <div className="band-track flex h-full w-max">
+        {loop.map((src, i) => (
+          <div
+            key={i}
+            className="h-full w-[clamp(220px,26vw,340px)] shrink-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${src})` }}
+            aria-hidden="true"
+          />
+        ))}
+      </div>
+      <style>{`
+        .band-track { animation: band-marquee 45s linear infinite; }
+        @keyframes band-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .band-track { animation: none; } }
+      `}</style>
     </div>
   );
 }
