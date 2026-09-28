@@ -4,6 +4,10 @@ import { Tag } from "@/components/ui/Tag";
 import { CATEGORIES } from "@/data/demo";
 import { ACTIVITIES, youtubeThumb } from "@/data/activities";
 import { useI18n } from "@/lib/i18n";
+import { BandSlider } from "./BandSlider";
+
+// Community photos for the "life on the farm" slider band.
+const BAND_IMAGES = ["/community/s1.jpg", "/community/s2.jpg", "/community/s3.jpg", "/community/s4.jpg", "/community/s5.jpg", "/community/s6.jpg"];
 
 const U = "https://images.unsplash.com/";
 
@@ -59,9 +63,9 @@ export function HomePage() {
   ];
 
   const testimonials = [
-    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · 🇵🇹 Sintra", "Permaculture farm · 🇵🇹 Sintra"), photo: U + "photo-1544005313-94ddf0286df2?w=600&q=80" },
-    { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · 🇩🇪 Berlin", "Ecologist · 🇩🇪 Berlin"), photo: U + "photo-1500648767791-00dcc994a43e?w=600&q=80" },
-    { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · 🇹🇷 İzmir", "New farmer · 🇹🇷 İzmir"), photo: U + "photo-1494790108377-be9c29b29330?w=600&q=80" },
+    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · 🇵🇹 Sintra", "Permaculture farm · 🇵🇹 Sintra"), photo: "/community/t-marta.jpg" },
+    { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · 🇩🇪 Berlin", "Ecologist · 🇩🇪 Berlin"), photo: "/community/t-jonas.jpg" },
+    { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · 🇹🇷 İzmir", "New farmer · 🇹🇷 İzmir"), photo: "/community/t-elif.jpg" },
   ];
 
   return (
@@ -120,10 +124,9 @@ export function HomePage() {
       </section>
 
       {/* Çiftlikte hayat bandı */}
-      <section className="relative flex min-h-[300px] items-end bg-cover bg-center"
+      <section className="relative flex min-h-[300px] items-end overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: `linear-gradient(160deg,#2f5741,#6f9e5c)` }}>
-        <img src={U + "photo-1464226184884-fa280b87c399?w=1600&q=80"} alt="" onError={hide}
-          className="absolute inset-0 -z-0 h-full w-full object-cover" />
+        <BandSlider images={BAND_IMAGES} />
         <div className="absolute inset-0 bg-linear-90 from-forest-900/70 to-forest-900/20" />
         <div className="container-x relative py-8 text-white">
           <h3 className="font-display text-2xl font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">{t("Çiftlikte hayat, birlikte üretmek", "Life on the farm, growing together")}</h3>
