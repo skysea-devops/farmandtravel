@@ -149,6 +149,15 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   return key;
 }
 
+export const activities = {
+  list: <T>(limit = 20, offset = 0) => api.getCached<T>(`/activities?limit=${limit}&offset=${offset}`, 60_000),
+  submit: async (body: unknown) => { const r = await api.post("/activities", body); api.invalidate(); return r; },
+  mine: <T>() => api.get<T>("/activities/mine"),
+  adminList: <T>(status = "pending") => api.get<T>(`/admin/activities?status=${status}`),
+  approve: async (id: string) => { const r = await api.post(`/admin/activities/${id}/approve`); api.invalidate(); return r; },
+  reject: async (id: string) => { const r = await api.post(`/admin/activities/${id}/reject`); api.invalidate(); return r; },
+};
+
 export const billing = {
   // Returns the hosted checkout URL to redirect to (or throws on 503 when unconfigured).
   checkout: (market: "tr" | "intl") => api.post<{ url: string }>("/billing/checkout", { market }),

@@ -154,6 +154,7 @@ locals {
     "POST /webhooks/lemonsqueezy",
     "GET /taxonomy",
     "GET /public/members",
+    "GET /activities",
     "OPTIONS /{proxy+}",
   ]
 }

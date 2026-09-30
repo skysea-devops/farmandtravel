@@ -1,0 +1,118 @@
+import { Hono } from "hono";
+import { z } from "zod";
+import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
+import { query } from "../../shared/db/pool.js";
+import { safeUrl } from "../../shared/media/s3.js";
+import { Forbidden, NotFound } from "../../shared/errors/index.js";
+
+export const activitiesRoutes = new Hono();
+
+interface ActivityRow {
+  id: string;
+  kind: string;
+  title: string;
+  description: string | null;
+  image_key: string | null;
+  image_url: string | null;
+  youtube_id: string | null;
+  author_name: string | null;
+  place: string | null;
+  event_at: string | null;
+  online: boolean | null;
+  status: string;
+  pinned: boolean;
+  created_at: string;
+  published_at: string | null;
+}
+
+async function toDto(r: ActivityRow) {
+  const image = r.image_key ? await safeUrl(r.image_key) : r.image_url;
+  return {
+    id: r.id,
+    kind: r.kind,
+    title: r.title,
+    desc: r.description,
+    image,
+    youtubeId: r.youtube_id,
+    author: r.author_name,
+    place: r.place,
+    when: r.event_at,
+    online: r.online,
+    pinned: r.pinned,
+    status: r.status,
+    date: r.published_at ?? r.created_at,
+  };
+}
+
+const COLS = `id, kind, title, description, image_key, image_url, youtube_id,
+              author_name, place, event_at, online, status, pinned, created_at, published_at`;
+const SELECT = `SELECT ${COLS} FROM activities`;
+
+// --- PUBLIC: published feed (pinned first, then newest). Paginated for the archive. ---
+activitiesRoutes.get("/activities", async (c) => {
+  const limit = Math.min(Number(c.req.query("limit") ?? 20), 50);
+  const offset = Math.max(Number(c.req.query("offset") ?? 0), 0);
+  const [rows, count] = await Promise.all([
+    query<ActivityRow>(
+      `${SELECT} WHERE status='published' ORDER BY pinned DESC, published_at DESC NULLS LAST LIMIT $1 OFFSET $2`,
+      [limit, offset],
+    ),
+    query<{ n: string }>("SELECT count(*)::int AS n FROM activities WHERE status='published'"),
+  ]);
+  const items = await Promise.all(rows.rows.map(toDto));
+  return c.json({ items, total: Number(count.rows[0]?.n ?? 0) });
+});
+
+// --- Member: submit an activity (goes to the moderation queue as 'pending') ---
+const submitSchema = z.object({
+  kind: z.enum(["photo", "meeting", "announcement", "video"]),
+  title: z.string().min(3).max(140),
+  desc: z.string().max(2000).optional(),
+  imageKey: z.string().optional(),
+  youtubeId: z.string().max(20).optional(),
+  place: z.string().max(120).optional(),
+  when: z.string().max(120).optional(),
+  online: z.boolean().optional(),
+});
+activitiesRoutes.post("/activities", auth, async (c) => {
+  const { memberId } = currentUser(c);
+  const b = submitSchema.parse(await c.req.json());
+  if (b.imageKey && !b.imageKey.startsWith(`gallery/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
+  const name = await query<{ first_name: string | null }>("SELECT first_name FROM members WHERE id=$1", [memberId]);
+  const r = await query<ActivityRow>(
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, online, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending') RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, b.imageKey ?? null, b.youtubeId ?? null, b.place ?? null, b.when ?? null, b.online ?? null],
+  );
+  return c.json(await toDto(r.rows[0]!));
+});
+
+// --- Member: my own submissions with their status ---
+activitiesRoutes.get("/activities/mine", auth, async (c) => {
+  const { memberId } = currentUser(c);
+  const r = await query<ActivityRow>(`${SELECT} WHERE author_id=$1 ORDER BY created_at DESC`, [memberId]);
+  return c.json({ items: await Promise.all(r.rows.map(toDto)) });
+});
+
+// --- Admin: moderation queue (default: pending) ---
+activitiesRoutes.get("/admin/activities", auth, requireAdmin, async (c) => {
+  const status = c.req.query("status") ?? "pending";
+  const r = await query<ActivityRow>(`${SELECT} WHERE status=$1 ORDER BY created_at DESC`, [status]);
+  return c.json({ items: await Promise.all(r.rows.map(toDto)) });
+});
+
+// --- Admin: approve (publish) / reject ---
+activitiesRoutes.post("/admin/activities/:id/approve", auth, requireAdmin, async (c) => {
+  const r = await query<ActivityRow>(
+    `UPDATE activities SET status='published', published_at=now() WHERE id=$1 RETURNING ${COLS}`,
+    [c.req.param("id")],
+  );
+  if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
+  return c.json(await toDto(r.rows[0]!));
+});
+
+activitiesRoutes.post("/admin/activities/:id/reject", auth, requireAdmin, async (c) => {
+  const r = await query("UPDATE activities SET status='rejected' WHERE id=$1", [c.req.param("id")]);
+  if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
+  return c.json({ ok: true });
+});

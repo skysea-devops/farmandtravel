@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ACTIVITIES, youtubeThumb, type Activity } from "@/data/activities";
+import { useEffect, useMemo, useState } from "react";
+import { youtubeThumb } from "@/data/activities";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { activities as actApi, uploadImage } from "@/lib/api";
+import { Button } from "@/components/ui/Button";
+import type { ActivityItem, ActivityKind } from "@/lib/types";
 
 function useKindLabel() {
   const { t } = useI18n();
-  const map: Record<Activity["kind"], string> = {
+  const map: Record<ActivityKind, string> = {
     video: t("🎥 Podcast", "🎥 Podcast"),
     photo: t("📷 Paylaşım", "📷 Post"),
     meeting: t("📅 Buluşma", "📅 Meetup"),
@@ -15,89 +17,199 @@ function useKindLabel() {
   return map;
 }
 
+function fmtDate(iso: string, lang: string) {
+  try {
+    return new Date(iso).toLocaleDateString(lang === "en" ? "en-GB" : "tr-TR", { day: "numeric", month: "long" });
+  } catch {
+    return "";
+  }
+}
+
 export function ActivitiesPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { t } = useI18n();
-  // Podcast (video) is open to everyone; other activities prompt sign-up.
-  const gate = () => navigate(user ? "/app" : "/kayit");
-  const featured = ACTIVITIES.find((a) => a.kind === "video") ?? ACTIVITIES[0];
-  const rest = ACTIVITIES.filter((a) => a.id !== featured.id);
+  const { t, lang } = useI18n();
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const load = () => actApi.list<{ items: ActivityItem[] }>(50).then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
+  useEffect(() => { load(); }, []);
+
+  const featured = useMemo(() => items.find((a) => a.pinned && a.youtubeId) ?? null, [items]);
+  const rest = useMemo(() => items.filter((a) => a.id !== featured?.id), [items, featured]);
+  const shown = showAll ? rest : rest.slice(0, 5);
 
   return (
     <div className="container-x py-10">
-      <h1 className="font-display text-[28px] font-semibold">{t("Aktiviteler", "Activities")}</h1>
-      <p className="mb-8 text-sm text-ink-500">
-        {t("Topluluktan paylaşımlar, online ve yüz yüze buluşmalar, duyurular ve podcast'ler.", "Posts from the community, online and in-person meetups, announcements and podcasts.")}
-      </p>
-
-      {/* Öne çıkan: kurucu podcast */}
-      {featured.youtubeId && <FeaturedVideo activity={featured} />}
-
-      {/* Akış */}
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {rest.map((a) => <ActivityCard key={a.id} a={a} onClick={gate} />)}
-      </div>
-    </div>
-  );
-}
-
-function FeaturedVideo({ activity }: { activity: Activity }) {
-  const [play, setPlay] = useState(false);
-  const { t } = useI18n();
-  const kindLabel = useKindLabel();
-  return (
-    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
-      <div className="relative aspect-video bg-forest-900">
-        {play ? (
-          <iframe
-            className="h-full w-full"
-            src={`https://www.youtube-nocookie.com/embed/${activity.youtubeId}?autoplay=1`}
-            title={activity.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <button onClick={() => setPlay(true)} className="group relative h-full w-full" aria-label={t("Videoyu oynat", "Play video")}>
-            <img src={youtubeThumb(activity.youtubeId!)} alt="" className="h-full w-full object-cover" />
-            <span className="absolute inset-0 grid place-items-center bg-forest-900/30 transition group-hover:bg-forest-900/40">
-              <span className="grid size-16 place-items-center rounded-full bg-white/90 text-2xl text-forest-700 shadow-lg">▶</span>
-            </span>
-          </button>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[28px] font-semibold">{t("Aktiviteler", "Activities")}</h1>
+          <p className="mt-1 text-sm text-ink-500">
+            {t("Topluluktan paylaşımlar, online ve yüz yüze buluşmalar, duyurular ve podcast'ler.", "Posts from the community, online and in-person meetups, announcements and podcasts.")}
+          </p>
+        </div>
+        {user && (
+          <Button size="sm" onClick={() => setFormOpen((o) => !o)}>{formOpen ? t("Kapat", "Close") : t("＋ Aktivite paylaş", "＋ Share an activity")}</Button>
         )}
       </div>
-      <div className="p-5">
-        <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel.video} · {t("ÖNE ÇIKAN", "FEATURED")}</div>
-        <h2 className="font-display text-xl font-semibold">{activity.title}</h2>
-        <p className="mt-1.5 text-sm text-ink-700">{activity.desc}</p>
-        <div className="mt-2 text-xs text-ink-500">{activity.author} · {activity.place} · {activity.date}</div>
-      </div>
+
+      {formOpen && user && <SubmitForm onDone={() => { setFormOpen(false); load(); }} />}
+
+      {loading ? (
+        <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
+      ) : (
+        <>
+          {featured && <FeaturedVideo a={featured} />}
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            {shown.map((a) => <ActivityCard key={a.id} a={a} />)}
+          </div>
+
+          {rest.length > 5 && (
+            <div className="mt-6 text-center">
+              <Button variant="outline" onClick={() => setShowAll((s) => !s)}>
+                {showAll ? t("Daha az göster", "Show less") : t(`Arşiv — tümünü gör (${rest.length})`, `Archive — see all (${rest.length})`)}
+              </Button>
+            </div>
+          )}
+
+          {rest.length === 0 && !featured && (
+            <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+              {t("Henüz aktivite yok.", "No activities yet.")}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
-}
 
-function ActivityCard({ a, onClick }: { a: Activity; onClick: () => void }) {
-  const { t } = useI18n();
-  const kindLabel = useKindLabel();
-  return (
-    <button onClick={onClick} className="group block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface text-left transition hover:border-forest-500 hover:shadow-sm">
-      {a.image && <div className="h-44 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
-      <div className="p-5">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</span>
-          <span className="text-xs text-ink-400 opacity-0 transition group-hover:opacity-100">{t("🔒 Üye ol", "🔒 Join")}</span>
+  function FeaturedVideo({ a }: { a: ActivityItem }) {
+    const [play, setPlay] = useState(false);
+    const kindLabel = useKindLabel();
+    return (
+      <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+        <div className="relative aspect-video bg-forest-900">
+          {play ? (
+            <iframe className="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${a.youtubeId}?autoplay=1`} title={a.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          ) : (
+            <button onClick={() => setPlay(true)} className="group relative h-full w-full" aria-label={t("Videoyu oynat", "Play video")}>
+              <img src={youtubeThumb(a.youtubeId!)} alt="" className="h-full w-full object-cover" />
+              <span className="absolute inset-0 grid place-items-center bg-forest-900/30 transition group-hover:bg-forest-900/40">
+                <span className="grid size-16 place-items-center rounded-full bg-white/90 text-2xl text-forest-700 shadow-lg">▶</span>
+              </span>
+            </button>
+          )}
         </div>
-        <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
-        <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>
-        {a.kind === "meeting" && (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-700">
-            <span>{a.online ? t("🟢 Online", "🟢 Online") : t("📍 Yüz yüze", "📍 In person")}</span><span>·</span><span>{a.when}</span>
+        <div className="p-5">
+          <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel.video} · {t("ÖNE ÇIKAN", "FEATURED")}</div>
+          <h2 className="font-display text-xl font-semibold">{a.title}</h2>
+          {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
+          <div className="mt-2 text-xs text-ink-500">{[a.author, a.place, fmtDate(a.date, lang)].filter(Boolean).join(" · ")}</div>
+        </div>
+      </div>
+    );
+  }
+
+  function ActivityCard({ a }: { a: ActivityItem }) {
+    const kindLabel = useKindLabel();
+    return (
+      <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+        {a.image && <div className="h-44 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
+        <div className="p-5">
+          <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</div>
+          <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
+          {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
+          {a.kind === "meeting" && a.when && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-700">
+              <span>{a.online ? t("🟢 Online", "🟢 Online") : t("📍 Yüz yüze", "📍 In person")}</span><span>·</span><span>{a.when}</span>
+            </div>
+          )}
+          <div className="mt-3 text-xs text-ink-500">{[a.author, a.place, fmtDate(a.date, lang)].filter(Boolean).join(" · ")}</div>
+        </div>
+      </div>
+    );
+  }
+
+  function SubmitForm({ onDone }: { onDone: () => void }) {
+    const [kind, setKind] = useState<ActivityKind>("photo");
+    const [title, setTitle] = useState("");
+    const [desc, setDesc] = useState("");
+    const [place, setPlace] = useState("");
+    const [when, setWhen] = useState("");
+    const [online, setOnline] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [msg, setMsg] = useState<string | null>(null);
+    const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
+
+    async function submit(e: React.FormEvent) {
+      e.preventDefault();
+      if (title.trim().length < 3) return;
+      setBusy(true); setMsg(null);
+      try {
+        let imageKey: string | undefined;
+        if (kind === "photo" && file) imageKey = await uploadImage(file, "gallery");
+        await actApi.submit({ kind, title, desc: desc || undefined, place: place || undefined, imageKey, when: when || undefined, online: kind === "meeting" ? online : undefined });
+        setMsg(t("Gönderildi! Bir yönetici onayladıktan sonra yayınlanacak.", "Sent! It will be published once an admin approves it."));
+        setTimeout(onDone, 1200);
+      } catch {
+        setMsg(t("Gönderilemedi, tekrar dene.", "Couldn't send, please try again."));
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    return (
+      <form onSubmit={submit} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+        <h3 className="font-display mb-3 text-lg font-semibold">{t("Aktivite paylaş", "Share an activity")}</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Tür", "Type")}</span>
+            <select value={kind} onChange={(e) => setKind(e.target.value as ActivityKind)} className={inp}>
+              <option value="photo">{t("Paylaşım (fotoğraf)", "Post (photo)")}</option>
+              <option value="meeting">{t("Buluşma", "Meetup")}</option>
+              <option value="announcement">{t("Duyuru", "Announcement")}</option>
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Başlık", "Title")}</span>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inp} required maxLength={140} />
+          </label>
+        </div>
+        <label className="mt-3 block text-sm">
+          <span className="mb-1 block font-medium text-ink-700">{t("Açıklama", "Description")}</span>
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className={inp} maxLength={2000} />
+        </label>
+        {kind === "photo" && (
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Fotoğraf", "Photo")}</span>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
+          </label>
+        )}
+        {kind === "meeting" && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("Tarih/saat/yer", "Date/time/place")}</span>
+              <input value={when} onChange={(e) => setWhen(e.target.value)} className={inp} placeholder={t("18 Eylül, 20:00 · Zoom", "18 Sep, 20:00 · Zoom")} />
+            </label>
+            <label className="mt-6 flex items-center gap-2 text-sm text-ink-700">
+              <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} /> {t("Online buluşma", "Online meetup")}
+            </label>
           </div>
         )}
-        <div className="mt-3 text-xs text-ink-500">
-          {a.author ? `${a.author} · ${a.place} · ` : ""}{a.date}
+        {(kind === "photo" || kind === "announcement") && (
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Yer (isteğe bağlı)", "Place (optional)")}</span>
+            <input value={place} onChange={(e) => setPlace(e.target.value)} className={inp} placeholder={t("🇹🇷 Konya", "🇹🇷 Konya")} />
+          </label>
+        )}
+        <div className="mt-4 flex items-center gap-3">
+          <Button type="submit" disabled={busy}>{busy ? t("Gönderiliyor…", "Sending…") : t("Onaya gönder", "Submit for review")}</Button>
+          {msg && <span className="text-sm text-ink-600">{msg}</span>}
         </div>
-      </div>
-    </button>
-  );
+      </form>
+    );
+  }
 }
