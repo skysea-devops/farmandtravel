@@ -21,7 +21,7 @@ const CAT_EN: Record<string, string> = {
   "Off-grid yaşam": "Off-grid living",
   "İnziva merkezi": "Retreat center",
   "Çiftçilik okulu": "Farming school",
-  "Bağ & şaraphane": "Vineyard & winery",
+  "Hayvan barınağı": "Animal shelter",
 };
 
 const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
