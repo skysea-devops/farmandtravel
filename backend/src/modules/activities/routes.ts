@@ -9,7 +9,7 @@ export const activitiesRoutes = new Hono();
 
 // To submit an activity a member must be an established, well-regarded member:
 // enough accepted connections + a good rating from enough reviews.
-const MIN_CONNECTIONS = 5;
+const MIN_CONNECTIONS = 20;
 const MIN_RATING = 4; // average, out of 5
 const MIN_REVIEWS = 10;
 
