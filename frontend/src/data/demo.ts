@@ -89,7 +89,7 @@ export const CATEGORIES: Category[] = [
   { label: "Doğa & yaban hayatı", photo: U + "photo-1500595046743-cd271d694d30?w=600&q=80" },
   { label: "Gıda ormanı", photo: U + "photo-1441974231531-c6227db76b6e?w=600&q=80" },
   { label: "Off-grid yaşam", photo: U + "photo-1470071459604-3b5ec3a7fe05?w=600&q=80" },
-  { label: "İnziva merkezi", photo: U + "photo-1571896349842-33c89424de2d?w=600&q=80", addable: true },
+  { label: "İnziva merkezi", photo: "/community/cat-retreat.jpg", addable: true },
   { label: "Çiftçilik okulu", photo: U + "photo-1560493676-04071c5f467b?w=600&q=80", addable: true },
-  { label: "Bağ & şaraphane", photo: U + "photo-1507434965515-61970f2bd7c6?w=600&q=80", addable: true },
+  { label: "Hayvan barınağı", photo: "/community/cat-shelter.jpg", addable: true },
 ];
