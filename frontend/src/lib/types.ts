@@ -31,6 +31,16 @@ export interface ActivityItem {
   date: string; // ISO timestamp
 }
 
+export interface ActivityEligibility {
+  eligible: boolean;
+  canSubmit: boolean;
+  isAdmin: boolean;
+  connections: number;
+  ratingCount: number;
+  ratingAvg: number;
+  need: { connections: number; reviews: number; rating: number };
+}
+
 export interface Profile {
   id: string;
   status: "onboarding" | "profile_complete" | "active" | "suspended";

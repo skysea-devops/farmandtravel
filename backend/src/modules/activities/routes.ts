@@ -7,6 +7,43 @@ import { Forbidden, NotFound } from "../../shared/errors/index.js";
 
 export const activitiesRoutes = new Hono();
 
+// To submit an activity a member must be an established, well-regarded member:
+// enough accepted connections + a good rating from enough reviews.
+const MIN_CONNECTIONS = 5;
+const MIN_RATING = 4; // average, out of 5
+const MIN_REVIEWS = 10;
+
+async function eligibility(memberId: string) {
+  const [conn, rev] = await Promise.all([
+    query<{ n: string }>(
+      "SELECT count(*)::int AS n FROM connections WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'",
+      [memberId],
+    ),
+    query<{ n: string; avg: string }>(
+      "SELECT count(*)::int AS n, COALESCE(round(avg(rating)::numeric,1),0) AS avg FROM reviews WHERE reviewee_id=$1",
+      [memberId],
+    ),
+  ]);
+  const connections = Number(conn.rows[0]?.n ?? 0);
+  const ratingCount = Number(rev.rows[0]?.n ?? 0);
+  const ratingAvg = Number(rev.rows[0]?.avg ?? 0);
+  const eligible = connections >= MIN_CONNECTIONS && ratingCount >= MIN_REVIEWS && ratingAvg >= MIN_RATING;
+  return {
+    eligible,
+    connections,
+    ratingCount,
+    ratingAvg,
+    need: { connections: MIN_CONNECTIONS, reviews: MIN_REVIEWS, rating: MIN_RATING },
+  };
+}
+
+// Frontend uses this to show requirements + enable/disable the submit form.
+activitiesRoutes.get("/activities/eligibility", auth, async (c) => {
+  const { memberId, isAdmin } = currentUser(c);
+  const e = await eligibility(memberId);
+  return c.json({ ...e, isAdmin, canSubmit: isAdmin || e.eligible });
+});
+
 interface ActivityRow {
   id: string;
   kind: string;
@@ -75,8 +112,14 @@ const submitSchema = z.object({
   online: z.boolean().optional(),
 });
 activitiesRoutes.post("/activities", auth, async (c) => {
-  const { memberId } = currentUser(c);
+  const { memberId, isAdmin } = currentUser(c);
   const b = submitSchema.parse(await c.req.json());
+  if (!isAdmin) {
+    const elig = await eligibility(memberId);
+    if (!elig.eligible) {
+      return c.json({ error: "not_eligible", message: "Aktivite paylaşmak için yeterli bağlantı, puan ve yorumun yok.", ...elig }, 403);
+    }
+  }
   if (b.imageKey && !b.imageKey.startsWith(`gallery/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
   const name = await query<{ first_name: string | null }>("SELECT first_name FROM members WHERE id=$1", [memberId]);
   const r = await query<ActivityRow>(

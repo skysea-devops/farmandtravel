@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { activities as actApi, uploadImage } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
-import type { ActivityItem, ActivityKind } from "@/lib/types";
+import type { ActivityItem, ActivityKind, ActivityEligibility } from "@/lib/types";
 
 function useKindLabel() {
   const { t } = useI18n();
@@ -32,9 +32,13 @@ export function ActivitiesPage() {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [elig, setElig] = useState<ActivityEligibility | null>(null);
 
   const load = () => actApi.list<{ items: ActivityItem[] }>(50).then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (user) actApi.eligibility<ActivityEligibility>().then(setElig).catch(() => setElig(null));
+  }, [user]);
 
   const featured = useMemo(() => items.find((a) => a.pinned && a.youtubeId) ?? null, [items]);
   const rest = useMemo(() => items.filter((a) => a.id !== featured?.id), [items, featured]);
@@ -49,12 +53,29 @@ export function ActivitiesPage() {
             {t("Topluluktan paylaşımlar, online ve yüz yüze buluşmalar, duyurular ve podcast'ler.", "Posts from the community, online and in-person meetups, announcements and podcasts.")}
           </p>
         </div>
-        {user && (
+        {user && elig?.canSubmit && (
           <Button size="sm" onClick={() => setFormOpen((o) => !o)}>{formOpen ? t("Kapat", "Close") : t("＋ Aktivite paylaş", "＋ Share an activity")}</Button>
         )}
       </div>
 
-      {formOpen && user && <SubmitForm onDone={() => { setFormOpen(false); load(); }} />}
+      {user && elig && !elig.canSubmit && (
+        <div className="mb-8 rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-sand-100 p-4 text-sm text-ink-700">
+          <div className="mb-1 font-semibold">{t("Aktivite paylaşmak için", "To share an activity you need")}:</div>
+          <ul className="ml-4 list-disc space-y-0.5">
+            <li className={elig.connections >= elig.need.connections ? "text-forest-600" : ""}>
+              {t(`En az ${elig.need.connections} bağlantı`, `At least ${elig.need.connections} connections`)} — {t("sende", "you have")} {elig.connections}
+            </li>
+            <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : ""}>
+              {t(`En az ${elig.need.rating} ortalama puan`, `At least ${elig.need.rating} average rating`)} — {t("sende", "you have")} {elig.ratingAvg}
+            </li>
+            <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : ""}>
+              {t(`En az ${elig.need.reviews} yorum`, `At least ${elig.need.reviews} reviews`)} — {t("sende", "you have")} {elig.ratingCount}
+            </li>
+          </ul>
+        </div>
+      )}
+
+      {formOpen && user && elig?.canSubmit && <SubmitForm onDone={() => { setFormOpen(false); load(); }} />}
 
       {loading ? (
         <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
