@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { CATEGORIES } from "@/data/demo";
-import { ACTIVITIES, youtubeThumb } from "@/data/activities";
+import { youtubeThumb } from "@/data/activities";
 import { useI18n } from "@/lib/i18n";
+import { activities as actApi } from "@/lib/api";
+import type { ActivityItem } from "@/lib/types";
 import { BandSlider } from "./BandSlider";
 
 // Community photos for the "life on the farm" slider band.
@@ -41,7 +44,12 @@ export function HomePage() {
     { n: 3, ttl: t("Bağlan", "Connect"), d: t("İstek gönder; iki taraf da kabul edince iletişim açılır.", "Send a request; once both sides accept, contact opens up.") },
   ];
 
-  const homeActivities = ACTIVITIES.slice(0, 4).map((a) => ({
+  const [feed, setFeed] = useState<ActivityItem[]>([]);
+  useEffect(() => {
+    actApi.list<{ items: ActivityItem[] }>(4).then((r) => setFeed(r.items)).catch(() => {});
+  }, []);
+
+  const homeActivities = feed.slice(0, 4).map((a) => ({
     id: a.id,
     cap: a.title,
     who: a.author

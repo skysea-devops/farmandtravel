@@ -17,6 +17,7 @@ import { MesajlarPage } from "@/features/app/MesajlarPage";
 import { KaydedilenlerPage } from "@/features/app/KaydedilenlerPage";
 import { BildirimlerPage } from "@/features/app/BildirimlerPage";
 import { AbonelikPage } from "@/features/app/AbonelikPage";
+import { AktiviteOnayPage } from "@/features/app/AktiviteOnayPage";
 import { AyarlarPage } from "@/features/app/stubs";
 import { NotFoundPage } from "@/features/misc/NotFoundPage";
 import { RequireAuth } from "@/components/RequireAuth";
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="bildirimler" element={<BildirimlerPage />} />
         <Route path="profil" element={<ProfilePage />} />
         <Route path="abonelik" element={<AbonelikPage />} />
+        <Route path="aktivite-onay" element={<AktiviteOnayPage />} />
         <Route path="ayarlar" element={<AyarlarPage />} />
       </Route>
     </Routes>

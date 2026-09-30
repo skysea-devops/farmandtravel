@@ -14,10 +14,38 @@ export interface InferResponse {
   taxonomy: TaxonomyItem[];
 }
 
+export type ActivityKind = "video" | "photo" | "meeting" | "announcement";
+export interface ActivityItem {
+  id: string;
+  kind: ActivityKind;
+  title: string;
+  desc: string | null;
+  image: string | null;
+  youtubeId: string | null;
+  author: string | null;
+  place: string | null;
+  when: string | null;
+  online: boolean | null;
+  pinned: boolean;
+  status: "pending" | "published" | "rejected";
+  date: string; // ISO timestamp
+}
+
+export interface ActivityEligibility {
+  eligible: boolean;
+  canSubmit: boolean;
+  isAdmin: boolean;
+  connections: number;
+  ratingCount: number;
+  ratingAvg: number;
+  need: { connections: number; reviews: number; rating: number };
+}
+
 export interface Profile {
   id: string;
   status: "onboarding" | "profile_complete" | "active" | "suspended";
   plan?: "none" | "frontier" | "active";
+  isAdmin?: boolean;
   firstName: string | null;
   country: string | null;
   city: string | null;

@@ -48,10 +48,10 @@ membersRoutes.post("/onboarding/draft", auth, async (c) => {
 
 // Kendi profilim (owner projection)
 membersRoutes.get("/profile/me", auth, async (c) => {
-  const { memberId } = currentUser(c);
+  const { memberId, isAdmin } = currentUser(c);
   const me = await getMyProfile.execute(memberId);
   const [avatarUrl, photos] = await Promise.all([safeUrl(me.avatarKey), loadPhotos(memberId)]);
-  return c.json({ ...me, avatarUrl, photos });
+  return c.json({ ...me, avatarUrl, photos, isAdmin });
 });
 
 // Gallery: add a photo (key comes from a prior /uploads/presign upload).

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { NavLink, Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth";
-import { notifications as notifApi } from "@/lib/api";
+import { api, notifications as notifApi } from "@/lib/api";
+import type { Profile } from "@/lib/types";
 
 const nav = [
   { to: "/app", label: "Panel", icon: "🏠", end: true },
@@ -23,11 +24,19 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [unread, setUnread] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Refresh the bell badge on navigation (cheap, cached 30s).
   useEffect(() => {
     notifApi.unread<{ unread: number }>().then((r) => setUnread(r.unread)).catch(() => {});
   }, [location.pathname]);
+
+  // Show the admin link only to admins.
+  useEffect(() => {
+    api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
+  }, []);
+
+  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: "Aktivite onayları", icon: "✅" }] : [];
 
   const item = ({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) => (
     <NavLink
@@ -59,6 +68,7 @@ export function AppLayout() {
         </Link>
         <nav className="flex flex-1 flex-col gap-1">
           {nav.map(item)}
+          {adminNav.map(item)}
           <div className="mt-auto flex flex-col gap-1 border-t border-white/10 pt-3">
             {navBottom.map(item)}
           </div>
@@ -88,7 +98,7 @@ export function AppLayout() {
           <button onClick={() => { logout(); navigate("/"); }} className="ml-auto text-sm text-moss-100">Çıkış</button>
         </header>
         <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
-          {nav.map((n) => (
+          {[...nav, ...adminNav].map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}
               className={({ isActive }) => cn("whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium", isActive ? "bg-forest-600 text-white" : "text-ink-700 hover:bg-sand-100")}>
               {n.label}
