@@ -7,7 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { BandSlider } from "./BandSlider";
 
 // Community photos for the "life on the farm" slider band.
-const BAND_IMAGES = ["/community/s1.jpg", "/community/s2.jpg", "/community/s3.jpg", "/community/s4.jpg", "/community/s5.jpg", "/community/s6.jpg", "/community/s7.jpg", "/community/s8.jpg", "/community/s9.jpg"];
+const BAND_IMAGES = ["/community/s1.jpg", "/community/s2.jpg", "/community/s3.jpg", "/community/s4.jpg", "/community/s5.jpg", "/community/s6.jpg", "/community/s7.jpg", "/community/s8.jpg", "/community/s9.jpg", "/community/s10.jpg", "/community/s11.jpg", "/community/s12.jpg"];
 
 const U = "https://images.unsplash.com/";
 
