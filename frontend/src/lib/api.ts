@@ -152,7 +152,7 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
 export const activities = {
   list: <T>(limit = 20, offset = 0) => api.getCached<T>(`/activities?limit=${limit}&offset=${offset}`, 60_000),
   eligibility: <T>() => api.get<T>("/activities/eligibility"),
-  submit: async (body: unknown) => { const r = await api.post("/activities", body); api.invalidate(); return r; },
+  submit: async <T>(body: unknown) => { const r = await api.post<T>("/activities", body); api.invalidate(); return r; },
   mine: <T>() => api.get<T>("/activities/mine"),
   adminList: <T>(status = "pending") => api.get<T>(`/admin/activities?status=${status}`),
   approve: async (id: string) => { const r = await api.post(`/admin/activities/${id}/approve`); api.invalidate(); return r; },

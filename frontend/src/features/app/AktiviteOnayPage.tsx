@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { api, activities as actApi } from "@/lib/api";
+import { ActivityForm } from "@/features/activities/ActivityForm";
 import type { ActivityItem, Profile } from "@/lib/types";
 
 const KIND: Record<string, string> = {
@@ -12,6 +13,7 @@ export function AktiviteOnayPage() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = () =>
     actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
@@ -48,8 +50,15 @@ export function AktiviteOnayPage() {
 
   return (
     <div>
-      <h1 className="font-display mb-1 text-2xl font-semibold">Aktivite onayları</h1>
-      <p className="mb-5 text-sm text-ink-500">Üyelerin gönderdiği aktiviteleri onayla veya reddet. Onaylananlar sitede yayınlanır.</p>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display mb-1 text-2xl font-semibold">Aktivite onayları</h1>
+          <p className="text-sm text-ink-500">Üyelerin gönderdiği aktiviteleri onayla veya reddet. Kendi oluşturduğun aktiviteler doğrudan yayınlanır.</p>
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
+      </div>
+
+      {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
 
       {items.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">

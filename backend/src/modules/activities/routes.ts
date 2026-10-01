@@ -122,10 +122,13 @@ activitiesRoutes.post("/activities", auth, async (c) => {
   }
   if (b.imageKey && !b.imageKey.startsWith(`gallery/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
   const name = await query<{ first_name: string | null }>("SELECT first_name FROM members WHERE id=$1", [memberId]);
+  // Admins create & publish directly; members' submissions go to the approval queue.
+  const status = isAdmin ? "published" : "pending";
+  const publishedAt = isAdmin ? new Date().toISOString() : null;
   const r = await query<ActivityRow>(
-    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, online, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending') RETURNING ${COLS}`,
-    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, b.imageKey ?? null, b.youtubeId ?? null, b.place ?? null, b.when ?? null, b.online ?? null],
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, online, status, published_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, b.imageKey ?? null, b.youtubeId ?? null, b.place ?? null, b.when ?? null, b.online ?? null, status, publishedAt],
   );
   return c.json(await toDto(r.rows[0]!));
 });
