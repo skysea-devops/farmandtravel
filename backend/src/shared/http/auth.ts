@@ -5,6 +5,7 @@ import type { Context, Next } from "hono";
 import { env } from "../config/env.js";
 import { query } from "../db/pool.js";
 import { Unauthorized, Forbidden } from "../errors/index.js";
+import { provisionWelcome } from "../../modules/messages/official.js";
 
 export type AuthUser = { memberId: string; sub: string; groups: string[]; isAdmin: boolean };
 
@@ -23,15 +24,18 @@ const FRONTIER_CUTOFF = Date.parse("2026-10-10T00:00:00+03:00");
 // Idempotent get-or-create for the member row keyed by cognito_sub. Uses an upsert
 // (not SELECT-then-INSERT) so two parallel first requests from a brand-new user
 // can't both try to INSERT and hit the unique(cognito_sub) violation.
-async function ensureMember(sub: string): Promise<{ id: string; status: string }> {
+async function ensureMember(sub: string, lang: "tr" | "en"): Promise<{ id: string; status: string }> {
   const plan = Date.now() < FRONTIER_CUTOFF ? "frontier" : "none";
-  const r = await query<{ id: string; status: string }>(
+  // (xmax = 0) is true only for a fresh INSERT (not the ON CONFLICT update path).
+  const r = await query<{ id: string; status: string; inserted: boolean }>(
     `INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2)
        ON CONFLICT (cognito_sub) DO UPDATE SET cognito_sub = EXCLUDED.cognito_sub
-     RETURNING id, status`,
+     RETURNING id, status, (xmax = 0) AS inserted`,
     [sub, plan],
   );
-  return r.rows[0]!;
+  const row = r.rows[0]!;
+  if (row.inserted) await provisionWelcome(row.id, lang); // first login → welcome message
+  return { id: row.id, status: row.status };
 }
 
 export async function auth(c: Context, next: Next) {
@@ -51,7 +55,10 @@ export async function auth(c: Context, next: Next) {
   }
 
   if (!sub) throw Unauthorized();
-  const member = await ensureMember(sub);
+  // Welcome-message language from the calling site (reconnectwithsoil.com → English).
+  const origin = c.req.header("origin") ?? c.req.header("referer") ?? "";
+  const lang = /reconnectwithsoil\.com/.test(origin) ? "en" : "tr";
+  const member = await ensureMember(sub, lang);
   // Suspended members are blocked at the door for every authenticated route.
   if (member.status === "suspended") throw Forbidden("Hesabın askıya alındı");
   c.set("user", { memberId: member.id, sub, groups, isAdmin: groups.includes("admin") } satisfies AuthUser);

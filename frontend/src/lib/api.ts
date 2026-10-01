@@ -159,6 +159,11 @@ export const activities = {
   reject: async (id: string) => { const r = await api.post(`/admin/activities/${id}/reject`); api.invalidate(); return r; },
 };
 
+export const admin = {
+  // Broadcast a message from the official account to all members.
+  broadcast: (body: string) => api.post<{ recipients: number }>("/admin/broadcast", { body }),
+};
+
 export const billing = {
   // Returns the hosted checkout URL to redirect to (or throws on 503 when unconfigured).
   checkout: (market: "tr" | "intl") => api.post<{ url: string }>("/billing/checkout", { market }),

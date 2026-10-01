@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { api, activities as actApi } from "@/lib/api";
+import { api, activities as actApi, admin as adminApi } from "@/lib/api";
 import { ActivityForm } from "@/features/activities/ActivityForm";
 import type { ActivityItem, Profile } from "@/lib/types";
 
@@ -14,6 +14,24 @@ export function AktiviteOnayPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [bcBody, setBcBody] = useState("");
+  const [bcBusy, setBcBusy] = useState(false);
+  const [bcMsg, setBcMsg] = useState<string | null>(null);
+
+  async function sendBroadcast(e: React.FormEvent) {
+    e.preventDefault();
+    if (bcBody.trim().length < 2) return;
+    setBcBusy(true); setBcMsg(null);
+    try {
+      const r = await adminApi.broadcast(bcBody.trim());
+      setBcBody("");
+      setBcMsg(`${r.recipients} kişiye gönderildi.`);
+    } catch {
+      setBcMsg("Gönderilemedi.");
+    } finally {
+      setBcBusy(false);
+    }
+  }
 
   const load = () =>
     actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
@@ -60,6 +78,20 @@ export function AktiviteOnayPage() {
 
       {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
 
+      {/* Herkese duyuru — resmi "Toprakla Yeniden" hesabından mesaj */}
+      <form onSubmit={sendBroadcast} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+        <h2 className="font-display mb-1 text-lg font-semibold">📣 Herkese mesaj gönder</h2>
+        <p className="mb-3 text-sm text-ink-500">Tüm üyelere "Toprakla Yeniden" adıyla mesaj gider; Mesajlar bölümünde görünür.</p>
+        <textarea value={bcBody} onChange={(e) => setBcBody(e.target.value)} rows={3} maxLength={4000}
+          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+          placeholder="Topluluğa iletmek istediğin mesaj…" />
+        <div className="mt-3 flex items-center gap-3">
+          <Button type="submit" disabled={bcBusy}>{bcBusy ? "Gönderiliyor…" : "Herkese gönder"}</Button>
+          {bcMsg && <span className="text-sm text-ink-600">{bcMsg}</span>}
+        </div>
+      </form>
+
+      <h2 className="font-display mb-3 text-lg font-semibold">Onay bekleyenler</h2>
       {items.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
           Onay bekleyen aktivite yok. 🎉
