@@ -18,7 +18,7 @@ import { KaydedilenlerPage } from "@/features/app/KaydedilenlerPage";
 import { BildirimlerPage } from "@/features/app/BildirimlerPage";
 import { AbonelikPage } from "@/features/app/AbonelikPage";
 import { AktiviteOnayPage } from "@/features/app/AktiviteOnayPage";
-import { AyarlarPage } from "@/features/app/stubs";
+import { AyarlarPage } from "@/features/app/AyarlarPage";
 import { NotFoundPage } from "@/features/misc/NotFoundPage";
 import { RequireAuth } from "@/components/RequireAuth";
 

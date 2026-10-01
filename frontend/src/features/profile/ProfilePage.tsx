@@ -17,13 +17,48 @@ export function ProfilePage() {
   const avatarInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
 
+  // Editable private contact details (revealed only on an accepted connection).
+  const emptyContact = { lastName: "", contactEmail: "", phone: "", employer: "", addressExact: "", instagram: "", website: "" };
+  const [contact, setContact] = useState(emptyContact);
+  const [cBusy, setCBusy] = useState(false);
+  const [cMsg, setCMsg] = useState<string | null>(null);
+
   function load() {
     api.getCached<Profile>("/profile/me")
-      .then(setP)
+      .then((data) => {
+        setP(data);
+        const s = (data.socials ?? {}) as Record<string, string>;
+        setContact({
+          lastName: data.lastName ?? "", contactEmail: data.contactEmail ?? "", phone: data.phone ?? "",
+          employer: data.employer ?? "", addressExact: data.addressExact ?? "",
+          instagram: s.instagram ?? "", website: s.website ?? "",
+        });
+      })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }
   useEffect(load, []);
+
+  async function saveContact(e: React.FormEvent) {
+    e.preventDefault();
+    setCBusy(true); setCMsg(null);
+    try {
+      await api.put("/profile", {
+        lastName: contact.lastName || undefined,
+        contactEmail: contact.contactEmail || undefined,
+        phone: contact.phone || undefined,
+        employer: contact.employer || undefined,
+        addressExact: contact.addressExact || undefined,
+        socials: { instagram: contact.instagram, website: contact.website },
+      });
+      api.invalidate("/profile/me");
+      setCMsg("Kaydedildi.");
+    } catch (e) {
+      setCMsg(e instanceof Error ? e.message : "Kaydedilemedi.");
+    } finally {
+      setCBusy(false);
+    }
+  }
 
   async function onAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -122,10 +157,39 @@ export function ProfilePage() {
         );
       })}
 
+      <Block title="İletişim bilgileri">
+        <p className="mb-3 text-xs text-ink-500">Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.</p>
+        <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
+          <CField label="Soyad" value={contact.lastName} onChange={(v) => setContact({ ...contact, lastName: v })} />
+          <CField label="İletişim e-postası" type="email" value={contact.contactEmail} onChange={(v) => setContact({ ...contact, contactEmail: v })} />
+          <CField label="Telefon" value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
+          <CField label="İş yeri / çiftlik" value={contact.employer} onChange={(v) => setContact({ ...contact, employer: v })} />
+          <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder="@kullanici" />
+          <CField label="Web sitesi" value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
+          <div className="sm:col-span-2">
+            <CField label="Açık adres" value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
+          </div>
+          <div className="flex items-center gap-3 sm:col-span-2">
+            <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? "Kaydediliyor…" : "Kaydet"}</Button>
+            {cMsg && <span className="text-sm text-ink-600">{cMsg}</span>}
+          </div>
+        </form>
+      </Block>
+
       <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
         👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.
       </div>
     </div>
+  );
+}
+
+const cinp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
+function CField({ label, value, onChange, type, placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block font-medium text-ink-700">{label}</span>
+      <input type={type ?? "text"} className={cinp} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </label>
   );
 }
 

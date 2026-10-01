@@ -88,6 +88,18 @@ membersRoutes.delete("/profile/photos/:id", auth, async (c) => {
   return c.json({ ok: true });
 });
 
+// Hesabı sil: üyeyi ve (CASCADE ile) tüm bağlı kayıtlarını kaldır; S3 görsellerini
+// best-effort temizle. Cognito kullanıcısı tarayıcıda (deleteUser) silinir.
+membersRoutes.delete("/profile", auth, async (c) => {
+  const { memberId } = currentUser(c);
+  const photos = await query<{ s3_key: string }>("SELECT s3_key FROM member_photos WHERE member_id=$1", [memberId]);
+  const me = await query<{ avatar_key: string | null }>("SELECT avatar_key FROM members WHERE id=$1", [memberId]);
+  await query("DELETE FROM members WHERE id=$1", [memberId]); // CASCADE handles children
+  const keys = [...photos.rows.map((p) => p.s3_key), me.rows[0]?.avatar_key].filter(Boolean) as string[];
+  await Promise.all(keys.map((k) => deleteObject(k).catch(() => {})));
+  return c.json({ ok: true });
+});
+
 // Profil oluştur/güncelle (O3)
 const profileSchema = z.object({
   firstName: z.string().min(1).optional(),

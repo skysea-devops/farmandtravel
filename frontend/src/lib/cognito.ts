@@ -145,6 +145,30 @@ export function signOut(): void {
   getPool().getCurrentUser()?.signOut();
 }
 
+// --- Change password (while logged in) ---
+export function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const user = getPool().getCurrentUser();
+    if (!user) return reject(new Error("Oturum bulunamadı."));
+    user.getSession((err: Error | null) => {
+      if (err) return reject(normalize(err));
+      user.changePassword(oldPassword, newPassword, (e) => (e ? reject(normalize(e)) : resolve()));
+    });
+  });
+}
+
+// --- Delete the current Cognito user (irreversible) ---
+export function deleteAccount(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const user = getPool().getCurrentUser();
+    if (!user) return reject(new Error("Oturum bulunamadı."));
+    user.getSession((err: Error | null) => {
+      if (err) return reject(normalize(err));
+      user.deleteUser((e) => (e ? reject(normalize(e)) : resolve()));
+    });
+  });
+}
+
 // --- Forgot password: send a reset code to the user's email ---
 export function forgotPassword(email: string): Promise<void> {
   return new Promise((resolve, reject) => {
