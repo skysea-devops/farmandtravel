@@ -167,7 +167,7 @@ export function ProfilePage() {
           <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder="@kullanici" />
           <CField label="Web sitesi" value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
           <div className="sm:col-span-2">
-            <CField label="Açık adres" value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
+            <CField label="Adres" value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
           </div>
           <div className="flex items-center gap-3 sm:col-span-2">
             <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? "Kaydediliyor…" : "Kaydet"}</Button>

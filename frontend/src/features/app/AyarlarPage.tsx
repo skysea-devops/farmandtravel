@@ -93,7 +93,7 @@ export function AyarlarPage() {
           <Row label={t("İş yeri / çiftlik", "Workplace / farm")} value={p?.employer ?? ""} />
           <Row label="Instagram" value={socials.instagram ?? ""} />
           <Row label={t("Web sitesi", "Website")} value={socials.website ?? ""} />
-          <div className="col-span-2"><Row label={t("Açık adres", "Full address")} value={p?.addressExact ?? ""} /></div>
+          <div className="col-span-2"><Row label={t("Adres", "Address")} value={p?.addressExact ?? ""} /></div>
         </div>
         <p className="mt-4 text-xs text-ink-500">
           {t("Bu bilgiler profil sayfandan düzenlenir. İletişim bilgilerin yalnızca karşılıklı bağlantı kurduğun kişilere görünür.", "These are edited on your profile page. Contact details are shown only to people you've mutually connected with.")}
