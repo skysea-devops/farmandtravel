@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
@@ -60,7 +61,7 @@ export function SignUpPage() {
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inp} placeholder="ornek@eposta.com" />
               </Field>
               <Field label={t("Şifre", "Password")} hint={t("En az 8 karakter; büyük harf, küçük harf ve rakam içermeli.", "At least 8 characters, with upper- and lower-case letters and a number.")}>
-                <input type="password" required value={pw} onChange={(e) => setPw(e.target.value)} className={inp} placeholder="••••••••" />
+                <PasswordInput required value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
               </Field>
               <label className="mb-4 flex items-start gap-2 text-[13px] text-ink-700">
                 <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-1" />
