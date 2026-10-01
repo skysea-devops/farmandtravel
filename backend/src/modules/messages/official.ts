@@ -2,10 +2,15 @@
 // Reuses the normal connection+message model so these land in each member's Mesajlar.
 import { query } from "../../shared/db/pool.js";
 
-const WELCOME =
+const WELCOME_TR =
   "Aramıza hoş geldin! 🌱 Toprakla Yeniden topluluğuna katıldığın için çok mutluyuz. " +
   "Profilini tamamla, haritada çevreni keşfet ve sana uygun kişilerle bağlantı kur. " +
   "Aklına takılan olursa buradan bize yazabilirsin. İyi ki buradasın!";
+
+const WELCOME_EN =
+  "Welcome! 🌱 We're so glad you've joined the Reconnect with Soil community. " +
+  "Complete your profile, explore the map around you, and connect with the right people. " +
+  "If anything comes up, you can write to us right here. Great to have you!";
 
 let officialId: string | null = null;
 async function getOfficialId(): Promise<string | null> {
@@ -16,7 +21,7 @@ async function getOfficialId(): Promise<string | null> {
 }
 
 // Create the official↔member accepted connection + welcome message (once, on signup).
-export async function provisionWelcome(memberId: string): Promise<void> {
+export async function provisionWelcome(memberId: string, lang: "tr" | "en" = "tr"): Promise<void> {
   try {
     const off = await getOfficialId();
     if (!off || off === memberId) return;
@@ -26,7 +31,7 @@ export async function provisionWelcome(memberId: string): Promise<void> {
       [off, memberId],
     );
     const cid = conn.rows[0]!.id;
-    await query("INSERT INTO messages (connection_id, sender_id, body) VALUES ($1,$2,$3)", [cid, off, WELCOME]);
+    await query("INSERT INTO messages (connection_id, sender_id, body) VALUES ($1,$2,$3)", [cid, off, lang === "en" ? WELCOME_EN : WELCOME_TR]);
     await query(
       "INSERT INTO notifications (user_id, actor_id, type, data) VALUES ($1,$2,'message',jsonb_build_object('connectionId',$3::text))",
       [memberId, off, cid],
