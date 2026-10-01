@@ -6,10 +6,10 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
 export function LoginPage() {
-  const { login, confirmSignUp, resendCode, forgotPassword, confirmForgotPassword } = useAuth();
+  const { login, completeNewPassword, confirmSignUp, resendCode, forgotPassword, confirmForgotPassword } = useAuth();
   const { t } = useI18n();
   const nav = useNavigate();
-  const [phase, setPhase] = useState<"login" | "confirm" | "forgot">("login");
+  const [phase, setPhase] = useState<"login" | "confirm" | "forgot" | "newpass">("login");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [code, setCode] = useState("");
@@ -53,8 +53,13 @@ export function LoginPage() {
       await login(email, pw);
       nav("/app");
     } catch (e) {
-      // Hesap doğrulanmamışsa kod adımına geç ve yeni kod gönder.
-      if ((e as { code?: string }).code === "UserNotConfirmedException") {
+      const code = (e as { code?: string }).code;
+      // Admin tarafından geçici şifreyle oluşturulan hesap: yeni şifre belirlet.
+      if (code === "NewPasswordRequired") {
+        setInfo(t("Bu ilk girişin. Lütfen yeni bir şifre belirle.", "This is your first login. Please set a new password."));
+        setPhase("newpass");
+      } else if (code === "UserNotConfirmedException") {
+        // Hesap doğrulanmamışsa kod adımına geç ve yeni kod gönder.
         try { await resendCode(email); } catch { /* ignore */ }
         setInfo(t(`Hesabın doğrulanmamış. ${email} adresine yeni kod gönderdik.`, `Your account isn't verified. We sent a new code to ${email}.`));
         setPhase("confirm");
@@ -62,6 +67,16 @@ export function LoginPage() {
         setErr(msg(e));
       }
     } finally { setBusy(false); }
+  }
+
+  async function submitNewPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPw.length < 8) return;
+    setBusy(true); setErr(null);
+    try {
+      await completeNewPassword(email, pw, newPw); // pw = temporary password entered on login
+      nav("/app");
+    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
 
   async function submitCode(e: React.FormEvent) {
@@ -126,6 +141,24 @@ export function LoginPage() {
                 <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? t("Sıfırlanıyor…", "Resetting…") : t("Şifreyi sıfırla ve giriş yap →", "Reset and log in →")}</Button>
               </form>
             )}
+            <div className="mt-4 text-center text-sm">
+              <button onClick={() => setPhase("login")} className="text-ink-500 hover:text-ink-900">{t("← Girişe dön", "← Back to login")}</button>
+            </div>
+          </>
+        ) : phase === "newpass" ? (
+          <>
+            <h1 className="font-display mb-1 text-2xl font-semibold">{t("Yeni şifre belirle", "Set a new password")}</h1>
+            <p className="mb-5 text-sm text-ink-500">{t("Hesabın için kalıcı bir şifre belirle.", "Set a permanent password for your account.")}</p>
+            {info && <Alert kind="info">{info}</Alert>}
+            {err && <Alert>{err}</Alert>}
+            <form onSubmit={submitNewPassword}>
+              <div className="mb-4">
+                <label className="mb-1.5 block text-[13px] font-semibold text-ink-700">{t("Yeni şifre", "New password")}</label>
+                <PasswordInput required value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
+                <p className="mt-1.5 text-xs text-ink-500">{t("En az 8 karakter; büyük harf, küçük harf ve rakam içermeli.", "At least 8 characters, with upper- and lower-case letters and a number.")}</p>
+              </div>
+              <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? t("Kaydediliyor…", "Saving…") : t("Şifreyi belirle ve giriş yap →", "Set password and log in →")}</Button>
+            </form>
             <div className="mt-4 text-center text-sm">
               <button onClick={() => setPhase("login")} className="text-ink-500 hover:text-ink-900">{t("← Girişe dön", "← Back to login")}</button>
             </div>
