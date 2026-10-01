@@ -5,6 +5,7 @@ import type { Context, Next } from "hono";
 import { env } from "../config/env.js";
 import { query } from "../db/pool.js";
 import { Unauthorized, Forbidden } from "../errors/index.js";
+import { provisionWelcome } from "../../modules/messages/official.js";
 
 export type AuthUser = { memberId: string; sub: string; groups: string[]; isAdmin: boolean };
 
@@ -25,13 +26,16 @@ const FRONTIER_CUTOFF = Date.parse("2026-10-10T00:00:00+03:00");
 // can't both try to INSERT and hit the unique(cognito_sub) violation.
 async function ensureMember(sub: string): Promise<{ id: string; status: string }> {
   const plan = Date.now() < FRONTIER_CUTOFF ? "frontier" : "none";
-  const r = await query<{ id: string; status: string }>(
+  // (xmax = 0) is true only for a fresh INSERT (not the ON CONFLICT update path).
+  const r = await query<{ id: string; status: string; inserted: boolean }>(
     `INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2)
        ON CONFLICT (cognito_sub) DO UPDATE SET cognito_sub = EXCLUDED.cognito_sub
-     RETURNING id, status`,
+     RETURNING id, status, (xmax = 0) AS inserted`,
     [sub, plan],
   );
-  return r.rows[0]!;
+  const row = r.rows[0]!;
+  if (row.inserted) await provisionWelcome(row.id); // first login → welcome message
+  return { id: row.id, status: row.status };
 }
 
 export async function auth(c: Context, next: Next) {

@@ -1,11 +1,20 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser } from "../../shared/http/auth.js";
+import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
+import { broadcast } from "./official.js";
 
 export const messagesRoutes = new Hono();
+
+// Admin: broadcast a message from the official "Toprakla Yeniden" account to everyone.
+const broadcastSchema = z.object({ body: z.string().min(1).max(4000) });
+messagesRoutes.post("/admin/broadcast", auth, requireAdmin, async (c) => {
+  const { body } = broadcastSchema.parse(await c.req.json());
+  const recipients = await broadcast(body);
+  return c.json({ ok: true, recipients });
+});
 
 // Returns the other member id if `me` is part of this ACCEPTED connection, else null.
 async function participant(me: string, connectionId: string): Promise<string | null> {
