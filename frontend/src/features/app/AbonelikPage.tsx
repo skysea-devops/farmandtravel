@@ -75,8 +75,8 @@ export function AbonelikPage() {
 
       <p className="mt-4 text-xs text-ink-500">
         {t(
-          "3 Ekim 2026'ya kadar katılan herkes Frontier üye olarak ücretsizdir.",
-          "Everyone who joins before 3 October 2026 is a free Frontier member.",
+          "10 Ekim 2026'ya kadar katılan herkes Frontier üye olarak ücretsizdir.",
+          "Everyone who joins before 10 October 2026 is a free Frontier member.",
         )}
       </p>
     </div>

@@ -121,3 +121,23 @@ export async function getIdToken(): Promise<string | null> {
 export function signOut(): void {
   getPool().getCurrentUser()?.signOut();
 }
+
+// --- Forgot password: send a reset code to the user's email ---
+export function forgotPassword(email: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    new CognitoUser({ Username: email, Pool: getPool() }).forgotPassword({
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(normalize(err)),
+    });
+  });
+}
+
+// --- Confirm the reset: set a new password with the emailed code ---
+export function confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    new CognitoUser({ Username: email, Pool: getPool() }).confirmPassword(code, newPassword, {
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(normalize(err)),
+    });
+  });
+}

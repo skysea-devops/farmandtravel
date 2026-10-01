@@ -18,7 +18,7 @@ function parseGroups(raw: unknown): string[] {
 
 // Everyone who joins before this date is grandfathered as a free "frontier" member
 // (the initial community). Later sign-ups start on 'none' and must subscribe.
-const FRONTIER_CUTOFF = Date.parse("2026-10-03T00:00:00+03:00");
+const FRONTIER_CUTOFF = Date.parse("2026-10-10T00:00:00+03:00");
 
 // Idempotent get-or-create for the member row keyed by cognito_sub. Uses an upsert
 // (not SELECT-then-INSERT) so two parallel first requests from a brand-new user
