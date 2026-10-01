@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as cognito from "@/lib/cognito";
-import { setCacheScope } from "@/lib/api";
+import { api, setCacheScope } from "@/lib/api";
 
 // Cognito-backed auth. `ready` is false until the stored session is restored on
 // first load, so guards don't bounce a signed-in user to /giris on refresh.
@@ -15,6 +15,8 @@ interface AuthCtx {
   completeNewPassword: (email: string, tempPassword: string, newPassword: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => void;
 }
 
@@ -56,6 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
   };
 
+  const changePassword = (oldPassword: string, newPassword: string) => cognito.changePassword(oldPassword, newPassword);
+
+  // Purge server data first (while the token is still valid), then delete the Cognito
+  // user, then clear local state.
+  const deleteAccount = async () => {
+    await api.del("/profile");
+    await cognito.deleteAccount();
+    setCacheScope(null);
+    setUser(null);
+  };
+
   const logout = () => {
     cognito.signOut();
     setCacheScope(null); // clears the in-memory GET cache
@@ -63,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, ready, signUp, confirmSignUp, resendCode, login, completeNewPassword, forgotPassword, confirmForgotPassword, logout }}>
+    <Ctx.Provider value={{ user, ready, signUp, confirmSignUp, resendCode, login, completeNewPassword, forgotPassword, confirmForgotPassword, changePassword, deleteAccount, logout }}>
       {children}
     </Ctx.Provider>
   );

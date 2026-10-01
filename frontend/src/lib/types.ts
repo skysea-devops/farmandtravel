@@ -53,6 +53,12 @@ export interface Profile {
   headline: string | null;
   bio: string | null;
   avatarKey: string | null;
+  lastName?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  socials?: Record<string, unknown> | null;
+  employer?: string | null;
+  addressExact?: string | null;
   profile: Record<string, unknown>;
   avatarUrl?: string | null;
   photos?: Photo[];
