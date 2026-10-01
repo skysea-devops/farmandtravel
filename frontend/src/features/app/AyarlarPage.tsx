@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { api } from "@/lib/api";
@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 
-const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
 const Card = ({ children }: { children: React.ReactNode }) => (
   <section className="mb-6 rounded-[var(--radius-lg)] border border-border bg-surface p-6">{children}</section>
 );
@@ -17,46 +16,24 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
     {children}
   </label>
 );
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <div className="text-xs text-ink-500">{label}</div>
+    <div className="text-sm text-ink-900">{value || "—"}</div>
+  </div>
+);
 
 export function AyarlarPage() {
   const { t } = useI18n();
   const { changePassword, deleteAccount } = useAuth();
   const nav = useNavigate();
 
-  // --- contact info ---
   const [p, setP] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  const [savingContact, setSavingContact] = useState(false);
 
   useEffect(() => {
-    api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
+    api.getCached<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
-
-  const set = (patch: Partial<Profile>) => setP((cur) => (cur ? { ...cur, ...patch } : cur));
-  const socials = (p?.socials ?? {}) as Record<string, string>;
-
-  async function saveContact(e: React.FormEvent) {
-    e.preventDefault();
-    if (!p) return;
-    setSavingContact(true); setSavedMsg(null);
-    try {
-      await api.put("/profile", {
-        lastName: p.lastName ?? undefined,
-        contactEmail: p.contactEmail || undefined,
-        phone: p.phone ?? undefined,
-        employer: p.employer ?? undefined,
-        addressExact: p.addressExact ?? undefined,
-        socials,
-      });
-      api.invalidate("/profile/me");
-      setSavedMsg(t("Kaydedildi.", "Saved."));
-    } catch {
-      setSavedMsg(t("Kaydedilemedi.", "Couldn't save."));
-    } finally {
-      setSavingContact(false);
-    }
-  }
 
   // --- change password ---
   const [oldPw, setOldPw] = useState("");
@@ -95,45 +72,32 @@ export function AyarlarPage() {
 
   if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
 
+  const socials = (p?.socials ?? {}) as Record<string, string>;
+
   return (
     <div className="max-w-2xl">
       <h1 className="font-display mb-5 text-2xl font-semibold">{t("Ayarlar", "Settings")}</h1>
 
-      {/* İletişim bilgileri */}
+      {/* Hesap bilgileri — salt okunur; düzenleme Profil sayfasında */}
       <Card>
-        <h2 className="font-display mb-1 text-lg font-semibold">{t("İletişim bilgileri", "Contact details")}</h2>
-        <p className="mb-4 text-sm text-ink-500">
-          {t("Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.", "These are shown only to people you've mutually connected with.")}
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold">{t("Hesap bilgileri", "Account info")}</h2>
+          <Link to="/app/profil" className="text-sm text-forest-600 hover:underline">{t("Profilde düzenle", "Edit in profile")}</Link>
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <Row label={t("Ad", "First name")} value={p?.firstName ?? ""} />
+          <Row label={t("Şehir / Ülke", "City / Country")} value={[p?.city, p?.country].filter(Boolean).join(", ")} />
+          <Row label={t("Soyad", "Last name")} value={p?.lastName ?? ""} />
+          <Row label={t("İletişim e-postası", "Contact email")} value={p?.contactEmail ?? ""} />
+          <Row label={t("Telefon", "Phone")} value={p?.phone ?? ""} />
+          <Row label={t("İş yeri / çiftlik", "Workplace / farm")} value={p?.employer ?? ""} />
+          <Row label="Instagram" value={socials.instagram ?? ""} />
+          <Row label={t("Web sitesi", "Website")} value={socials.website ?? ""} />
+          <div className="col-span-2"><Row label={t("Açık adres", "Full address")} value={p?.addressExact ?? ""} /></div>
+        </div>
+        <p className="mt-4 text-xs text-ink-500">
+          {t("Bu bilgiler profil sayfandan düzenlenir. İletişim bilgilerin yalnızca karşılıklı bağlantı kurduğun kişilere görünür.", "These are edited on your profile page. Contact details are shown only to people you've mutually connected with.")}
         </p>
-        <form onSubmit={saveContact} className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("Soyad", "Last name")}>
-            <input className={inp} value={p?.lastName ?? ""} onChange={(e) => set({ lastName: e.target.value })} />
-          </Field>
-          <Field label={t("İletişim e-postası", "Contact email")}>
-            <input type="email" className={inp} value={p?.contactEmail ?? ""} onChange={(e) => set({ contactEmail: e.target.value })} />
-          </Field>
-          <Field label={t("Telefon", "Phone")}>
-            <input className={inp} value={p?.phone ?? ""} onChange={(e) => set({ phone: e.target.value })} />
-          </Field>
-          <Field label={t("İş yeri / çiftlik", "Workplace / farm")}>
-            <input className={inp} value={p?.employer ?? ""} onChange={(e) => set({ employer: e.target.value })} />
-          </Field>
-          <Field label="Instagram">
-            <input className={inp} value={socials.instagram ?? ""} onChange={(e) => set({ socials: { ...socials, instagram: e.target.value } })} placeholder="@kullanici" />
-          </Field>
-          <Field label={t("Web sitesi", "Website")}>
-            <input className={inp} value={socials.website ?? ""} onChange={(e) => set({ socials: { ...socials, website: e.target.value } })} placeholder="https://" />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label={t("Açık adres", "Full address")}>
-              <input className={inp} value={p?.addressExact ?? ""} onChange={(e) => set({ addressExact: e.target.value })} />
-            </Field>
-          </div>
-          <div className="flex items-center gap-3 sm:col-span-2">
-            <Button type="submit" disabled={savingContact}>{savingContact ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
-            {savedMsg && <span className="text-sm text-ink-600">{savedMsg}</span>}
-          </div>
-        </form>
       </Card>
 
       {/* Şifre değiştir */}
