@@ -12,6 +12,7 @@ interface AuthCtx {
   confirmSignUp: (email: string, code: string) => Promise<void>;
   resendCode: (email: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  completeNewPassword: (email: string, tempPassword: string, newPassword: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   logout: () => void;
@@ -39,6 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = (email: string, password: string) => cognito.signUp(email, password);
   const confirmSignUp = (email: string, code: string) => cognito.confirmSignUp(email, code);
   const resendCode = (email: string) => cognito.resendCode(email);
+  const completeNewPassword = async (email: string, tempPassword: string, newPassword: string) => {
+    const session = await cognito.completeNewPassword(email, tempPassword, newPassword);
+    const u = cognito.userInfo(session);
+    setCacheScope(u.sub);
+    setUser(u);
+  };
   const forgotPassword = (email: string) => cognito.forgotPassword(email);
   const confirmForgotPassword = (email: string, code: string, newPassword: string) => cognito.confirmForgotPassword(email, code, newPassword);
 
@@ -56,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, ready, signUp, confirmSignUp, resendCode, login, forgotPassword, confirmForgotPassword, logout }}>
+    <Ctx.Provider value={{ user, ready, signUp, confirmSignUp, resendCode, login, completeNewPassword, forgotPassword, confirmForgotPassword, logout }}>
       {children}
     </Ctx.Provider>
   );

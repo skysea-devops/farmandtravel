@@ -91,6 +91,29 @@ export function signIn(email: string, password: string): Promise<CognitoUserSess
     user.authenticateUser(details, {
       onSuccess: (session) => resolve(session),
       onFailure: (err) => reject(normalize(err)),
+      // Admin-created users log in with a temporary password and must set a new one.
+      newPasswordRequired: () => {
+        const e = new Error("Yeni bir şifre belirlemen gerekiyor.") as Error & { code?: string };
+        e.code = "NewPasswordRequired";
+        reject(e);
+      },
+    });
+  });
+}
+
+// --- Complete the "new password required" challenge (temp password → permanent) ---
+export function completeNewPassword(email: string, tempPassword: string, newPassword: string): Promise<CognitoUserSession> {
+  return new Promise((resolve, reject) => {
+    const user = new CognitoUser({ Username: email, Pool: getPool() });
+    user.authenticateUser(new AuthenticationDetails({ Username: email, Password: tempPassword }), {
+      onSuccess: (session) => resolve(session),
+      onFailure: (err) => reject(normalize(err)),
+      newPasswordRequired: () => {
+        user.completeNewPasswordChallenge(newPassword, {}, {
+          onSuccess: (session) => resolve(session),
+          onFailure: (err) => reject(normalize(err)),
+        });
+      },
     });
   });
 }
