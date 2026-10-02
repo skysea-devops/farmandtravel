@@ -16,6 +16,28 @@ messagesRoutes.post("/admin/broadcast", auth, requireAdmin, async (c) => {
   return c.json({ ok: true, recipients });
 });
 
+// Admin: search members by name/email to pick a recipient.
+messagesRoutes.get("/admin/members", auth, requireAdmin, async (c) => {
+  const q = (c.req.query("q") ?? "").trim();
+  if (q.length < 2) return c.json({ members: [] });
+  const r = await query<{ id: string; first_name: string | null; last_name: string | null; city: string | null; country: string | null }>(
+    `SELECT id, first_name, last_name, city, country FROM members
+      WHERE is_official = false
+        AND (first_name ILIKE $1 OR last_name ILIKE $1 OR contact_email ILIKE $1)
+      ORDER BY first_name NULLS LAST LIMIT 20`,
+    [`%${q}%`],
+  );
+  return c.json({
+    members: r.rows.map((m) => ({
+      id: m.id,
+      firstName: m.first_name,
+      lastName: m.last_name,
+      city: m.city,
+      country: m.country,
+    })),
+  });
+});
+
 // Admin: message a single member from the official account (no connection needed).
 const dmSchema = z.object({ memberId: z.string().uuid(), body: z.string().min(1).max(4000) });
 messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
