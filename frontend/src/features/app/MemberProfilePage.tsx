@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
-import { api, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
-import type { Axis, MemberDetail, Photo, ReviewsData } from "@/lib/types";
+import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
+import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = {
   situation: "Durumu", seek: "Aradıkları", offer: "Sundukları", topic: "İlgi alanları",
@@ -19,6 +19,11 @@ export function MemberProfilePage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
+  }, []);
 
   function load() {
     setLoading(true);
@@ -83,6 +88,8 @@ export function MemberProfilePage() {
         )}
         <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? "🔖 Kaydedildi" : "🔖 Kaydet"}</Button>
       </div>
+
+      {isAdmin && <AdminMessage memberId={m.id} name={m.firstName ?? "bu üye"} />}
 
       {m.connection?.status === "accepted" && m.contact && (
         <div className="mb-4 rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-5">
@@ -217,6 +224,51 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
         </div>
       )}
     </Block>
+  );
+}
+
+// Admin-only: send any message to this member from the official "Toprakla Yeniden"
+// account — no connection required (announcements, reminders, warnings, anything).
+function AdminMessage({ memberId, name }: { memberId: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function send() {
+    if (body.trim().length < 1) return;
+    setBusy(true); setMsg(null);
+    try {
+      await adminApi.message(memberId, body.trim());
+      setBody("");
+      setMsg("Gönderildi.");
+    } catch {
+      setMsg("Gönderilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-[var(--radius-lg)] border border-[#d9c7a3] bg-[#f7f0df] p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[15px] font-semibold text-[#6b5518]">🛡️ Admin: bu üyeye mesaj gönder</h2>
+        {!open && <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Mesaj yaz</Button>}
+      </div>
+      {open && (
+        <div className="mt-3">
+          <p className="mb-2 text-xs text-ink-600">{name} kişisine "Toprakla Yeniden" adıyla mesaj gider (bağlantı gerekmez).</p>
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={4000}
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+            placeholder="Mesajın…" />
+          <div className="mt-2 flex items-center gap-3">
+            <Button size="sm" disabled={busy} onClick={send}>{busy ? "Gönderiliyor…" : "Gönder"}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Kapat</Button>
+            {msg && <span className="text-sm text-ink-600">{msg}</span>}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

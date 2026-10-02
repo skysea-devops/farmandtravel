@@ -162,6 +162,8 @@ export const activities = {
 export const admin = {
   // Broadcast a message from the official account to all members.
   broadcast: (body: string) => api.post<{ recipients: number }>("/admin/broadcast", { body }),
+  // Message a single member from the official account (warnings / rule reminders).
+  message: (memberId: string, body: string) => api.post<{ connectionId: string }>("/admin/message", { memberId, body }),
 };
 
 export const billing = {

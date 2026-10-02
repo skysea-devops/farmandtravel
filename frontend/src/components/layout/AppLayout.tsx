@@ -36,7 +36,7 @@ export function AppLayout() {
     api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
   }, []);
 
-  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: "Aktivite onayları", icon: "✅" }] : [];
+  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: "Admin Panel", icon: "🛡️" }] : [];
 
   const item = ({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) => (
     <NavLink

@@ -70,8 +70,8 @@ export function AktiviteOnayPage() {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display mb-1 text-2xl font-semibold">Aktivite onayları</h1>
-          <p className="text-sm text-ink-500">Üyelerin gönderdiği aktiviteleri onayla veya reddet. Kendi oluşturduğun aktiviteler doğrudan yayınlanır.</p>
+          <h1 className="font-display mb-1 text-2xl font-semibold">Admin Panel</h1>
+          <p className="text-sm text-ink-500">Aktiviteleri yönet, topluluğa duyuru gönder. Kendi oluşturduğun aktiviteler doğrudan yayınlanır.</p>
         </div>
         <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
       </div>

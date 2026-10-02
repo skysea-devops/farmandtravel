@@ -4,7 +4,7 @@ import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
-import { broadcast } from "./official.js";
+import { broadcast, messageMember } from "./official.js";
 
 export const messagesRoutes = new Hono();
 
@@ -14,6 +14,14 @@ messagesRoutes.post("/admin/broadcast", auth, requireAdmin, async (c) => {
   const { body } = broadcastSchema.parse(await c.req.json());
   const recipients = await broadcast(body);
   return c.json({ ok: true, recipients });
+});
+
+// Admin: message a single member from the official account (no connection needed).
+const dmSchema = z.object({ memberId: z.string().uuid(), body: z.string().min(1).max(4000) });
+messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
+  const { memberId, body } = dmSchema.parse(await c.req.json());
+  const connectionId = await messageMember(memberId, body);
+  return c.json({ ok: true, connectionId });
 });
 
 // Returns the other member id if `me` is part of this ACCEPTED connection, else null.
