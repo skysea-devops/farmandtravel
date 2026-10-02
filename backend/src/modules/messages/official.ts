@@ -41,6 +41,33 @@ export async function provisionWelcome(memberId: string, lang: "tr" | "en" = "tr
   }
 }
 
+// Send a message from the official account to a single member (no connection needed —
+// used for warnings / rule reminders). Ensures the official thread exists.
+export async function messageMember(memberId: string, body: string): Promise<string | null> {
+  const off = await getOfficialId();
+  if (!off || off === memberId) return null;
+  let conn = await query<{ id: string }>(
+    `SELECT id FROM connections
+      WHERE (requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1) LIMIT 1`,
+    [off, memberId],
+  );
+  let cid = conn.rows[0]?.id;
+  if (!cid) {
+    conn = await query<{ id: string }>(
+      `INSERT INTO connections (requester_id, addressee_id, status, responded_at)
+       VALUES ($1,$2,'accepted',now()) RETURNING id`,
+      [off, memberId],
+    );
+    cid = conn.rows[0]!.id;
+  }
+  await query("INSERT INTO messages (connection_id, sender_id, body) VALUES ($1,$2,$3)", [cid, off, body]);
+  await query(
+    "INSERT INTO notifications (user_id, actor_id, type, data) VALUES ($1,$2,'message',jsonb_build_object('connectionId',$3::text))",
+    [memberId, off, cid],
+  );
+  return cid;
+}
+
 // Broadcast a message from the official account to every (non-official) member.
 // Ensures each member has an official thread, posts the message, and notifies. Returns
 // the number of recipients.

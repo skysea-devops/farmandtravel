@@ -54,6 +54,7 @@ async function candidates(excludeId: string): Promise<CandidateRow[]> {
       WHERE m.id <> $1
         AND m.status IN ('profile_complete','active')
         AND m.first_name IS NOT NULL
+        AND m.is_official = false
       GROUP BY m.id`,
     [excludeId],
   );
@@ -65,6 +66,7 @@ async function oneMember(id: string): Promise<CandidateRow | null> {
     `${CARD_SELECT}
       WHERE m.id = $1
         AND m.status IN ('profile_complete','active')
+        AND m.is_official = false
       GROUP BY m.id`,
     [id],
   );
