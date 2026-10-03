@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
-import { api, uploadImage } from "@/lib/api";
-import type { Axis, Photo, Profile } from "@/lib/types";
+import { Stars } from "@/components/ui/Stars";
+import { api, reviews as reviewsApi, uploadImage } from "@/lib/api";
+import type { Axis, MyReviewsData, Photo, Profile } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = { situation: "Durumum", seek: "Aradıklarım", offer: "Sunduklarım", topic: "İlgi alanlarım" };
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -22,6 +23,10 @@ export function ProfilePage() {
   const [contact, setContact] = useState(emptyContact);
   const [cBusy, setCBusy] = useState(false);
   const [cMsg, setCMsg] = useState<string | null>(null);
+
+  // My reviews: received (drives the rating by my name) + written.
+  const [rev, setRev] = useState<MyReviewsData | null>(null);
+  useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
 
   function load() {
     api.getCached<Profile>("/profile/me")
@@ -121,6 +126,13 @@ export function ProfilePage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">{p.firstName ?? "İsimsiz"}</h1>
           <div className="text-sm text-ink-500">{[p.city, p.country].filter(Boolean).join(", ") || "Konum eklenmedi"}{p.headline ? ` · ${p.headline}` : ""}</div>
+          {rev && rev.received.summary.count > 0 && (
+            <div className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-600">
+              <Stars value={rev.received.summary.avg} />
+              <span className="font-semibold">{rev.received.summary.avg}</span>
+              <span className="text-ink-500">({rev.received.summary.count} değerlendirme)</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -157,6 +169,8 @@ export function ProfilePage() {
         );
       })}
 
+      <MyReviews data={rev} />
+
       <Block title="İletişim bilgileri">
         <p className="mb-3 text-xs text-ink-500">Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.</p>
         <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
@@ -190,6 +204,82 @@ function CField({ label, value, onChange, type, placeholder }: { label: string; 
       <span className="mb-1 block font-medium text-ink-700">{label}</span>
       <input type={type ?? "text"} className={cinp} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </label>
+  );
+}
+
+// My reviews on my own profile: "Hakkımdaki" (received) + "Yazdıklarım" (written),
+// as two tabs — the pattern Airbnb / Couchsurfing / Workaway use on your own page.
+function MyReviews({ data }: { data: MyReviewsData | null }) {
+  const [tab, setTab] = useState<"received" | "written">("received");
+  if (!data) return null;
+
+  const received = data.received.reviews;
+  const written = data.written;
+  const list = tab === "received" ? received : written;
+
+  const TabBtn = ({ id, label }: { id: "received" | "written"; label: string }) => (
+    <button
+      type="button"
+      onClick={() => setTab(id)}
+      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition ${
+        tab === id ? "bg-forest-600 text-white" : "text-ink-700 hover:bg-sand-100"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <Block title="Değerlendirmelerim">
+      {data.received.summary.count > 0 && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-ink-600">
+          <Stars value={data.received.summary.avg} className="text-base" />
+          <span className="font-semibold">{data.received.summary.avg}</span>
+          <span className="text-ink-500">/ 5 · {data.received.summary.count} değerlendirme</span>
+        </div>
+      )}
+
+      <div className="mb-4 flex gap-1.5">
+        <TabBtn id="received" label={`Hakkımdaki (${received.length})`} />
+        <TabBtn id="written" label={`Yazdıklarım (${written.length})`} />
+      </div>
+
+      {list.length === 0 ? (
+        <p className="text-sm text-ink-500">
+          {tab === "received" ? "Henüz kimse seni değerlendirmedi." : "Henüz kimseyi değerlendirmedin."}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {tab === "received"
+            ? received.map((r, i) => (
+                <div key={i} className="flex gap-3">
+                  <Avatar url={r.reviewer.avatarUrl} className="size-9" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{r.reviewer.firstName ?? "Bir üye"}</span>
+                      <Stars value={r.rating} />
+                    </div>
+                    {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
+                  </div>
+                </div>
+              ))
+            : written.map((r, i) => (
+                <div key={i} className="flex gap-3">
+                  <Avatar url={r.reviewee.avatarUrl} className="size-9" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/app/uye/${r.reviewee.id}`} className="text-sm font-semibold hover:underline">
+                        {r.reviewee.firstName ?? "Bir üye"}
+                      </Link>
+                      <Stars value={r.rating} />
+                    </div>
+                    {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
+                  </div>
+                </div>
+              ))}
+        </div>
+      )}
+    </Block>
   );
 }
 

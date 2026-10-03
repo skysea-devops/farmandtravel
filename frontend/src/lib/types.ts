@@ -110,6 +110,16 @@ export interface ReviewsData {
   canReview: boolean;
   myReview: { rating: number; comment: string | null } | null;
 }
+export interface WrittenReview {
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  reviewee: { id: string; firstName: string | null; avatarUrl: string | null };
+}
+export interface MyReviewsData {
+  received: { summary: { avg: number; count: number }; reviews: Review[] };
+  written: WrittenReview[];
+}
 export interface PendingRequest {
   connectionId: string;
   message: string | null;

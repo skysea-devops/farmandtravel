@@ -186,6 +186,8 @@ export const notifications = {
 
 export const reviews = {
   list: <T>(memberId: string) => api.get<T>(`/members/${memberId}/reviews`),
+  // My own reviews: received (about me) + written (by me).
+  me: <T>() => api.getCached<T>("/reviews/me", 60_000),
   submit: async (revieweeId: string, rating: number, comment?: string) => {
     const r = await api.post("/reviews", { revieweeId, rating, comment });
     api.invalidate();
