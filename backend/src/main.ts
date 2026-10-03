@@ -51,6 +51,21 @@ export const handler: Handler = async (event, context, callback) => {
     return { warmed: true };
   }
 
+  // Daily retention purge (EventBridge): hard-delete members anonymized more than
+  // 3 months ago. CASCADE removes their messages/connections/reviews for good.
+  if (event && (event as { task?: string }).task === "purge") {
+    await ensureDatabaseUrl();
+    try {
+      const { pool } = await import("./shared/db/pool.js");
+      const r = await pool.query(
+        "DELETE FROM members WHERE status='deleted' AND deleted_at < now() - interval '3 months'",
+      );
+      return { purged: r.rowCount ?? 0 };
+    } catch (e) {
+      return { purged: 0, error: String(e) };
+    }
+  }
+
   if (!cached) {
     await ensureDatabaseUrl();
     const [{ handle }, { createApp }] = await Promise.all([

@@ -88,13 +88,34 @@ membersRoutes.delete("/profile/photos/:id", auth, async (c) => {
   return c.json({ ok: true });
 });
 
-// Hesabı sil: üyeyi ve (CASCADE ile) tüm bağlı kayıtlarını kaldır; S3 görsellerini
-// best-effort temizle. Cognito kullanıcısı tarayıcıda (deleteUser) silinir.
+// Hesabı sil: ANONİMLEŞTİR (satırı silme). Mesaj/bağlantı geçmişi karşı taraf için
+// korunur; üye "Silinmiş üye" olarak görünür, Keşfet'te çıkmaz. PII temizlenir,
+// fotoğraflar/S3 ve etiketler/kaydedilenler/bildirimler kaldırılır, deleted_at damgalanır.
+// 3 ay sonra günlük purge işi (main.ts task:"purge") satırı tamamen siler (CASCADE).
+// Cognito kullanıcısı tarayıcıda (deleteUser) silinir.
 membersRoutes.delete("/profile", auth, async (c) => {
   const { memberId } = currentUser(c);
   const photos = await query<{ s3_key: string }>("SELECT s3_key FROM member_photos WHERE member_id=$1", [memberId]);
   const me = await query<{ avatar_key: string | null }>("SELECT avatar_key FROM members WHERE id=$1", [memberId]);
-  await query("DELETE FROM members WHERE id=$1", [memberId]); // CASCADE handles children
+
+  // Scrub all PII; break the Cognito linkage so the sub can't match a future login.
+  await query(
+    `UPDATE members SET
+       status='deleted', deleted_at=now(),
+       cognito_sub = 'deleted:' || id::text,
+       first_name='Silinmiş üye', last_name=NULL, headline=NULL, bio=NULL, avatar_key=NULL,
+       country=NULL, city=NULL, languages='{}',
+       contact_email=NULL, phone=NULL, socials=NULL, employer=NULL, address_exact=NULL,
+       profile='{}', draft='{}', updated_at=now()
+     WHERE id=$1`,
+    [memberId],
+  );
+  // Remove things that shouldn't linger for an anonymized member.
+  await query("DELETE FROM member_tags WHERE member_id=$1", [memberId]);
+  await query("DELETE FROM member_photos WHERE member_id=$1", [memberId]);
+  await query("DELETE FROM saved_members WHERE saver_id=$1 OR saved_id=$1", [memberId]);
+  await query("DELETE FROM notifications WHERE user_id=$1 OR actor_id=$1", [memberId]);
+
   const keys = [...photos.rows.map((p) => p.s3_key), me.rows[0]?.avatar_key].filter(Boolean) as string[];
   await Promise.all(keys.map((k) => deleteObject(k).catch(() => {})));
   return c.json({ ok: true });
