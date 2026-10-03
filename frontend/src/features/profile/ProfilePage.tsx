@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
-import { api, reviews as reviewsApi, uploadImage } from "@/lib/api";
-import type { Axis, MyReviewsData, Photo, Profile } from "@/lib/types";
+import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@/lib/api";
+import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
 const AXIS_LABEL: Record<Axis, string> = { situation: "Durumum", seek: "Aradıklarım", offer: "Sunduklarım", topic: "İlgi alanlarım" };
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -27,6 +27,10 @@ export function ProfilePage() {
   // My reviews: received (drives the rating by my name) + written.
   const [rev, setRev] = useState<MyReviewsData | null>(null);
   useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
+
+  // Activity-sharing eligibility (personal progress lives here, not on the public page).
+  const [elig, setElig] = useState<ActivityEligibility | null>(null);
+  useEffect(() => { actApi.eligibility<ActivityEligibility>().then(setElig).catch(() => {}); }, []);
 
   function load() {
     api.getCached<Profile>("/profile/me")
@@ -171,6 +175,8 @@ export function ProfilePage() {
 
       <MyReviews data={rev} />
 
+      <ActivityEligibilityCard elig={elig} />
+
       <Block title="İletişim bilgileri">
         <p className="mb-3 text-xs text-ink-500">Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.</p>
         <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
@@ -294,6 +300,34 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
                 </div>
               ))}
         </div>
+      )}
+    </Block>
+  );
+}
+
+// Personal activity-sharing progress (moved here from the public Aktiviteler page).
+function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null }) {
+  if (!elig) return null;
+  if (elig.isAdmin) return null; // admins zaten doğrudan paylaşır
+  return (
+    <Block title="Aktivite paylaşımı">
+      {elig.canSubmit ? (
+        <p className="text-sm text-forest-700">✓ Koşulları sağlıyorsun — Aktiviteler sayfasından paylaşım yapabilirsin.</p>
+      ) : (
+        <>
+          <p className="mb-2 text-sm text-ink-600">Aktivite paylaşabilmek için:</p>
+          <ul className="ml-4 list-disc space-y-0.5 text-sm">
+            <li className={elig.connections >= elig.need.connections ? "text-forest-600" : "text-ink-700"}>
+              En az {elig.need.connections} bağlantı — sende {elig.connections}
+            </li>
+            <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : "text-ink-700"}>
+              En az {elig.need.rating.toFixed(1)} ortalama puan — sende {elig.ratingAvg}
+            </li>
+            <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : "text-ink-700"}>
+              En az {elig.need.reviews} değerlendirme — sende {elig.ratingCount}
+            </li>
+          </ul>
+        </>
       )}
     </Block>
   );

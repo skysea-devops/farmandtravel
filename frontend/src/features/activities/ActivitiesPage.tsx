@@ -41,6 +41,9 @@ export function ActivitiesPage() {
     if (user) actApi.eligibility<ActivityEligibility>().then(setElig).catch(() => setElig(null));
   }, [user]);
 
+  // Generic requirement numbers (match backend); use live values when available.
+  const need = elig?.need ?? { connections: 20, rating: 4, reviews: 10 };
+
   const featured = useMemo(() => items.find((a) => a.pinned && a.youtubeId) ?? null, [items]);
   const rest = useMemo(() => items.filter((a) => a.id !== featured?.id), [items, featured]);
   const shown = showAll ? rest : rest.slice(0, 5);
@@ -58,23 +61,6 @@ export function ActivitiesPage() {
           <Button size="sm" onClick={() => setFormOpen((o) => !o)}>{formOpen ? t("Kapat", "Close") : t("＋ Aktivite paylaş", "＋ Share an activity")}</Button>
         )}
       </div>
-
-      {user && elig && !elig.canSubmit && (
-        <div className="mb-8 rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-sand-100 p-4 text-sm text-ink-700">
-          <div className="mb-1 font-semibold">{t("Aktivite paylaşmak için", "To share an activity you need")}:</div>
-          <ul className="ml-4 list-disc space-y-0.5">
-            <li className={elig.connections >= elig.need.connections ? "text-forest-600" : ""}>
-              {t(`En az ${elig.need.connections} bağlantı`, `At least ${elig.need.connections} connections`)} — {t("sende", "you have")} {elig.connections}
-            </li>
-            <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : ""}>
-              {t(`En az ${elig.need.rating} ortalama puan`, `At least ${elig.need.rating} average rating`)} — {t("sende", "you have")} {elig.ratingAvg}
-            </li>
-            <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : ""}>
-              {t(`En az ${elig.need.reviews} yorum`, `At least ${elig.need.reviews} reviews`)} — {t("sende", "you have")} {elig.ratingCount}
-            </li>
-          </ul>
-        </div>
-      )}
 
       {formOpen && user && elig?.canSubmit && <ActivityForm onDone={() => { setFormOpen(false); load(); }} />}
 
@@ -101,6 +87,15 @@ export function ActivitiesPage() {
               {t("Henüz aktivite yok.", "No activities yet.")}
             </div>
           )}
+
+          {/* Genel bilgi (kişisel ilerleme Profil sayfasında). */}
+          <div className="mt-12 rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-sand-100 p-4 text-sm text-ink-600">
+            <span className="font-semibold">{t("Aktivite paylaşmak için", "To share an activity")}:</span>{" "}
+            {t(
+              `en az ${need.connections} bağlantı, ${need.rating.toFixed(1)} ortalama puan ve ${need.reviews} değerlendirme gerekir. Durumunu “Profilim” sayfandan görebilirsin.`,
+              `you need at least ${need.connections} connections, a ${need.rating.toFixed(1)} average rating and ${need.reviews} reviews. You can see your progress on your profile page.`,
+            )}
+          </div>
         </>
       )}
     </div>
