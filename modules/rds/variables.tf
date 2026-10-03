@@ -36,6 +36,15 @@ variable "master_username" {
   default = "ftadmin"
 }
 
+# Stable master password, supplied by the caller (a Terraform-managed random_password).
+# We do NOT use RDS-managed rotation: that rotates the password in Secrets Manager
+# while the Lambdas carry a value injected at apply time, so a rotation silently
+# breaks DB auth. A fixed password keeps RDS and the Lambda env in sync.
+variable "master_password" {
+  type      = string
+  sensitive = true
+}
+
 variable "backup_retention_days" {
   type    = number
   default = 7

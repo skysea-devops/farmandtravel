@@ -1,4 +1,5 @@
-# RDS PostgreSQL — db.t4g.micro, private, RDS-managed master password (Secrets Manager).
+# RDS PostgreSQL — db.t4g.micro, private. Master password is a stable, Terraform-
+# managed value (no RDS-managed rotation — see modules/rds/variables.tf for why).
 # Single-AZ at MVP; deletion protection + PITR on. Migrate to Multi-AZ / RI on launch.
 locals {
   name = "${var.project}-${var.environment}"
@@ -22,9 +23,7 @@ resource "aws_db_instance" "this" {
 
   db_name  = var.db_name
   username = var.master_username
-
-  # RDS manages the master password in Secrets Manager — no plaintext in Terraform/state.
-  manage_master_user_password = true
+  password = var.master_password
 
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = var.vpc_security_group_ids
