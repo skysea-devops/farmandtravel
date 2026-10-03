@@ -164,6 +164,8 @@ export const admin = {
   broadcast: (body: string) => api.post<{ recipients: number }>("/admin/broadcast", { body }),
   // Message a single member from the official account (warnings / rule reminders).
   message: (memberId: string, body: string) => api.post<{ connectionId: string }>("/admin/message", { memberId, body }),
+  // Search members by name/email to pick a recipient.
+  searchMembers: <T>(q: string) => api.get<T>(`/admin/members?q=${encodeURIComponent(q)}`),
 };
 
 export const billing = {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { api, activities as actApi, admin as adminApi } from "@/lib/api";
 import { ActivityForm } from "@/features/activities/ActivityForm";
@@ -7,6 +7,126 @@ import type { ActivityItem, Profile } from "@/lib/types";
 const KIND: Record<string, string> = {
   video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
 };
+
+type FoundMember = { id: string; firstName: string | null; lastName: string | null; city: string | null; country: string | null };
+
+const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
+const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
+
+// Admin: isimle ara → üye seç → "Toprakla Yeniden" adıyla tek kişiye mesaj gönder.
+// (Bağlantı gerekmez; herhangi bir üyeye yazılabilir.)
+function DirectMessageCard() {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<FoundMember[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [picked, setPicked] = useState<FoundMember | null>(null);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const seq = useRef(0);
+
+  // Debounced arama: 2+ karakterde ara, yarıştaki eski sonuçları yut.
+  useEffect(() => {
+    if (picked) return;
+    const term = q.trim();
+    if (term.length < 2) { setResults([]); return; }
+    const id = ++seq.current;
+    setSearching(true);
+    const t = setTimeout(() => {
+      adminApi.searchMembers<{ members: FoundMember[] }>(term)
+        .then((r) => { if (id === seq.current) setResults(r.members); })
+        .catch(() => { if (id === seq.current) setResults([]); })
+        .finally(() => { if (id === seq.current) setSearching(false); });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, picked]);
+
+  function pick(m: FoundMember) {
+    setPicked(m);
+    setResults([]);
+    setQ("");
+    setMsg(null);
+  }
+
+  function reset() {
+    setPicked(null);
+    setBody("");
+    setMsg(null);
+  }
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!picked || body.trim().length < 1) return;
+    setBusy(true); setMsg(null);
+    try {
+      await adminApi.message(picked.id, body.trim());
+      setMsg(`${fullName(picked)} kişisine gönderildi.`);
+      setBody("");
+      setPicked(null);
+    } catch {
+      setMsg("Gönderilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+      <h2 className="font-display mb-1 text-lg font-semibold">✉️ Belirli bir üyeye mesaj gönder</h2>
+      <p className="mb-3 text-sm text-ink-500">İsimle ara, üyeyi seç ve "Toprakla Yeniden" adıyla mesaj gönder. Bağlantın olmasa da yazabilirsin.</p>
+
+      {!picked ? (
+        <div>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="İsim veya e-posta ara…"
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+          />
+          {searching && <div className="mt-2 text-xs text-ink-500">Aranıyor…</div>}
+          {!searching && q.trim().length >= 2 && results.length === 0 && (
+            <div className="mt-2 text-xs text-ink-500">Sonuç yok.</div>
+          )}
+          {results.length > 0 && (
+            <div className="mt-2 flex flex-col divide-y divide-border rounded-lg border border-border">
+              {results.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => pick(m)}
+                  className="flex items-center justify-between px-3 py-2.5 text-left text-sm transition hover:bg-sand-100"
+                >
+                  <span className="font-medium text-ink-800">{fullName(m)}</span>
+                  {whereFrom(m) && <span className="text-xs text-ink-500">{whereFrom(m)}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+          {msg && <div className="mt-3 text-sm text-ink-600">{msg}</div>}
+        </div>
+      ) : (
+        <form onSubmit={send}>
+          <div className="mb-3 flex items-center justify-between rounded-lg bg-sand-100 px-3 py-2 text-sm">
+            <span><span className="text-ink-500">Alıcı: </span><span className="font-medium text-ink-800">{fullName(picked)}</span>{whereFrom(picked) && <span className="text-ink-500"> · {whereFrom(picked)}</span>}</span>
+            <button type="button" onClick={reset} className="text-xs text-clay-600 hover:underline">Değiştir</button>
+          </div>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            maxLength={4000}
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+            placeholder="Mesajın…"
+          />
+          <div className="mt-3 flex items-center gap-3">
+            <Button type="submit" disabled={busy || body.trim().length < 1}>{busy ? "Gönderiliyor…" : "Gönder"}</Button>
+            {msg && <span className="text-sm text-ink-600">{msg}</span>}
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
 
 export function AktiviteOnayPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -90,6 +210,8 @@ export function AktiviteOnayPage() {
           {bcMsg && <span className="text-sm text-ink-600">{bcMsg}</span>}
         </div>
       </form>
+
+      <DirectMessageCard />
 
       <h2 className="font-display mb-3 text-lg font-semibold">Onay bekleyenler</h2>
       {items.length === 0 ? (
