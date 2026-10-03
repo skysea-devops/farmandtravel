@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
+import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { ActivityForm } from "@/features/activities/ActivityForm";
-import type { ActivityItem, AdminReviewItem, Profile } from "@/lib/types";
+import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile } from "@/lib/types";
 
 const KIND: Record<string, string> = {
   video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
@@ -15,11 +16,12 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
-type TabId = "reviews" | "activities" | "messages";
+type TabId = "reviews" | "activities" | "messages" | "inbox";
 const TABS: { id: TabId; label: string }[] = [
   { id: "reviews", label: "⚖️ Değerlendirmeler" },
   { id: "activities", label: "📅 Aktiviteler" },
   { id: "messages", label: "📣 Duyuru & Mesaj" },
+  { id: "inbox", label: "📨 Gelen kutusu" },
 ];
 
 export function AktiviteOnayPage() {
@@ -73,6 +75,127 @@ export function AktiviteOnayPage() {
           <DirectMessageCard />
         </>
       )}
+      {tab === "inbox" && <InboxSection />}
+    </div>
+  );
+}
+
+// ── Gelen kutusu ─────────────────────────────────────────────────────────────
+// "Toprakla Yeniden" hesabının mesaj kutusu: admin'in gönderdiği mesajlar + gelen
+// cevaplar burada (admin'in kendi hesabından ayrı). Buradan cevap da yazılır.
+function InboxSection() {
+  const [items, setItems] = useState<AdminInboxItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const load = () =>
+    adminApi.inbox<{ conversations: AdminInboxItem[] }>()
+      .then((r) => setItems(r.conversations)).catch(() => {}).finally(() => setLoaded(true));
+  useEffect(() => { load(); }, []);
+
+  if (openId) {
+    const it = items.find((x) => x.connectionId === openId);
+    return <InboxThread connectionId={openId} title={it ? inboxName(it.member) : "Sohbet"} onBack={() => { setOpenId(null); load(); }} />;
+  }
+
+  if (!loaded) return <div className="py-8 text-center text-ink-500">Yükleniyor…</div>;
+
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="font-display text-lg font-semibold">Gelen kutusu — Toprakla Yeniden</h2>
+        <p className="text-sm text-ink-500">Resmi hesaptan gönderilen mesajlar ve üyelerden gelen cevaplar. Kendi hesabının mesajlarından ayrıdır.</p>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Henüz mesaj yok. "Duyuru &amp; Mesaj" sekmesinden bir üyeye yazınca burada görünür.
+        </div>
+      ) : (
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+          {items.map((it) => (
+            <button
+              key={it.connectionId}
+              type="button"
+              onClick={() => setOpenId(it.connectionId)}
+              className="flex items-center gap-3 px-4 py-3 text-left transition hover:bg-sand-100"
+            >
+              <Avatar url={it.member.avatarUrl} className="size-10 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-semibold">{inboxName(it.member)}</span>
+                  {it.unread > 0 && <span className="rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{it.unread}</span>}
+                </div>
+                <div className="truncate text-sm text-ink-500">
+                  {it.lastBody ?? "—"}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function inboxName(m: { firstName: string | null; lastName: string | null }) {
+  return [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
+}
+
+function InboxThread({ connectionId, title, onBack }: { connectionId: string; title: string; onBack: () => void }) {
+  const [data, setData] = useState<AdminInboxThread | null>(null);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = () => adminApi.inboxThread<AdminInboxThread>(connectionId).then(setData).catch(() => {});
+  useEffect(() => { load(); }, [connectionId]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (body.trim().length < 1) return;
+    setBusy(true);
+    try { await adminApi.inboxReply(connectionId, body.trim()); setBody(""); load(); }
+    finally { setBusy(false); }
+  }
+
+  const offId = data?.officialId;
+
+  return (
+    <div>
+      <button type="button" onClick={onBack} className="mb-3 text-sm text-forest-600 hover:underline">← Gelen kutusu</button>
+      <div className="mb-3 flex items-center gap-2">
+        <Avatar url={data?.member?.avatarUrl} className="size-9" />
+        <div className="text-sm font-semibold">{title}</div>
+      </div>
+
+      <div className="mb-3 flex max-h-[55vh] flex-col gap-2 overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-bg p-4">
+        {!data ? (
+          <div className="py-6 text-center text-ink-500">Yükleniyor…</div>
+        ) : data.messages.length === 0 ? (
+          <div className="py-6 text-center text-ink-500">Mesaj yok.</div>
+        ) : (
+          data.messages.map((m) => {
+            const mine = m.senderId === offId; // official (admin) tarafı
+            return (
+              <div key={m.id} className={cn("max-w-[80%] rounded-2xl px-3.5 py-2 text-sm", mine ? "self-end bg-forest-600 text-white" : "self-start bg-surface border border-border text-ink-800")}>
+                {m.body}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <form onSubmit={send} className="flex items-end gap-2">
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={2}
+          maxLength={4000}
+          placeholder="Toprakla Yeniden adıyla cevap yaz…"
+          className="flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+        />
+        <Button type="submit" disabled={busy || body.trim().length < 1}>{busy ? "…" : "Gönder"}</Button>
+      </form>
     </div>
   );
 }
@@ -286,7 +409,7 @@ function DirectMessageCard() {
     setBusy(true); setMsg(null);
     try {
       await adminApi.message(picked.id, body.trim());
-      setMsg(`${fullName(picked)} kişisine gönderildi.`);
+      setMsg(`${fullName(picked)} kişisine gönderildi. Cevaplar "Gelen kutusu" sekmesinde görünür.`);
       setBody("");
       setPicked(null);
     } catch {

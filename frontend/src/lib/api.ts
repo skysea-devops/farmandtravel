@@ -166,6 +166,10 @@ export const admin = {
   message: (memberId: string, body: string) => api.post<{ connectionId: string }>("/admin/message", { memberId, body }),
   // Search members by name/email to pick a recipient.
   searchMembers: <T>(q: string) => api.get<T>(`/admin/members?q=${encodeURIComponent(q)}`),
+  // Official "Toprakla Yeniden" account inbox (admin sees sent + replies).
+  inbox: <T>() => api.get<T>("/admin/inbox"),
+  inboxThread: <T>(connectionId: string) => api.get<T>(`/admin/inbox/${connectionId}`),
+  inboxReply: (connectionId: string, body: string) => api.post(`/admin/inbox/${connectionId}`, { body }),
 };
 
 export const billing = {

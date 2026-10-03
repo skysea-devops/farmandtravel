@@ -123,6 +123,29 @@ export interface MyReviewsData {
   written: WrittenReview[];
   pendingReceived: number;
 }
+export interface AdminInboxMember {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  city: string | null;
+  country: string | null;
+  avatarKey: string | null;
+  avatarUrl?: string | null;
+}
+export interface AdminInboxItem {
+  connectionId: string;
+  member: AdminInboxMember;
+  lastBody: string | null;
+  lastAt: string | null;
+  lastSender: string | null;
+  unread: number;
+}
+export interface AdminInboxThread {
+  connectionId: string;
+  officialId: string;
+  member: AdminInboxMember | null;
+  messages: Message[];
+}
 export interface AdminReviewItem {
   id: string;
   rating: number;
