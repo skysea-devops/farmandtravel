@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { messages as msgApi } from "@/lib/api";
+import { msgTime, listTime } from "@/lib/time";
 import type { Conversation, Message, Thread } from "@/lib/types";
 
 export function MesajlarPage() {
@@ -43,7 +44,8 @@ export function MesajlarPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-semibold">{c.member.firstName}</span>
-                    {c.unread > 0 && <span className="ml-auto rounded-full bg-forest-600 px-1.5 text-[11px] font-semibold text-white">{c.unread}</span>}
+                    {c.lastAt && <span className="ml-auto shrink-0 text-[11px] text-ink-400">{listTime(c.lastAt)}</span>}
+                    {c.unread > 0 && <span className="shrink-0 rounded-full bg-forest-600 px-1.5 text-[11px] font-semibold text-white">{c.unread}</span>}
                   </div>
                   <div className="truncate text-[13px] text-ink-500">{c.lastBody ?? "Henüz mesaj yok"}</div>
                 </div>
@@ -118,7 +120,8 @@ function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; on
                 "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm",
                 mine ? "bg-forest-600 text-white" : "bg-sand-100 text-ink-900",
               )}>
-                {m.body}
+                <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                <div className={cn("mt-1 text-right text-[10px]", mine ? "text-white/70" : "text-ink-400")}>{msgTime(m.createdAt)}</div>
               </div>
             </div>
           );
