@@ -32,10 +32,13 @@ resource "aws_iam_role_policy_attachment" "vpc" {
 }
 
 data "aws_iam_policy_document" "perms" {
-  # Read the RDS-managed master password secret.
-  statement {
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [var.db_secret_arn]
+  # Read the DB secret only if one is wired (not used with discrete DB creds).
+  dynamic "statement" {
+    for_each = var.db_secret_arn == "" ? [] : [1]
+    content {
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = [var.db_secret_arn]
+    }
   }
   # Media bucket read/write (presigned + server-side ops).
   statement {

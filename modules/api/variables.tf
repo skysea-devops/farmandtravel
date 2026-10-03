@@ -19,7 +19,13 @@ variable "cognito_audiences" {
 }
 
 # Data plane the Lambda touches
-variable "db_secret_arn" { type = string }
+# db_secret_arn is optional: creds are injected as discrete DB_USER/DB_PASSWORD env
+# vars, so there's no runtime Secrets Manager call. Left empty, the secret-read IAM
+# grant is omitted too.
+variable "db_secret_arn" {
+  type    = string
+  default = ""
+}
 variable "db_host" { type = string }
 variable "db_name" { type = string }
 variable "db_user" {

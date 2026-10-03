@@ -38,7 +38,15 @@ module "cognito" {
   mobile_callback_urls    = var.mobile_callback_urls
 }
 
-# Database — RDS PostgreSQL, private, managed master password.
+# Stable DB master password (alnum, no special chars so it's connection-string safe).
+# Terraform-managed and stored in state; it does not rotate, so the value in RDS and
+# in the Lambda env stay in sync. (random_password is stable across applies once created.)
+resource "random_password" "db_master" {
+  length  = 32
+  special = false
+}
+
+# Database — RDS PostgreSQL, private, stable Terraform-managed master password.
 module "rds" {
   source = "../../modules/rds"
 
@@ -46,6 +54,7 @@ module "rds" {
   environment            = var.environment
   subnet_ids             = module.network.private_subnet_ids
   vpc_security_group_ids = [module.network.rds_sg_id]
+  master_password        = random_password.db_master.result
 }
 
 # Media storage — private bucket, presigned uploads.
@@ -78,15 +87,6 @@ module "site" {
   secondary_domain = var.secondary_domain
 }
 
-# RDS-managed master credentials, read at deploy time and injected into the Lambda
-# env so it needs no Secrets Manager call (and no interface VPC endpoint) at runtime.
-data "aws_secretsmanager_secret_version" "db_master" {
-  secret_id = module.rds.master_secret_arn
-}
-locals {
-  db_creds = jsondecode(data.aws_secretsmanager_secret_version.db_master.secret_string)
-}
-
 # Compute — Lambda (lambdalith) + API Gateway HTTP API + Cognito JWT authorizer.
 module "api" {
   source = "../../modules/api"
@@ -100,11 +100,10 @@ module "api" {
   cognito_issuer    = module.cognito.issuer
   cognito_audiences = [module.cognito.web_client_id, module.cognito.mobile_client_id]
 
-  db_secret_arn     = module.rds.master_secret_arn
   db_host           = module.rds.address
   db_name           = module.rds.db_name
-  db_user           = local.db_creds.username
-  db_password       = local.db_creds.password
+  db_user           = module.rds.username
+  db_password       = random_password.db_master.result
   media_bucket_arn  = module.storage.media_bucket_arn
   media_bucket_name = module.storage.media_bucket_name
   allowed_origins   = local.web_origins
