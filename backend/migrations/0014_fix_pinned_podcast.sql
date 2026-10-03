@@ -3,7 +3,7 @@
 -- collaboration). Keeps the same video and pinned state.
 UPDATE activities
    SET title = 'Topluluk, sürdürülebilir tarım ve yaratıcı işbirliği — Inna & Özgür',
-       description = 'Inna ve Özgür bu bölümde topluluğun dönüştürücü gücünü, sürdürülebilir tarımı ve yaratıcı işbirliğini konuşuyor. Kişisel yolculukların, toprakla kurulan bağın ve sanatsal ifadenin; hızla değişen bir dünyada dayanıklılığı ve kendine yeterliliği nasıl beslediğini anlatıyor.',
+       description = 'Inna ve Özgür bu bölümde topluluğun dönüştürücü gücünü, sürdürülebilir tarımı ve yaratıcı işbirliğini konuşuyor. Kişisel yolculukların ve toprakla kurulan bağın; hızla değişen bir dünyada kendine yeterliliği nasıl beslediğini anlatıyor.',
        author_name = 'Inna & Özgür',
        place = NULL
  WHERE youtube_id = 'jOW8K7XUX4o' AND pinned = true;
