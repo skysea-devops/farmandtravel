@@ -203,6 +203,27 @@ resource "aws_lambda_permission" "warmup" {
   source_arn    = aws_cloudwatch_event_rule.warmup.arn
 }
 
+# --- Daily data-retention purge (hard-delete members anonymized > 3 months ago) ---
+resource "aws_cloudwatch_event_rule" "purge" {
+  name                = "${local.name}-purge"
+  description         = "Daily purge of long-deleted (anonymized) members"
+  schedule_expression = "rate(1 day)"
+}
+
+resource "aws_cloudwatch_event_target" "purge" {
+  rule  = aws_cloudwatch_event_rule.purge.name
+  arn   = aws_lambda_function.api.arn
+  input = jsonencode({ task = "purge" })
+}
+
+resource "aws_lambda_permission" "purge" {
+  statement_id  = "AllowEventBridgePurge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.purge.arn
+}
+
 # --- One-off DB migration runner ---
 # Same code bundle, different handler (migrate.handler). Not wired to API Gateway;
 # invoked on demand (CI or `aws lambda invoke`) to apply migrations + seed inside

@@ -4,6 +4,7 @@ import { Stars } from "@/components/ui/Stars";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
+import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
 import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile } from "@/lib/types";
 
@@ -124,7 +125,8 @@ function InboxSection() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-semibold">{inboxName(it.member)}</span>
-                  {it.unread > 0 && <span className="rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{it.unread}</span>}
+                  {it.lastAt && <span className="ml-auto shrink-0 text-[11px] text-ink-400">{listTime(it.lastAt)}</span>}
+                  {it.unread > 0 && <span className="shrink-0 rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{it.unread}</span>}
                 </div>
                 <div className="truncate text-sm text-ink-500">
                   {it.lastBody ?? "—"}
@@ -178,7 +180,8 @@ function InboxThread({ connectionId, title, onBack }: { connectionId: string; ti
             const mine = m.senderId === offId; // official (admin) tarafı
             return (
               <div key={m.id} className={cn("max-w-[80%] rounded-2xl px-3.5 py-2 text-sm", mine ? "self-end bg-forest-600 text-white" : "self-start bg-surface border border-border text-ink-800")}>
-                {m.body}
+                <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                <div className={cn("mt-1 text-right text-[10px]", mine ? "text-white/70" : "text-ink-400")}>{msgTime(m.createdAt)}</div>
               </div>
             );
           })

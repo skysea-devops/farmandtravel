@@ -22,7 +22,7 @@ messagesRoutes.get("/admin/members", auth, requireAdmin, async (c) => {
   if (q.length < 2) return c.json({ members: [] });
   const r = await query<{ id: string; first_name: string | null; last_name: string | null; city: string | null; country: string | null }>(
     `SELECT id, first_name, last_name, city, country FROM members
-      WHERE is_official = false
+      WHERE is_official = false AND status <> 'deleted'
         AND (first_name ILIKE $1 OR last_name ILIKE $1 OR contact_email ILIKE $1)
       ORDER BY first_name NULLS LAST LIMIT 20`,
     [`%${q}%`],
