@@ -4,7 +4,7 @@ import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
-import { broadcast, messageMember } from "./official.js";
+import { broadcast, messageMember, getOfficialId } from "./official.js";
 
 export const messagesRoutes = new Hono();
 
@@ -44,6 +44,91 @@ messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
   const { memberId, body } = dmSchema.parse(await c.req.json());
   const connectionId = await messageMember(memberId, body);
   return c.json({ ok: true, connectionId });
+});
+
+// Admin: inbox of the official "Toprakla Yeniden" account — every thread with real
+// activity (more than the auto welcome message), so admins see what they sent and the
+// members' replies. Replies come in through the same messages table.
+messagesRoutes.get("/admin/inbox", auth, requireAdmin, async (c) => {
+  const off = await getOfficialId();
+  if (!off) return c.json({ conversations: [] });
+  const r = await query(
+    `SELECT c.id AS "connectionId",
+            json_build_object('id', o.id, 'firstName', o.first_name, 'lastName', o.last_name,
+                              'city', o.city, 'country', o.country, 'avatarKey', o.avatar_key) AS member,
+            lm.body AS "lastBody", lm.created_at AS "lastAt", lm.sender_id AS "lastSender",
+            COALESCE(u.n, 0) AS "unread"
+       FROM connections c
+       JOIN members o ON o.id = CASE WHEN c.requester_id=$1 THEN c.addressee_id ELSE c.requester_id END
+       LEFT JOIN LATERAL (
+         SELECT body, created_at, sender_id FROM messages
+          WHERE connection_id=c.id ORDER BY created_at DESC LIMIT 1
+       ) lm ON true
+       LEFT JOIN LATERAL (
+         SELECT count(*)::int AS n FROM messages
+          WHERE connection_id=c.id AND sender_id<>$1 AND read_at IS NULL
+       ) u ON true
+      WHERE (c.requester_id=$1 OR c.addressee_id=$1) AND c.status='accepted'
+        AND (SELECT count(*) FROM messages m2 WHERE m2.connection_id=c.id) > 1
+      ORDER BY lm.created_at DESC NULLS LAST`,
+    [off],
+  );
+  const conversations = await Promise.all(
+    r.rows.map(async (row: Record<string, unknown>) => {
+      const member = row.member as { avatarKey?: string | null };
+      return {
+        connectionId: row.connectionId,
+        member: { ...member, avatarUrl: await safeUrl(member?.avatarKey) },
+        lastBody: row.lastBody ?? null,
+        lastAt: row.lastAt ?? null,
+        lastSender: row.lastSender ?? null,
+        unread: Number(row.unread ?? 0),
+      };
+    }),
+  );
+  return c.json({ conversations });
+});
+
+// Admin: one official thread — marks the member's messages read, returns the exchange.
+messagesRoutes.get("/admin/inbox/:connectionId", auth, requireAdmin, async (c) => {
+  const off = await getOfficialId();
+  const cid = c.req.param("connectionId");
+  const other = off && cid ? await participant(off, cid) : null;
+  if (!off || !other) return c.json({ error: "not_found", message: "Sohbet bulunamadı" }, 404);
+
+  await query(
+    `UPDATE messages SET read_at=now()
+      WHERE connection_id=$1 AND sender_id<>$2 AND read_at IS NULL`,
+    [cid, off],
+  );
+  const r = await query(
+    `SELECT id, sender_id AS "senderId", body, created_at AS "createdAt"
+       FROM messages WHERE connection_id=$1 ORDER BY created_at ASC`,
+    [cid],
+  );
+  const om = await query<{ avatarKey: string | null }>(
+    `SELECT id, first_name AS "firstName", last_name AS "lastName", country, city, avatar_key AS "avatarKey"
+       FROM members WHERE id=$1`,
+    [other],
+  );
+  const member = om.rows[0] ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) } : null;
+  return c.json({ connectionId: cid, officialId: off, member, messages: r.rows });
+});
+
+// Admin: reply from the official account in an existing thread.
+messagesRoutes.post("/admin/inbox/:connectionId", auth, requireAdmin, async (c) => {
+  const off = await getOfficialId();
+  const cid = c.req.param("connectionId");
+  const other = off && cid ? await participant(off, cid) : null;
+  if (!off || !other) return c.json({ error: "not_found", message: "Sohbet bulunamadı" }, 404);
+  const { body } = sendSchema.parse(await c.req.json());
+  const r = await query(
+    `INSERT INTO messages (connection_id, sender_id, body) VALUES ($1,$2,$3)
+      RETURNING id, sender_id AS "senderId", body, created_at AS "createdAt"`,
+    [cid, off, body],
+  );
+  await notify(other, off, "message", { connectionId: cid });
+  return c.json(r.rows[0]);
 });
 
 // Returns the other member id if `me` is part of this ACCEPTED connection, else null.

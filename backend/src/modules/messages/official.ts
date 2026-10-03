@@ -13,7 +13,7 @@ const WELCOME_EN =
   "If anything comes up, you can write to us right here. Great to have you!";
 
 let officialId: string | null = null;
-async function getOfficialId(): Promise<string | null> {
+export async function getOfficialId(): Promise<string | null> {
   if (officialId) return officialId;
   const r = await query<{ id: string }>("SELECT id FROM members WHERE is_official=true LIMIT 1");
   officialId = r.rows[0]?.id ?? null;
