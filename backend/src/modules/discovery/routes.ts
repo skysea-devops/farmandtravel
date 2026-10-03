@@ -36,8 +36,8 @@ async function myTags(memberId: string): Promise<Tag[]> {
 
 const CARD_SELECT = `
   SELECT m.id, m.first_name, m.country, m.city, m.headline, m.bio, m.avatar_key,
-         COALESCE((SELECT round(avg(rating)::numeric, 1) FROM reviews WHERE reviewee_id = m.id), 0) AS rating_avg,
-         (SELECT count(*)::int FROM reviews WHERE reviewee_id = m.id) AS rating_count,
+         COALESCE((SELECT round(avg(rating)::numeric, 1) FROM visible_reviews WHERE reviewee_id = m.id), 0) AS rating_avg,
+         (SELECT count(*)::int FROM visible_reviews WHERE reviewee_id = m.id) AS rating_count,
          COALESCE(
            json_agg(
              json_build_object('axis', t.axis, 'value', t.value,

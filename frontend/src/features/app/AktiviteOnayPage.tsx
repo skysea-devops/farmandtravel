@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { api, activities as actApi, admin as adminApi } from "@/lib/api";
+import { Stars } from "@/components/ui/Stars";
+import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { ActivityForm } from "@/features/activities/ActivityForm";
-import type { ActivityItem, Profile } from "@/lib/types";
+import type { ActivityItem, AdminReviewItem, Profile } from "@/lib/types";
 
 const KIND: Record<string, string> = {
   video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
@@ -12,6 +13,61 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
+
+// Admin: değerlendirme moderasyon kuyruğu. 4 yıldız ve altı ya da uygunsuz yorum
+// içeren değerlendirmeler yayınlanmadan önce burada beklet­ilir; admin onaylar
+// (hemen yayınlanır) ya da reddeder (hiç görünmez).
+function ReviewModerationCard() {
+  const [items, setItems] = useState<AdminReviewItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = () =>
+    reviewsApi.adminList<{ reviews: AdminReviewItem[] }>()
+      .then((r) => setItems(r.reviews)).catch(() => {}).finally(() => setLoaded(true));
+  useEffect(() => { load(); }, []);
+
+  async function act(id: string, kind: "approve" | "reject") {
+    setBusy(id);
+    try {
+      if (kind === "approve") await reviewsApi.approve(id);
+      else await reviewsApi.reject(id);
+      setItems((xs) => xs.filter((r) => r.id !== id));
+    } finally { setBusy(null); }
+  }
+
+  if (!loaded) return null;
+
+  return (
+    <div className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+      <h2 className="font-display mb-1 text-lg font-semibold">⚖️ Değerlendirme onayları{items.length ? ` (${items.length})` : ""}</h2>
+      <p className="mb-3 text-sm text-ink-500">4 yıldız ve altı ya da uygunsuz yorum içeren değerlendirmeler. Onaylarsan hemen yayınlanır, reddedersen görünmez. Gerekirse ilgili üyeye yukarıdan mesaj atıp savunmasını alabilirsin.</p>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-ink-500">Bekleyen değerlendirme yok. 🎉</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((r) => (
+            <div key={r.id} className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
+              <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-semibold">{r.reviewerName ?? "Bir üye"}</span>
+                <span className="text-ink-500">→</span>
+                <span className="font-semibold">{r.revieweeName ?? "Bir üye"}</span>
+                <Stars value={r.rating} />
+                {r.flagged && <span className="rounded-full bg-clay-500/15 px-2 py-0.5 text-[11px] font-semibold text-clay-600">⚠ Uygunsuz olabilir</span>}
+              </div>
+              {r.comment ? <p className="text-sm text-ink-700">{r.comment}</p> : <p className="text-sm italic text-ink-400">(yorum yok)</p>}
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" disabled={busy === r.id} onClick={() => act(r.id, "approve")}>Onayla & yayınla</Button>
+                <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => act(r.id, "reject")}>Reddet</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Admin: isimle ara → üye seç → "Toprakla Yeniden" adıyla tek kişiye mesaj gönder.
 // (Bağlantı gerekmez; herhangi bir üyeye yazılabilir.)
@@ -213,7 +269,9 @@ export function AktiviteOnayPage() {
 
       <DirectMessageCard />
 
-      <h2 className="font-display mb-3 text-lg font-semibold">Onay bekleyenler</h2>
+      <ReviewModerationCard />
+
+      <h2 className="font-display mb-3 text-lg font-semibold">Aktivite onayları</h2>
       {items.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
           Onay bekleyen aktivite yok. 🎉

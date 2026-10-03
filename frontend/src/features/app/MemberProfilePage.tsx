@@ -153,6 +153,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [rateErr, setRateErr] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
 
   function load() {
     reviewsApi.list<ReviewsData>(memberId).then((d) => {
@@ -167,8 +168,16 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
     // silently doing nothing (users thought "Gönder" was broken).
     if (!rating) { setRateErr(true); return; }
     setSaving(true);
-    try { await reviewsApi.submit(memberId, rating, comment.trim() || undefined); setOpen(false); load(); }
-    finally { setSaving(false); }
+    try {
+      const r = await reviewsApi.submit(memberId, rating, comment.trim() || undefined);
+      setOpen(false);
+      setSent(
+        r && typeof r === "object" && (r as { status?: string }).status === "held"
+          ? "Değerlendirmen alındı. Yayınlanmadan önce ekip tarafından incelenecek."
+          : "Değerlendirmen alındı. Karşı taraf da değerlendirince (ya da 15 gün sonra) yayınlanacak.",
+      );
+      load();
+    } finally { setSaving(false); }
   }
 
   if (!data) return null;
@@ -204,12 +213,17 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
               <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3}
                 placeholder={`${name} ile deneyimini birkaç cümleyle anlat…`}
                 className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
+              <p className="mt-3 text-xs text-ink-500">
+                Değerlendirmeler karşılıklıdır: karşı taraf da seni değerlendirdiğinde (ya da 15 gün sonra) yayınlanır.
+                4 yıldız ve altı ya da uygunsuz yorumlar, yayınlanmadan önce ekip tarafından incelenir.
+              </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" disabled={saving} onClick={submit}>{saving ? "Kaydediliyor…" : "Gönder"}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setRateErr(false); }}>Vazgeç</Button>
               </div>
             </div>
           )}
+          {sent && <p className="mt-2 text-sm text-forest-700">✓ {sent}</p>}
         </div>
       )}
 
