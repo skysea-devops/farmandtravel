@@ -62,9 +62,24 @@ function jitter(seed: string, amp: number): LatLng {
   return [a * amp, b * amp];
 }
 
+// Find a known city/province inside a free-text location. Users often type an il +
+// ilçe ("Manisa Kırkağaç") or add separators ("Kırkağaç / Manisa"); the full string
+// won't be a key, so after an exact miss we scan each word for a known province/city.
+function cityLookup(city: string | null): LatLng | undefined {
+  const nc = norm(city);
+  if (!nc) return undefined;
+  const exact = CITY[nc];
+  if (exact) return exact;
+  // Split on whitespace/punctuation only (not letters) so "İstanbul" stays intact.
+  for (const tok of nc.split(/[\s,/;.\-|]+/)) {
+    if (tok && CITY[tok]) return CITY[tok];
+  }
+  return undefined;
+}
+
 // Resolve a member to [lat, lng], or null when we can't place them at all.
 export function coordsFor(country: string | null, city: string | null, seed = ""): LatLng | null {
-  const cityHit = CITY[norm(city)];
+  const cityHit = cityLookup(city);
   if (cityHit) {
     const [dy, dx] = jitter(seed, 0.06); // tiny spread within a city
     return [cityHit[0] + dy, cityHit[1] + dx];
