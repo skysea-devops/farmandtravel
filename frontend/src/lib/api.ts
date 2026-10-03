@@ -193,6 +193,10 @@ export const reviews = {
     api.invalidate();
     return r;
   },
+  // Admin moderation queue (reviews held for approval).
+  adminList: <T>() => api.get<T>("/admin/reviews"),
+  approve: async (id: string, note?: string) => { const r = await api.post(`/admin/reviews/${id}/approve`, { note }); api.invalidate(); return r; },
+  reject: async (id: string, note?: string) => { const r = await api.post(`/admin/reviews/${id}/reject`, { note }); api.invalidate(); return r; },
 };
 
 export const messages = {

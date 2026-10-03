@@ -110,15 +110,29 @@ export interface ReviewsData {
   canReview: boolean;
   myReview: { rating: number; comment: string | null } | null;
 }
+export type ReviewState = "published" | "held" | "pending" | "rejected";
 export interface WrittenReview {
   rating: number;
   comment: string | null;
   createdAt: string;
+  state: ReviewState;
   reviewee: { id: string; firstName: string | null; avatarUrl: string | null };
 }
 export interface MyReviewsData {
   received: { summary: { avg: number; count: number }; reviews: Review[] };
   written: WrittenReview[];
+  pendingReceived: number;
+}
+export interface AdminReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  flagged: boolean;
+  createdAt: string;
+  reviewerId: string;
+  reviewerName: string | null;
+  revieweeId: string;
+  revieweeName: string | null;
 }
 export interface PendingRequest {
   connectionId: string;

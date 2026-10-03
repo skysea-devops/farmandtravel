@@ -207,6 +207,13 @@ function CField({ label, value, onChange, type, placeholder }: { label: string; 
   );
 }
 
+const REVIEW_STATE: Record<string, { label: string; cls: string }> = {
+  published: { label: "Yayında", cls: "bg-moss-500/15 text-forest-700" },
+  pending: { label: "Karşı taraf değerlendirince görünür", cls: "bg-sand-100 text-ink-600" },
+  held: { label: "Admin onayında", cls: "bg-clay-500/15 text-clay-600" },
+  rejected: { label: "Yayınlanmadı", cls: "bg-sand-100 text-ink-400" },
+};
+
 // My reviews on my own profile: "Hakkımdaki" (received) + "Yazdıklarım" (written),
 // as two tabs — the pattern Airbnb / Couchsurfing / Workaway use on your own page.
 function MyReviews({ data }: { data: MyReviewsData | null }) {
@@ -244,9 +251,15 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
         <TabBtn id="written" label={`Yazdıklarım (${written.length})`} />
       </div>
 
+      {tab === "received" && data.pendingReceived > 0 && (
+        <div className="mb-3 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-3 py-2 text-[13px] text-[#2c5462]">
+          🔒 {data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.
+        </div>
+      )}
+
       {list.length === 0 ? (
         <p className="text-sm text-ink-500">
-          {tab === "received" ? "Henüz kimse seni değerlendirmedi." : "Henüz kimseyi değerlendirmedin."}
+          {tab === "received" ? "Henüz görünür bir değerlendirmen yok." : "Henüz kimseyi değerlendirmedin."}
         </p>
       ) : (
         <div className="space-y-3">
@@ -267,11 +280,14 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
                 <div key={i} className="flex gap-3">
                   <Avatar url={r.reviewee.avatarUrl} className="size-9" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Link to={`/app/uye/${r.reviewee.id}`} className="text-sm font-semibold hover:underline">
                         {r.reviewee.firstName ?? "Bir üye"}
                       </Link>
                       <Stars value={r.rating} />
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${REVIEW_STATE[r.state]?.cls ?? ""}`}>
+                        {REVIEW_STATE[r.state]?.label ?? r.state}
+                      </span>
                     </div>
                     {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
                   </div>

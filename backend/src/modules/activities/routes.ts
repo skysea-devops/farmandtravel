@@ -20,7 +20,7 @@ async function eligibility(memberId: string) {
       [memberId],
     ),
     query<{ n: string; avg: string }>(
-      "SELECT count(*)::int AS n, COALESCE(round(avg(rating)::numeric,1),0) AS avg FROM reviews WHERE reviewee_id=$1",
+      "SELECT count(*)::int AS n, COALESCE(round(avg(rating)::numeric,1),0) AS avg FROM visible_reviews WHERE reviewee_id=$1",
       [memberId],
     ),
   ]);
