@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
+import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { ActivityForm } from "@/features/activities/ActivityForm";
 import type { ActivityItem, AdminReviewItem, Profile } from "@/lib/types";
@@ -14,9 +15,71 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
-// Admin: değerlendirme moderasyon kuyruğu. 4 yıldız ve altı ya da uygunsuz yorum
-// içeren değerlendirmeler yayınlanmadan önce burada beklet­ilir; admin onaylar
-// (hemen yayınlanır) ya da reddeder (hiç görünmez).
+type TabId = "reviews" | "activities" | "messages";
+const TABS: { id: TabId; label: string }[] = [
+  { id: "reviews", label: "⚖️ Değerlendirmeler" },
+  { id: "activities", label: "📅 Aktiviteler" },
+  { id: "messages", label: "📣 Duyuru & Mesaj" },
+];
+
+export function AktiviteOnayPage() {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabId>("reviews");
+
+  useEffect(() => {
+    api.get<Profile>("/profile/me")
+      .then((p) => setIsAdmin(!!p.isAdmin))
+      .catch(() => setIsAdmin(false))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
+  if (!isAdmin) {
+    return (
+      <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+        Bu sayfa yalnızca yöneticiler içindir.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-5">
+        <h1 className="font-display mb-1 text-2xl font-semibold">Admin Panel</h1>
+        <p className="text-sm text-ink-500">Topluluğu yönet: değerlendirme onayları, aktiviteler, duyuru ve mesajlar.</p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-1 overflow-x-auto border-b border-border">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition",
+              tab === t.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "reviews" && <ReviewModerationCard />}
+      {tab === "activities" && <ActivitiesSection />}
+      {tab === "messages" && (
+        <>
+          <BroadcastCard />
+          <DirectMessageCard />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Değerlendirmeler ─────────────────────────────────────────────────────────
+// 4 yıldız ve altı ya da uygunsuz yorum içeren değerlendirmeler yayınlanmadan
+// önce burada bekletilir; admin onaylar (hemen yayınlanır) ya da reddeder.
 function ReviewModerationCard() {
   const [items, setItems] = useState<AdminReviewItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -36,19 +99,23 @@ function ReviewModerationCard() {
     } finally { setBusy(null); }
   }
 
-  if (!loaded) return null;
+  if (!loaded) return <div className="py-8 text-center text-ink-500">Yükleniyor…</div>;
 
   return (
-    <div className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <h2 className="font-display mb-1 text-lg font-semibold">⚖️ Değerlendirme onayları{items.length ? ` (${items.length})` : ""}</h2>
-      <p className="mb-3 text-sm text-ink-500">4 yıldız ve altı ya da uygunsuz yorum içeren değerlendirmeler. Onaylarsan hemen yayınlanır, reddedersen görünmez. Gerekirse ilgili üyeye yukarıdan mesaj atıp savunmasını alabilirsin.</p>
+    <div>
+      <div className="mb-3">
+        <h2 className="font-display text-lg font-semibold">Değerlendirme onayları{items.length ? ` (${items.length})` : ""}</h2>
+        <p className="text-sm text-ink-500">4 yıldız ve altı ya da uygunsuz yorum içeren değerlendirmeler. Onaylarsan hemen yayınlanır, reddedersen görünmez. Gerekirse ilgili üyeye "Duyuru &amp; Mesaj" sekmesinden yazıp savunmasını alabilirsin.</p>
+      </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-ink-500">Bekleyen değerlendirme yok. 🎉</p>
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Bekleyen değerlendirme yok. 🎉
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((r) => (
-            <div key={r.id} className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
+            <div key={r.id} className="rounded-[var(--radius-lg)] border border-border bg-surface p-4">
               <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-semibold">{r.reviewerName ?? "Bir üye"}</span>
                 <span className="text-ink-500">→</span>
@@ -58,7 +125,7 @@ function ReviewModerationCard() {
               </div>
               {r.comment ? <p className="text-sm text-ink-700">{r.comment}</p> : <p className="text-sm italic text-ink-400">(yorum yok)</p>}
               <div className="mt-3 flex gap-2">
-                <Button size="sm" disabled={busy === r.id} onClick={() => act(r.id, "approve")}>Onayla & yayınla</Button>
+                <Button size="sm" disabled={busy === r.id} onClick={() => act(r.id, "approve")}>Onayla &amp; yayınla</Button>
                 <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => act(r.id, "reject")}>Reddet</Button>
               </div>
             </div>
@@ -66,6 +133,109 @@ function ReviewModerationCard() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Aktiviteler ──────────────────────────────────────────────────────────────
+// Admin kendi aktivitesini doğrudan yayınlar; üye gönderileri onay bekler.
+function ActivitiesSection() {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const load = () =>
+    actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
+  useEffect(() => { load(); }, []);
+
+  async function act(id: string, kind: "approve" | "reject") {
+    setBusy(id);
+    try {
+      if (kind === "approve") await actApi.approve(id);
+      else await actApi.reject(id);
+      setItems((xs) => xs.filter((a) => a.id !== id));
+    } finally { setBusy(null); }
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Aktiviteler</h2>
+          <p className="text-sm text-ink-500">Kendi oluşturduğun aktiviteler doğrudan yayınlanır; üye gönderileri aşağıda onay bekler.</p>
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
+      </div>
+
+      {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
+
+      <h3 className="font-display mb-3 mt-5 text-[15px] font-semibold">Onay bekleyenler{items.length ? ` (${items.length})` : ""}</h3>
+      {loading ? (
+        <div className="py-8 text-center text-ink-500">Yükleniyor…</div>
+      ) : items.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Onay bekleyen aktivite yok. 🎉
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {items.map((a) => (
+            <div key={a.id} className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+              {a.image && <div className="h-48 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
+              <div className="p-5">
+                <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{KIND[a.kind] ?? a.kind}</div>
+                <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
+                {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
+                {a.kind === "meeting" && a.when && (
+                  <div className="mt-2 text-xs text-ink-600">{a.online ? "🟢 Online" : "📍 Yüz yüze"} · {a.when}</div>
+                )}
+                <div className="mt-2 text-xs text-ink-500">{[a.author, a.place].filter(Boolean).join(" · ")}</div>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" disabled={busy === a.id} onClick={() => act(a.id, "approve")}>Onayla &amp; yayınla</Button>
+                  <Button size="sm" variant="outline" disabled={busy === a.id} onClick={() => act(a.id, "reject")}>Reddet</Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Duyuru & Mesaj ───────────────────────────────────────────────────────────
+// Tüm üyelere resmi "Toprakla Yeniden" hesabından duyuru.
+function BroadcastCard() {
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (body.trim().length < 2) return;
+    setBusy(true); setMsg(null);
+    try {
+      const r = await adminApi.broadcast(body.trim());
+      setBody("");
+      setMsg(`${r.recipients} kişiye gönderildi.`);
+    } catch {
+      setMsg("Gönderilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={send} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+      <h2 className="font-display mb-1 text-lg font-semibold">📣 Herkese mesaj gönder</h2>
+      <p className="mb-3 text-sm text-ink-500">Tüm üyelere "Toprakla Yeniden" adıyla mesaj gider; Mesajlar bölümünde görünür.</p>
+      <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={4000}
+        className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
+        placeholder="Topluluğa iletmek istediğin mesaj…" />
+      <div className="mt-3 flex items-center gap-3">
+        <Button type="submit" disabled={busy}>{busy ? "Gönderiliyor…" : "Herkese gönder"}</Button>
+        {msg && <span className="text-sm text-ink-600">{msg}</span>}
+      </div>
+    </form>
   );
 }
 
@@ -127,7 +297,7 @@ function DirectMessageCard() {
   }
 
   return (
-    <div className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+    <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-5">
       <h2 className="font-display mb-1 text-lg font-semibold">✉️ Belirli bir üyeye mesaj gönder</h2>
       <p className="mb-3 text-sm text-ink-500">İsimle ara, üyeyi seç ve "Toprakla Yeniden" adıyla mesaj gönder. Bağlantın olmasa da yazabilirsin.</p>
 
@@ -179,124 +349,6 @@ function DirectMessageCard() {
             {msg && <span className="text-sm text-ink-600">{msg}</span>}
           </div>
         </form>
-      )}
-    </div>
-  );
-}
-
-export function AktiviteOnayPage() {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [items, setItems] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [bcBody, setBcBody] = useState("");
-  const [bcBusy, setBcBusy] = useState(false);
-  const [bcMsg, setBcMsg] = useState<string | null>(null);
-
-  async function sendBroadcast(e: React.FormEvent) {
-    e.preventDefault();
-    if (bcBody.trim().length < 2) return;
-    setBcBusy(true); setBcMsg(null);
-    try {
-      const r = await adminApi.broadcast(bcBody.trim());
-      setBcBody("");
-      setBcMsg(`${r.recipients} kişiye gönderildi.`);
-    } catch {
-      setBcMsg("Gönderilemedi.");
-    } finally {
-      setBcBusy(false);
-    }
-  }
-
-  const load = () =>
-    actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
-
-  useEffect(() => {
-    api.get<Profile>("/profile/me")
-      .then((p) => {
-        setIsAdmin(!!p.isAdmin);
-        if (p.isAdmin) load();
-        else setLoading(false);
-      })
-      .catch(() => { setIsAdmin(false); setLoading(false); });
-  }, []);
-
-  async function act(id: string, kind: "approve" | "reject") {
-    setBusy(id);
-    try {
-      if (kind === "approve") await actApi.approve(id);
-      else await actApi.reject(id);
-      setItems((xs) => xs.filter((a) => a.id !== id));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
-  if (!isAdmin) {
-    return (
-      <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-        Bu sayfa yalnızca yöneticiler içindir.
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display mb-1 text-2xl font-semibold">Admin Panel</h1>
-          <p className="text-sm text-ink-500">Aktiviteleri yönet, topluluğa duyuru gönder. Kendi oluşturduğun aktiviteler doğrudan yayınlanır.</p>
-        </div>
-        <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
-      </div>
-
-      {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
-
-      {/* Herkese duyuru — resmi "Toprakla Yeniden" hesabından mesaj */}
-      <form onSubmit={sendBroadcast} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-        <h2 className="font-display mb-1 text-lg font-semibold">📣 Herkese mesaj gönder</h2>
-        <p className="mb-3 text-sm text-ink-500">Tüm üyelere "Toprakla Yeniden" adıyla mesaj gider; Mesajlar bölümünde görünür.</p>
-        <textarea value={bcBody} onChange={(e) => setBcBody(e.target.value)} rows={3} maxLength={4000}
-          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
-          placeholder="Topluluğa iletmek istediğin mesaj…" />
-        <div className="mt-3 flex items-center gap-3">
-          <Button type="submit" disabled={bcBusy}>{bcBusy ? "Gönderiliyor…" : "Herkese gönder"}</Button>
-          {bcMsg && <span className="text-sm text-ink-600">{bcMsg}</span>}
-        </div>
-      </form>
-
-      <DirectMessageCard />
-
-      <ReviewModerationCard />
-
-      <h2 className="font-display mb-3 text-lg font-semibold">Aktivite onayları</h2>
-      {items.length === 0 ? (
-        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-          Onay bekleyen aktivite yok. 🎉
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {items.map((a) => (
-            <div key={a.id} className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
-              {a.image && <div className="h-48 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
-              <div className="p-5">
-                <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{KIND[a.kind] ?? a.kind}</div>
-                <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
-                {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
-                {a.kind === "meeting" && a.when && (
-                  <div className="mt-2 text-xs text-ink-600">{a.online ? "🟢 Online" : "📍 Yüz yüze"} · {a.when}</div>
-                )}
-                <div className="mt-2 text-xs text-ink-500">{[a.author, a.place].filter(Boolean).join(" · ")}</div>
-                <div className="mt-4 flex gap-2">
-                  <Button size="sm" disabled={busy === a.id} onClick={() => act(a.id, "approve")}>Onayla & yayınla</Button>
-                  <Button size="sm" variant="outline" disabled={busy === a.id} onClick={() => act(a.id, "reject")}>Reddet</Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );
