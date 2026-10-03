@@ -41,6 +41,56 @@ reviewsRoutes.post("/reviews", auth, async (c) => {
   return c.json({ ok: true });
 });
 
+// My own reviews: those written about me (received) + those I wrote (written).
+// Received powers the rating shown on my profile; written lets me find my own notes.
+reviewsRoutes.get("/reviews/me", auth, async (c) => {
+  const { memberId } = currentUser(c);
+
+  const recv = await query<{
+    rating: number; comment: string | null; createdAt: string;
+    otherId: string; firstName: string | null; avatarKey: string | null;
+  }>(
+    `SELECT r.rating, r.comment, r.created_at AS "createdAt",
+            o.id AS "otherId", o.first_name AS "firstName", o.avatar_key AS "avatarKey"
+       FROM reviews r JOIN members o ON o.id = r.reviewer_id
+      WHERE r.reviewee_id = $1
+      ORDER BY r.created_at DESC`,
+    [memberId],
+  );
+  const sent = await query<{
+    rating: number; comment: string | null; createdAt: string;
+    otherId: string; firstName: string | null; avatarKey: string | null;
+  }>(
+    `SELECT r.rating, r.comment, r.created_at AS "createdAt",
+            o.id AS "otherId", o.first_name AS "firstName", o.avatar_key AS "avatarKey"
+       FROM reviews r JOIN members o ON o.id = r.reviewee_id
+      WHERE r.reviewer_id = $1
+      ORDER BY r.created_at DESC`,
+    [memberId],
+  );
+
+  const received = await Promise.all(
+    recv.rows.map(async (r) => ({
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      reviewer: { id: r.otherId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
+    })),
+  );
+  const written = await Promise.all(
+    sent.rows.map(async (r) => ({
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      reviewee: { id: r.otherId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
+    })),
+  );
+  const count = received.length;
+  const avg = count ? Math.round((received.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
+
+  return c.json({ received: { summary: { avg, count }, reviews: received }, written });
+});
+
 // Reviews for a member + summary + whether I can review + my existing review.
 reviewsRoutes.get("/members/:id/reviews", auth, async (c) => {
   const { memberId } = currentUser(c);

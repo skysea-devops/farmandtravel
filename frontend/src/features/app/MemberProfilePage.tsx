@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
+import { StarInput } from "@/components/ui/StarInput";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
@@ -151,6 +152,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
+  const [rateErr, setRateErr] = useState(false);
 
   function load() {
     reviewsApi.list<ReviewsData>(memberId).then((d) => {
@@ -161,7 +163,9 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
   useEffect(load, [memberId]);
 
   async function submit() {
-    if (!rating) return;
+    // Keep the button clickable; if no star is picked, say so clearly instead of
+    // silently doing nothing (users thought "Gönder" was broken).
+    if (!rating) { setRateErr(true); return; }
     setSaving(true);
     try { await reviewsApi.submit(memberId, rating, comment.trim() || undefined); setOpen(false); load(); }
     finally { setSaving(false); }
@@ -187,18 +191,22 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
             </Button>
           ) : (
             <div className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
-              <div className="mb-2 flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <button key={i} onClick={() => setRating(i)}
-                    className={`text-2xl leading-none ${i <= rating ? "text-clay-500" : "text-border-strong"}`}>★</button>
-                ))}
+              <div className={`mb-3 rounded-lg p-3 transition ${rateErr ? "bg-clay-500/5 ring-2 ring-clay-500" : "bg-surface"}`}>
+                <label className="mb-2 block text-sm font-semibold text-ink-700">
+                  1. Puanını ver <span className="text-clay-600">*</span>
+                </label>
+                <StarInput value={rating} onChange={(v) => { setRating(v); setRateErr(false); }} />
+                {rateErr && <p className="mt-2 text-sm font-medium text-clay-600">👆 Göndermeden önce yıldızlara dokunarak puan ver.</p>}
               </div>
+              <label className="mb-1.5 block text-sm font-semibold text-ink-700">
+                2. Yorumun <span className="font-normal text-ink-400">(isteğe bağlı)</span>
+              </label>
               <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3}
                 placeholder={`${name} ile deneyimini birkaç cümleyle anlat…`}
                 className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" disabled={saving || !rating} onClick={submit}>{saving ? "Kaydediliyor…" : "Gönder"}</Button>
-                <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Vazgeç</Button>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" disabled={saving} onClick={submit}>{saving ? "Kaydediliyor…" : "Gönder"}</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setRateErr(false); }}>Vazgeç</Button>
               </div>
             </div>
           )}
