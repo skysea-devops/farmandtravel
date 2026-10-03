@@ -108,7 +108,7 @@ export interface ReviewsData {
   summary: { avg: number; count: number };
   reviews: Review[];
   canReview: boolean;
-  myReview: { rating: number; comment: string | null } | null;
+  myReview: { rating: number; comment: string | null; state?: string } | null;
 }
 export type ReviewState = "published" | "held" | "pending" | "rejected";
 export interface WrittenReview {

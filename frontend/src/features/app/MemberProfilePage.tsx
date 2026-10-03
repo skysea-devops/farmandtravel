@@ -146,6 +146,13 @@ export function MemberProfilePage() {
   );
 }
 
+const MY_REVIEW_STATE: Record<string, string> = {
+  approved: "Yayında",
+  auto: "Gönderildi",
+  held: "Admin onayında",
+  rejected: "Yayınlanmadı",
+};
+
 function ReviewsSection({ memberId, name }: { memberId: string; name: string }) {
   const [data, setData] = useState<ReviewsData | null>(null);
   const [rating, setRating] = useState(0);
@@ -177,6 +184,11 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
           : "Değerlendirmen alındı. Karşı taraf da değerlendirince (ya da 15 gün sonra) yayınlanacak.",
       );
       load();
+    } catch (e) {
+      // One-time guard (409) or any failure: refresh so the submitted review shows.
+      setOpen(false);
+      setSent(e instanceof Error && /zaten/i.test(e.message) ? e.message : "Değerlendirme gönderilemedi.");
+      load();
     } finally { setSaving(false); }
   }
 
@@ -192,12 +204,25 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
         </div>
       )}
 
-      {data.canReview && (
+      {/* Already reviewed → read-only (one-time, can't be edited). */}
+      {data.myReview ? (
+        <div className="mb-4 rounded-[var(--radius-lg)] border border-border bg-bg p-4">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold">Senin değerlendirmen</span>
+            <Stars value={data.myReview.rating} />
+            {data.myReview.state && (
+              <span className="rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-medium text-ink-600">
+                {MY_REVIEW_STATE[data.myReview.state] ?? ""}
+              </span>
+            )}
+          </div>
+          {data.myReview.comment && <p className="text-sm text-ink-700">{data.myReview.comment}</p>}
+          <p className="mt-2 text-xs text-ink-400">Değerlendirmeler tek seferliktir ve değiştirilemez.</p>
+        </div>
+      ) : data.canReview ? (
         <div className="mb-4">
           {!open ? (
-            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-              {data.myReview ? "★ Değerlendirmeni düzenle" : "★ Değerlendir"}
-            </Button>
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>★ Değerlendir</Button>
           ) : (
             <div className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
               <div className={`mb-3 rounded-lg p-3 transition ${rateErr ? "bg-clay-500/5 ring-2 ring-clay-500" : "bg-surface"}`}>
@@ -214,8 +239,9 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
                 placeholder={`${name} ile deneyimini birkaç cümleyle anlat…`}
                 className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
               <p className="mt-3 text-xs text-ink-500">
-                Değerlendirmeler karşılıklıdır: karşı taraf da seni değerlendirdiğinde (ya da 15 gün sonra) yayınlanır.
-                4 yıldız ve altı ya da uygunsuz yorumlar, yayınlanmadan önce ekip tarafından incelenir.
+                Değerlendirme <strong>tek seferliktir, sonradan değiştirilemez.</strong> Karşılıklıdır:
+                karşı taraf da seni değerlendirdiğinde (ya da 15 gün sonra) yayınlanır. 4 yıldız ve altı
+                ya da uygunsuz yorumlar, yayınlanmadan önce ekip tarafından incelenir.
               </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" disabled={saving} onClick={submit}>{saving ? "Kaydediliyor…" : "Gönder"}</Button>
@@ -225,7 +251,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
           )}
           {sent && <p className="mt-2 text-sm text-forest-700">✓ {sent}</p>}
         </div>
-      )}
+      ) : null}
 
       {data.reviews.length === 0 ? (
         <p className="text-sm text-ink-500">Henüz değerlendirme yok.</p>

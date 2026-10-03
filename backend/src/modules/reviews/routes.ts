@@ -19,7 +19,9 @@ async function accepted(a: string, b: string): Promise<boolean> {
   return (r.rowCount ?? 0) > 0;
 }
 
-// Create/update my review of a member (only if we have an accepted connection).
+// Create my review of a member (only if we have an accepted connection).
+// ONE-TIME: a review can't be edited once given (admin moderation would be
+// meaningless if it could change afterwards). A second attempt is rejected.
 // Publishing pipeline: 5 stars + clean comment -> auto (reveals on reciprocity or
 // after 15 days); 4 stars or below, or a profane comment -> held for admin.
 const schema = z.object({
@@ -38,16 +40,18 @@ reviewsRoutes.post("/reviews", auth, async (c) => {
   const flagged = isProfane(comment);
   const moderation = rating <= 4 || flagged ? "held" : "auto";
 
-  await query(
+  // ON CONFLICT DO NOTHING + RETURNING: a row comes back only on a fresh insert.
+  // No row => a review already exists => reject (one-time, race-safe).
+  const ins = await query<{ id: string }>(
     `INSERT INTO reviews (reviewer_id, reviewee_id, rating, comment, moderation, flagged)
        VALUES ($1,$2,$3,$4,$5,$6)
-       ON CONFLICT (reviewer_id, reviewee_id)
-       DO UPDATE SET rating=EXCLUDED.rating, comment=EXCLUDED.comment,
-                     moderation=EXCLUDED.moderation, flagged=EXCLUDED.flagged,
-                     admin_note=NULL, moderated_at=NULL, moderated_by=NULL,
-                     updated_at=now()`,
+       ON CONFLICT (reviewer_id, reviewee_id) DO NOTHING
+       RETURNING id`,
     [memberId, revieweeId, rating, comment ?? null, moderation, flagged],
   );
+  if (!ins.rows[0]) {
+    return c.json({ error: "already_reviewed", message: "Bu üyeyi zaten değerlendirdin; değerlendirme değiştirilemez." }, 409);
+  }
   // Only ping the reviewee for reviews that are (or may become) visible to them.
   if (moderation === "auto") await notify(revieweeId, memberId, "review", {});
   return c.json({ ok: true, status: moderation === "held" ? "held" : "pending" });
