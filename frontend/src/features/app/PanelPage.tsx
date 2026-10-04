@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Dashboard, MatchCard } from "@/lib/types";
 
 export function PanelPage() {
+  const { t } = useI18n();
   const [d, setD] = useState<Dashboard | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,15 +28,15 @@ export function PanelPage() {
     finally { setBusy(null); }
   }
 
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
-  if (err) return <div className="py-16 text-center text-ink-700">Panel yüklenemedi: {err}</div>;
+  if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
+  if (err) return <div className="py-16 text-center text-ink-700">{t("Panel yüklenemedi:", "Couldn't load your home:")} {err}</div>;
   if (!d) return null;
 
   const stats = [
-    { n: d.stats.matches, label: "Sana uygun eşleşme" },
-    { n: d.stats.pendingConnections, label: "Bekleyen bağlantı isteği" },
-    { n: d.stats.unreadMessages, label: "Okunmamış mesaj" },
-    { n: d.stats.profileViews, label: "Profil görüntülenme" },
+    { n: d.stats.matches, label: t("Sana uygun eşleşme", "Matches for you") },
+    { n: d.stats.pendingConnections, label: t("Bekleyen bağlantı isteği", "Pending requests") },
+    { n: d.stats.unreadMessages, label: t("Okunmamış mesaj", "Unread messages") },
+    { n: d.stats.profileViews, label: t("Profil görüntülenme", "Profile views") },
   ];
 
   return (
@@ -50,12 +52,12 @@ export function PanelPage() {
 
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold">Sana uygun eşleşmeler</h2>
-          <Link to="/app/kesfet" className="text-sm text-forest-600 hover:underline">Tümünü keşfet →</Link>
+          <h2 className="font-display text-xl font-semibold">{t("Sana uygun eşleşmeler", "Matches for you")}</h2>
+          <Link to="/app/kesfet" className="text-sm text-forest-600 hover:underline">{t("Tümünü keşfet →", "Discover all →")}</Link>
         </div>
         {d.matches.length === 0 ? (
           <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-8 text-center text-sm text-ink-500">
-            Henüz eşleşme yok. Profilindeki etiketleri zenginleştirdikçe uygun kişiler burada görünecek.
+            {t("Henüz eşleşme yok. Profilindeki etiketleri zenginleştirdikçe uygun kişiler burada görünecek.", "No matches yet. As you enrich your profile tags, the right people will show up here.")}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,12 +68,12 @@ export function PanelPage() {
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold">Bekleyen istekler</h2>
-          <Link to="/app/baglantilar" className="text-sm text-forest-600 hover:underline">Tümü →</Link>
+          <h2 className="font-display text-xl font-semibold">{t("Bekleyen istekler", "Pending requests")}</h2>
+          <Link to="/app/baglantilar" className="text-sm text-forest-600 hover:underline">{t("Tümü →", "All →")}</Link>
         </div>
         {d.pendingRequests.length === 0 ? (
           <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-ink-500">
-            Bekleyen bağlantı isteğin yok.
+            {t("Bekleyen bağlantı isteğin yok.", "You have no pending requests.")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -86,8 +88,8 @@ export function PanelPage() {
                     {r.message && <div className="mt-1 text-[13px] italic text-ink-600">"{r.message}"</div>}
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <Button size="sm" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "accept")}>Kabul et</Button>
-                    <Button size="sm" variant="outline" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "reject")}>Reddet</Button>
+                    <Button size="sm" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "accept")}>{t("Kabul et", "Accept")}</Button>
+                    <Button size="sm" variant="outline" disabled={busy === r.connectionId} onClick={() => act(r.connectionId, "reject")}>{t("Reddet", "Decline")}</Button>
                   </div>
                 </div>
               );
@@ -100,6 +102,7 @@ export function PanelPage() {
 }
 
 function MatchCardView({ m }: { m: MatchCard }) {
+  const { t, lang } = useI18n();
   const loc = [m.city, m.country].filter(Boolean).join(", ");
   return (
     <div className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5">
@@ -111,12 +114,12 @@ function MatchCardView({ m }: { m: MatchCard }) {
         </div>
       </div>
       <div className="mb-4 flex flex-wrap gap-1.5">
-        {(m.matched.length ? m.matched : m.tags).slice(0, 3).map((t) => (
-          <Tag key={`${t.axis}:${t.value}`} axis={t.axis}>{t.labelTr}</Tag>
+        {(m.matched.length ? m.matched : m.tags).slice(0, 3).map((tg) => (
+          <Tag key={`${tg.axis}:${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>
         ))}
       </div>
       <div className="mt-auto flex items-center gap-2">
-        <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">Profili gör</Button></Link>
+        <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">{t("Profili gör", "View profile")}</Button></Link>
       </div>
     </div>
   );

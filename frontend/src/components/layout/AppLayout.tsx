@@ -2,30 +2,32 @@ import { useEffect, useState } from "react";
 import { NavLink, Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { api, notifications as notifApi } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 
-const nav = [
-  { to: "/app", label: "Panel", icon: "🏠", end: true },
-  { to: "/app/kesfet", label: "Keşfet", icon: "🔍" },
-  { to: "/app/baglantilar", label: "Bağlantılar", icon: "🤝" },
-  { to: "/app/mesajlar", label: "Mesajlar", icon: "💬" },
-  { to: "/app/kaydedilenler", label: "Kaydedilenler", icon: "🔖" },
-  { to: "/app/bildirimler", label: "Bildirimler", icon: "🔔" },
-  { to: "/app/profil", label: "Profilim", icon: "👤" },
-];
-const navBottom = [
-  { to: "/app/abonelik", label: "Abonelik", icon: "💳" },
-  { to: "/app/ayarlar", label: "Ayarlar", icon: "⚙️" },
-];
-
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [unread, setUnread] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [plan, setPlan] = useState<string>("");
+
+  const nav = [
+    { to: "/app", label: t("Panel", "Home"), icon: "🏠", end: true },
+    { to: "/app/kesfet", label: t("Keşfet", "Discover"), icon: "🔍" },
+    { to: "/app/baglantilar", label: t("Bağlantılar", "Connections"), icon: "🤝" },
+    { to: "/app/mesajlar", label: t("Mesajlar", "Messages"), icon: "💬" },
+    { to: "/app/kaydedilenler", label: t("Kaydedilenler", "Saved"), icon: "🔖" },
+    { to: "/app/bildirimler", label: t("Bildirimler", "Notifications"), icon: "🔔" },
+    { to: "/app/profil", label: t("Profilim", "My profile"), icon: "👤" },
+  ];
+  const navBottom = [
+    { to: "/app/abonelik", label: t("Abonelik", "Membership"), icon: "💳" },
+    { to: "/app/ayarlar", label: t("Ayarlar", "Settings"), icon: "⚙️" },
+  ];
 
   // Refresh the bell badge on navigation (cheap, cached 30s).
   useEffect(() => {
@@ -44,12 +46,12 @@ export function AppLayout() {
   }, [navigate]);
 
   const planBadge =
-    plan === "frontier" ? { text: "🌱 Öncü üye · ücretsiz", cls: "text-moss-300" }
-    : plan === "active" ? { text: "● Üyelik aktif", cls: "text-moss-300" }
-    : plan === "none" ? { text: "Üyelik gerekli", cls: "text-clay-300" }
+    plan === "frontier" ? { text: t("🌱 Öncü üye · ücretsiz", "🌱 Founding member · free"), cls: "text-moss-300" }
+    : plan === "active" ? { text: t("● Üyelik aktif", "● Membership active"), cls: "text-moss-300" }
+    : plan === "none" ? { text: t("Üyelik gerekli", "Membership required"), cls: "text-clay-300" }
     : { text: "", cls: "text-moss-300" };
 
-  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: "Admin Panel", icon: "🛡️" }] : [];
+  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: t("Admin Panel", "Admin Panel"), icon: "🛡️" }] : [];
 
   const item = ({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) => (
     <NavLink
@@ -77,7 +79,7 @@ export function AppLayout() {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col bg-forest-900 p-4 md:flex">
         <Link to="/" className="font-display mb-6 flex items-center gap-2 px-1.5 text-[19px] font-semibold text-white">
           <span className="grid size-8 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
-          Toprakla Yeniden
+          {t("Toprakla Yeniden", "Reconnect with Soil")}
         </Link>
         <nav className="flex flex-1 flex-col gap-1">
           {nav.map(item)}
@@ -89,7 +91,7 @@ export function AppLayout() {
         <div className="mt-3 flex items-center gap-2.5 border-t border-white/10 pt-3">
           <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? "Üye"}</div>
+            <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? t("Üye", "Member")}</div>
             {planBadge.text && <div className={cn("text-xs", planBadge.cls)}>{planBadge.text}</div>}
           </div>
         </div>
@@ -97,7 +99,7 @@ export function AppLayout() {
           onClick={() => { logout(); navigate("/"); }}
           className="mt-2 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
         >
-          ↪ Çıkış
+          {t("↪ Çıkış", "↪ Log out")}
         </button>
       </aside>
 
@@ -106,9 +108,9 @@ export function AppLayout() {
         <header className="flex items-center gap-3 border-b border-border bg-forest-900 px-4 py-3 md:hidden">
           <Link to="/" className="font-display flex items-center gap-2 text-[17px] font-semibold text-white">
             <span className="grid size-7 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
-            Toprakla Yeniden
+            {t("Toprakla Yeniden", "Reconnect with Soil")}
           </Link>
-          <button onClick={() => { logout(); navigate("/"); }} className="ml-auto text-sm text-moss-100">Çıkış</button>
+          <button onClick={() => { logout(); navigate("/"); }} className="ml-auto text-sm text-moss-100">{t("Çıkış", "Log out")}</button>
         </header>
         <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
           {[...nav, ...adminNav].map((n) => (

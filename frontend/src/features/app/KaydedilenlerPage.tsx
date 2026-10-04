@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { saved as savedApi } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { SavedCard } from "@/lib/types";
 
 export function KaydedilenlerPage() {
+  const { t, lang } = useI18n();
   const [members, setMembers] = useState<SavedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -21,14 +23,14 @@ export function KaydedilenlerPage() {
     try { await savedApi.remove(id); load(); } finally { setBusy(null); }
   }
 
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
+  if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
 
   return (
     <>
-      <h1 className="font-display mb-5 text-2xl font-semibold">Kaydedilenler</h1>
+      <h1 className="font-display mb-5 text-2xl font-semibold">{t("Kaydedilenler", "Saved")}</h1>
       {members.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-10 text-center text-sm text-ink-500">
-          Henüz kimseyi kaydetmedin. Keşfet'te beğendiğin profillerde 🔖 ile kaydet.
+          {t("Henüz kimseyi kaydetmedin. Keşfet'te beğendiğin profillerde 🔖 ile kaydet.", "You haven't saved anyone yet. Tap 🔖 on profiles you like in Discover.")}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -44,11 +46,11 @@ export function KaydedilenlerPage() {
                   </div>
                 </div>
                 <div className="mb-4 flex flex-wrap gap-1.5">
-                  {m.tags.slice(0, 3).map((t) => <Tag key={`${t.axis}:${t.value}`} axis={t.axis}>{t.labelTr}</Tag>)}
+                  {m.tags.slice(0, 3).map((tg) => <Tag key={`${tg.axis}:${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}
                 </div>
                 <div className="mt-auto flex gap-2">
-                  <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">Profili gör</Button></Link>
-                  <Button size="sm" variant="outline" disabled={busy === m.id} onClick={() => remove(m.id)}>Kaldır</Button>
+                  <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">{t("Profili gör", "View profile")}</Button></Link>
+                  <Button size="sm" variant="outline" disabled={busy === m.id} onClick={() => remove(m.id)}>{t("Kaldır", "Remove")}</Button>
                 </div>
               </div>
             );
