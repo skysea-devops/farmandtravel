@@ -36,3 +36,8 @@ rds_multi_az       = false
 
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"
+
+# İkinci apex domain — İngilizce pazar (reconnectwithsoil.com). Route53 hosted
+# zone'u bu hesapta zaten kayıtlı. Aynı CloudFront dağıtımı + ACM sertifikası
+# apex + www olarak her iki domaini sunar; hostname diline göre site İngilizce açılır.
+secondary_domain = "reconnectwithsoil.com"

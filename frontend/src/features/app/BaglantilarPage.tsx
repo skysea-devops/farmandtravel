@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { ConnItem, Connections } from "@/lib/types";
 
 export function BaglantilarPage() {
+  const { t } = useI18n();
   const [data, setData] = useState<Connections | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,35 +28,35 @@ export function BaglantilarPage() {
     finally { setBusy(null); }
   }
 
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
-  if (err || !data) return <div className="py-16 text-center text-ink-700">Yüklenemedi: {err}</div>;
+  if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
+  if (err || !data) return <div className="py-16 text-center text-ink-700">{t("Yüklenemedi:", "Couldn't load:")} {err}</div>;
 
   return (
     <>
-      <h1 className="font-display mb-5 text-2xl font-semibold">Bağlantılar</h1>
+      <h1 className="font-display mb-5 text-2xl font-semibold">{t("Bağlantılar", "Connections")}</h1>
 
-      <Section title={`Gelen istekler${data.incoming.length ? ` (${data.incoming.length})` : ""}`}>
-        {data.incoming.length === 0 ? <Empty>Bekleyen gelen isteğin yok.</Empty> : data.incoming.map((c) => (
+      <Section title={`${t("Gelen istekler", "Incoming requests")}${data.incoming.length ? ` (${data.incoming.length})` : ""}`}>
+        {data.incoming.length === 0 ? <Empty>{t("Bekleyen gelen isteğin yok.", "No incoming requests.")}</Empty> : data.incoming.map((c) => (
           <Row key={c.connectionId} c={c}>
             <div className="flex gap-2">
-              <Button size="sm" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "accept")}>Kabul et</Button>
-              <Button size="sm" variant="outline" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "reject")}>Reddet</Button>
+              <Button size="sm" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "accept")}>{t("Kabul et", "Accept")}</Button>
+              <Button size="sm" variant="outline" disabled={busy === c.connectionId} onClick={() => act(c.connectionId, "reject")}>{t("Reddet", "Decline")}</Button>
             </div>
           </Row>
         ))}
       </Section>
 
-      <Section title="Gönderilen istekler">
-        {data.outgoing.length === 0 ? <Empty>Bekleyen gönderilmiş isteğin yok.</Empty> : data.outgoing.map((c) => (
-          <Row key={c.connectionId} c={c}><span className="text-xs text-ink-500">⏳ Yanıt bekleniyor</span></Row>
+      <Section title={t("Gönderilen istekler", "Sent requests")}>
+        {data.outgoing.length === 0 ? <Empty>{t("Bekleyen gönderilmiş isteğin yok.", "No pending sent requests.")}</Empty> : data.outgoing.map((c) => (
+          <Row key={c.connectionId} c={c}><span className="text-xs text-ink-500">{t("⏳ Yanıt bekleniyor", "⏳ Awaiting response")}</span></Row>
         ))}
       </Section>
 
-      <Section title={`Bağlantılarım${data.accepted.length ? ` (${data.accepted.length})` : ""}`}>
-        {data.accepted.length === 0 ? <Empty>Henüz bağlantın yok. Keşfet'ten insanlarla bağlantı kur.</Empty> : data.accepted.map((c) => (
+      <Section title={`${t("Bağlantılarım", "My connections")}${data.accepted.length ? ` (${data.accepted.length})` : ""}`}>
+        {data.accepted.length === 0 ? <Empty>{t("Henüz bağlantın yok. Keşfet'ten insanlarla bağlantı kur.", "No connections yet. Connect with people from Discover.")}</Empty> : data.accepted.map((c) => (
           <Row key={c.connectionId} c={c}>
             <div className="flex flex-col items-end gap-1.5">
-              <Link to={`/app/mesajlar/${c.connectionId}`}><Button size="sm" variant="outline">💬 Mesaj</Button></Link>
+              <Link to={`/app/mesajlar/${c.connectionId}`}><Button size="sm" variant="outline">{t("💬 Mesaj", "💬 Message")}</Button></Link>
               {c.contact?.contactEmail && <div className="text-xs text-ink-500">{c.contact.contactEmail}</div>}
             </div>
           </Row>

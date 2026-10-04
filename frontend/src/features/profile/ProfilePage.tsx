@@ -5,12 +5,17 @@ import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
-const AXIS_LABEL: Record<Axis, string> = { situation: "Durumum", seek: "Aradıklarım", offer: "Sunduklarım", topic: "İlgi alanlarım" };
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
 
 export function ProfilePage() {
+  const { t, lang } = useI18n();
+  const AXIS_LABEL: Record<Axis, string> = {
+    situation: t("Durumum", "My situation"), seek: t("Aradıklarım", "What I'm looking for"),
+    offer: t("Sunduklarım", "What I offer"), topic: t("İlgi alanlarım", "My interests"),
+  };
   const [p, setP] = useState<Profile | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,9 +66,9 @@ export function ProfilePage() {
         socials: { instagram: contact.instagram, website: contact.website },
       });
       api.invalidate("/profile/me");
-      setCMsg("Kaydedildi.");
+      setCMsg(t("Kaydedildi.", "Saved."));
     } catch (e) {
-      setCMsg(e instanceof Error ? e.message : "Kaydedilemedi.");
+      setCMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
     } finally {
       setCBusy(false);
     }
@@ -78,7 +83,7 @@ export function ProfilePage() {
       await api.put("/profile", { avatarKey: key });
       api.invalidate();
       load();
-    } catch (e) { alert(e instanceof Error ? e.message : "Yükleme hatası"); }
+    } catch (e) { alert(e instanceof Error ? e.message : t("Yükleme hatası", "Upload error")); }
     finally { setBusy(false); if (avatarInput.current) avatarInput.current.value = ""; }
   }
 
@@ -93,19 +98,19 @@ export function ProfilePage() {
       }
       api.invalidate();
       load();
-    } catch (e) { alert(e instanceof Error ? e.message : "Yükleme hatası"); }
+    } catch (e) { alert(e instanceof Error ? e.message : t("Yükleme hatası", "Upload error")); }
     finally { setBusy(false); if (galleryInput.current) galleryInput.current.value = ""; }
   }
 
   async function removePhoto(id: string) {
     setBusy(true);
     try { await api.del(`/profile/photos/${id}`); api.invalidate(); load(); }
-    catch (e) { alert(e instanceof Error ? e.message : "Silme hatası"); }
+    catch (e) { alert(e instanceof Error ? e.message : t("Silme hatası", "Delete error")); }
     finally { setBusy(false); }
   }
 
-  if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
-  if (err) return <div className="py-16 text-center text-ink-700">Profil yüklenemedi: {err}</div>;
+  if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
+  if (err) return <div className="py-16 text-center text-ink-700">{t("Profil yüklenemedi:", "Couldn't load profile:")} {err}</div>;
   if (!p) return null;
 
   const photos = p.photos ?? [];
@@ -114,8 +119,8 @@ export function ProfilePage() {
     <div className="max-w-3xl">
       {p.status === "onboarding" && (
         <div className="mb-5 flex items-center justify-between rounded-lg border border-[#ecd9a8] bg-[#f7edd6] px-4 py-3 text-sm text-[#8a6015]">
-          <span>Profilin henüz tamamlanmadı.</span>
-          <Link to="/onboarding"><Button size="sm">Tamamla</Button></Link>
+          <span>{t("Profilin henüz tamamlanmadı.", "Your profile isn't finished yet.")}</span>
+          <Link to="/onboarding"><Button size="sm">{t("Tamamla", "Finish")}</Button></Link>
         </div>
       )}
 
@@ -124,51 +129,51 @@ export function ProfilePage() {
           <Avatar url={p.avatarUrl} className="size-20" />
           <button onClick={() => avatarInput.current?.click()} disabled={busy}
             className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full border border-border bg-surface text-sm shadow-sm hover:bg-sand-100"
-            title="Profil fotoğrafı değiştir">📷</button>
+            title={t("Profil fotoğrafı değiştir", "Change profile photo")}>📷</button>
           <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-semibold">{p.firstName ?? "İsimsiz"}</h1>
-          <div className="text-sm text-ink-500">{[p.city, p.country].filter(Boolean).join(", ") || "Konum eklenmedi"}{p.headline ? ` · ${p.headline}` : ""}</div>
+          <h1 className="font-display text-2xl font-semibold">{p.firstName ?? t("İsimsiz", "Unnamed")}</h1>
+          <div className="text-sm text-ink-500">{[p.city, p.country].filter(Boolean).join(", ") || t("Konum eklenmedi", "No location")}{p.headline ? ` · ${p.headline}` : ""}</div>
           {rev && rev.received.summary.count > 0 && (
             <div className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-600">
               <Stars value={rev.received.summary.avg} />
               <span className="font-semibold">{rev.received.summary.avg}</span>
-              <span className="text-ink-500">({rev.received.summary.count} değerlendirme)</span>
+              <span className="text-ink-500">({rev.received.summary.count} {t("değerlendirme", "reviews")})</span>
             </div>
           )}
         </div>
       </div>
 
-      {p.bio && <Block title="Hakkımda"><p className="text-sm text-ink-700">{p.bio}</p></Block>}
+      {p.bio && <Block title={t("Hakkımda", "About me")}><p className="text-sm text-ink-700">{p.bio}</p></Block>}
 
-      <Block title="Fotoğraflarım">
+      <Block title={t("Fotoğraflarım", "My photos")}>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {photos.map((ph: Photo) => (
             <div key={ph.id} className="group relative aspect-square overflow-hidden rounded-lg bg-sand-100">
               {ph.url && <img src={ph.url} alt="" className="h-full w-full object-cover" />}
               <button onClick={() => removePhoto(ph.id)} disabled={busy}
                 className="absolute right-1 top-1 hidden size-6 place-items-center rounded-full bg-black/50 text-xs text-white group-hover:grid"
-                title="Sil">✕</button>
+                title={t("Sil", "Delete")}>✕</button>
             </div>
           ))}
           {photos.length < 12 && (
             <button onClick={() => galleryInput.current?.click()} disabled={busy}
               className="grid aspect-square place-items-center rounded-lg border-2 border-dashed border-border-strong text-ink-500 hover:border-forest-500 hover:text-forest-600">
-              <span className="text-center text-xs">{busy ? "…" : "+ Fotoğraf"}</span>
+              <span className="text-center text-xs">{busy ? "…" : t("+ Fotoğraf", "+ Photo")}</span>
             </button>
           )}
         </div>
         <input ref={galleryInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={onGallery} />
-        <p className="mt-2 text-xs text-ink-500">Çiftliğinden, projenden ya da kendinden fotoğraflar ekle (en fazla 12).</p>
+        <p className="mt-2 text-xs text-ink-500">{t("Çiftliğinden, projenden ya da kendinden fotoğraflar ekle (en fazla 12).", "Add photos of your farm, project or yourself (up to 12).")}</p>
       </Block>
 
       {AXES.map((axis) => {
-        const tags = p.tags.filter((t) => t.axis === axis);
+        const tags = p.tags.filter((tg) => tg.axis === axis);
         if (tags.length === 0) return null;
         return (
           <Block key={axis} title={AXIS_LABEL[axis]}>
-            <div className="flex flex-wrap gap-2">{tags.map((t) => <Tag key={t.value} axis={t.axis}>{t.labelTr}</Tag>)}</div>
+            <div className="flex flex-wrap gap-2">{tags.map((tg) => <Tag key={tg.value} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}</div>
           </Block>
         );
       })}
@@ -177,27 +182,27 @@ export function ProfilePage() {
 
       <ActivityEligibilityCard elig={elig} />
 
-      <Block title="İletişim bilgileri">
-        <p className="mb-3 text-xs text-ink-500">Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.</p>
+      <Block title={t("İletişim bilgileri", "Contact details")}>
+        <p className="mb-3 text-xs text-ink-500">{t("Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.", "These details are visible only to people whose connection you've mutually accepted.")}</p>
         <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
-          <CField label="Soyad" value={contact.lastName} onChange={(v) => setContact({ ...contact, lastName: v })} />
-          <CField label="İletişim e-postası" type="email" value={contact.contactEmail} onChange={(v) => setContact({ ...contact, contactEmail: v })} />
-          <CField label="Telefon" value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
-          <CField label="İş yeri / çiftlik" value={contact.employer} onChange={(v) => setContact({ ...contact, employer: v })} />
-          <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder="@kullanici" />
-          <CField label="Web sitesi" value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
+          <CField label={t("Soyad", "Last name")} value={contact.lastName} onChange={(v) => setContact({ ...contact, lastName: v })} />
+          <CField label={t("İletişim e-postası", "Contact email")} type="email" value={contact.contactEmail} onChange={(v) => setContact({ ...contact, contactEmail: v })} />
+          <CField label={t("Telefon", "Phone")} value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
+          <CField label={t("İş yeri / çiftlik", "Workplace / farm")} value={contact.employer} onChange={(v) => setContact({ ...contact, employer: v })} />
+          <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder={t("@kullanici", "@handle")} />
+          <CField label={t("Web sitesi", "Website")} value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
           <div className="sm:col-span-2">
-            <CField label="Adres" value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
+            <CField label={t("Adres", "Address")} value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
           </div>
           <div className="flex items-center gap-3 sm:col-span-2">
-            <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? "Kaydediliyor…" : "Kaydet"}</Button>
+            <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
             {cMsg && <span className="text-sm text-ink-600">{cMsg}</span>}
           </div>
         </form>
       </Block>
 
       <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
-        👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.
+        {t("👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.", "👁️ Before connecting, others see only your name, city/country, photos and tags. Your contact details stay private.")}
       </div>
     </div>
   );
@@ -213,16 +218,18 @@ function CField({ label, value, onChange, type, placeholder }: { label: string; 
   );
 }
 
-const REVIEW_STATE: Record<string, { label: string; cls: string }> = {
-  published: { label: "Yayında", cls: "bg-moss-500/15 text-forest-700" },
-  pending: { label: "Karşı taraf değerlendirince görünür", cls: "bg-sand-100 text-ink-600" },
-  held: { label: "Admin onayında", cls: "bg-clay-500/15 text-clay-600" },
-  rejected: { label: "Yayınlanmadı", cls: "bg-sand-100 text-ink-400" },
-};
+const reviewState = (t: (tr: string, en: string) => string): Record<string, { label: string; cls: string }> => ({
+  published: { label: t("Yayında", "Published"), cls: "bg-moss-500/15 text-forest-700" },
+  pending: { label: t("Karşı taraf değerlendirince görünür", "Visible once they review you"), cls: "bg-sand-100 text-ink-600" },
+  held: { label: t("Admin onayında", "Awaiting admin review"), cls: "bg-clay-500/15 text-clay-600" },
+  rejected: { label: t("Yayınlanmadı", "Not published"), cls: "bg-sand-100 text-ink-400" },
+});
 
 // My reviews on my own profile: "Hakkımdaki" (received) + "Yazdıklarım" (written),
 // as two tabs — the pattern Airbnb / Couchsurfing / Workaway use on your own page.
 function MyReviews({ data }: { data: MyReviewsData | null }) {
+  const { t } = useI18n();
+  const REVIEW_STATE = reviewState(t);
   const [tab, setTab] = useState<"received" | "written">("received");
   if (!data) return null;
 
@@ -243,29 +250,32 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
   );
 
   return (
-    <Block title="Değerlendirmelerim">
+    <Block title={t("Değerlendirmelerim", "My reviews")}>
       {data.received.summary.count > 0 && (
         <div className="mb-3 flex items-center gap-2 text-sm text-ink-600">
           <Stars value={data.received.summary.avg} className="text-base" />
           <span className="font-semibold">{data.received.summary.avg}</span>
-          <span className="text-ink-500">/ 5 · {data.received.summary.count} değerlendirme</span>
+          <span className="text-ink-500">/ 5 · {data.received.summary.count} {t("değerlendirme", "reviews")}</span>
         </div>
       )}
 
       <div className="mb-4 flex gap-1.5">
-        <TabBtn id="received" label={`Hakkımdaki (${received.length})`} />
-        <TabBtn id="written" label={`Yazdıklarım (${written.length})`} />
+        <TabBtn id="received" label={`${t("Hakkımdaki", "About me")} (${received.length})`} />
+        <TabBtn id="written" label={`${t("Yazdıklarım", "Written by me")} (${written.length})`} />
       </div>
 
       {tab === "received" && data.pendingReceived > 0 && (
         <div className="mb-3 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-3 py-2 text-[13px] text-[#2c5462]">
-          🔒 {data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.
+          {t(
+            `🔒 ${data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.`,
+            `🔒 ${data.pendingReceived} review(s) are waiting for you. Reviews are mutual; they'll appear once you review the other person too (or after 15 days).`,
+          )}
         </div>
       )}
 
       {list.length === 0 ? (
         <p className="text-sm text-ink-500">
-          {tab === "received" ? "Henüz görünür bir değerlendirmen yok." : "Henüz kimseyi değerlendirmedin."}
+          {tab === "received" ? t("Henüz görünür bir değerlendirmen yok.", "You have no visible reviews yet.") : t("Henüz kimseyi değerlendirmedin.", "You haven't reviewed anyone yet.")}
         </p>
       ) : (
         <div className="space-y-3">
@@ -275,7 +285,7 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
                   <Avatar url={r.reviewer.avatarUrl} className="size-9" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">{r.reviewer.firstName ?? "Bir üye"}</span>
+                      <span className="text-sm font-semibold">{r.reviewer.firstName ?? t("Bir üye", "A member")}</span>
                       <Stars value={r.rating} />
                     </div>
                     {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
@@ -288,7 +298,7 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link to={`/app/uye/${r.reviewee.id}`} className="text-sm font-semibold hover:underline">
-                        {r.reviewee.firstName ?? "Bir üye"}
+                        {r.reviewee.firstName ?? t("Bir üye", "A member")}
                       </Link>
                       <Stars value={r.rating} />
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${REVIEW_STATE[r.state]?.cls ?? ""}`}>
@@ -307,24 +317,25 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
 
 // Personal activity-sharing progress (moved here from the public Aktiviteler page).
 function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null }) {
+  const { t } = useI18n();
   if (!elig) return null;
   if (elig.isAdmin) return null; // admins zaten doğrudan paylaşır
   return (
-    <Block title="Aktivite paylaşımı">
+    <Block title={t("Aktivite paylaşımı", "Sharing activities")}>
       {elig.canSubmit ? (
-        <p className="text-sm text-forest-700">✓ Koşulları sağlıyorsun — Aktiviteler sayfasından paylaşım yapabilirsin.</p>
+        <p className="text-sm text-forest-700">{t("✓ Koşulları sağlıyorsun — Aktiviteler sayfasından paylaşım yapabilirsin.", "✓ You meet the requirements — you can post from the Activities page.")}</p>
       ) : (
         <>
-          <p className="mb-2 text-sm text-ink-600">Aktivite paylaşabilmek için:</p>
+          <p className="mb-2 text-sm text-ink-600">{t("Aktivite paylaşabilmek için:", "To share activities:")}</p>
           <ul className="ml-4 list-disc space-y-0.5 text-sm">
             <li className={elig.connections >= elig.need.connections ? "text-forest-600" : "text-ink-700"}>
-              En az {elig.need.connections} bağlantı — sende {elig.connections}
+              {t(`En az ${elig.need.connections} bağlantı — sende ${elig.connections}`, `At least ${elig.need.connections} connections — you have ${elig.connections}`)}
             </li>
             <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : "text-ink-700"}>
-              En az {elig.need.rating.toFixed(1)} ortalama puan — sende {elig.ratingAvg}
+              {t(`En az ${elig.need.rating.toFixed(1)} ortalama puan — sende ${elig.ratingAvg}`, `At least ${elig.need.rating.toFixed(1)} average rating — you have ${elig.ratingAvg}`)}
             </li>
             <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : "text-ink-700"}>
-              En az {elig.need.reviews} değerlendirme — sende {elig.ratingCount}
+              {t(`En az ${elig.need.reviews} değerlendirme — sende ${elig.ratingCount}`, `At least ${elig.need.reviews} reviews — you have ${elig.ratingCount}`)}
             </li>
           </ul>
         </>
