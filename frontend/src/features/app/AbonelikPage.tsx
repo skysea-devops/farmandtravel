@@ -15,7 +15,7 @@ export function AbonelikPage() {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const price = market === "intl" ? t("$40 / yıl", "$40 / year") : t("$20 / yıl", "$20 / year");
+  const price = t("$30 / yıl", "$30 / year");
 
   async function subscribe() {
     setBusy(true); setNote(null);
@@ -75,8 +75,8 @@ export function AbonelikPage() {
 
       <p className="mt-4 text-xs text-ink-500">
         {t(
-          "10 Ekim 2026'ya kadar katılan herkes Frontier üye olarak ücretsizdir.",
-          "Everyone who joins before 10 October 2026 is a free Frontier member.",
+          "Topluluğun ilk üyeleri (Frontier) ömür boyu ücretsizdir. Ücretli üyelik yakında başlayacak.",
+          "The community's first members (Frontier) are free for life. Paid membership is coming soon.",
         )}
       </p>
     </div>

@@ -17,6 +17,13 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    // Paywall: a 'membership_required' 403 means the user needs a subscription —
+    // send them to the membership page (the billing/profile routes stay accessible).
+    if (res.status === 403 && data?.error === "membership_required") {
+      try {
+        if (!location.pathname.endsWith("/abonelik")) location.assign("/app/abonelik");
+      } catch { /* non-browser context */ }
+    }
     throw new Error(msg);
   }
   return data as T;

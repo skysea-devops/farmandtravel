@@ -138,12 +138,14 @@ export function OnboardingPage() {
       )}
 
       {step === 3 && (
-        <Panel title="Neredeyse hazırsın 🎉" lead="Profilin hazır. Topluluğa erişmek için üyeliğini başlat.">
-          <div className="rounded-xl bg-sand-100 p-4">
-            <div className="flex justify-between py-1 text-sm"><span>Toprakla Yeniden üyelik</span><span>₺X / ay</span></div>
-            <div className="mt-1.5 flex justify-between border-t border-border pt-3 text-base font-semibold"><span>Bugün</span><span>₺X</span></div>
+        <Panel title="Hazırsın 🎉" lead="Profilin tamam. Topluluğa hoş geldin!">
+          <div className="rounded-xl border border-[#c6e0c2] bg-offer-bg p-4">
+            <div className="mb-1 text-2xl">🌱</div>
+            <div className="font-display text-base font-semibold text-forest-700">Öncü üye · Ücretsiz</div>
+            <p className="mt-1 text-sm text-ink-700">
+              Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($30/yıl) ileride başlayacak; o zamana kadar her şey açık.
+            </p>
           </div>
-          <p className="mt-3 text-xs text-ink-500">Dev modu: ödeme (Lemon Squeezy) altyapı yayına alınınca bağlanacak. Şimdilik profilini görebilirsin.</p>
           <Actions>
             <span />
             <Button onClick={() => nav("/app")}>Panele git →</Button>
