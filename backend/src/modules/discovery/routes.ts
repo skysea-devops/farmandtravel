@@ -4,8 +4,14 @@ import { auth, currentUser, requireMembership } from "../../shared/http/auth.js"
 import { safeUrl, withAvatarUrls } from "../../shared/media/s3.js";
 import { loadPhotos } from "../members/interface/routes.js";
 import { scoreCandidate, type Tag } from "./matchmaker.js";
+import { reqLang } from "../../shared/http/lang.js";
+import { translateFields } from "../../shared/text/translate.js";
 
 export const discoveryRoutes = new Hono();
+
+// Member free-text fields machine-translated on the English site. City & first name are
+// proper nouns (left as-is); tags already carry labelEn.
+const MEMBER_TEXT = ["bio", "headline", "country"] as const;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string | undefined): s is string => !!s && UUID_RE.test(s);
@@ -158,6 +164,15 @@ discoveryRoutes.get("/me/dashboard", auth, requireMembership, async (c) => {
     })),
   );
 
+  const lang = reqLang(c);
+  const topMatches = await withAvatarUrls(scored.slice(0, 12));
+  await translateFields(topMatches, MEMBER_TEXT, lang);
+  await translateFields(
+    pendingWithAvatar.map((p) => p.member as Record<string, unknown>),
+    ["headline", "country"],
+    lang,
+  );
+
   return c.json({
     stats: {
       matches: scored.length,
@@ -166,7 +181,7 @@ discoveryRoutes.get("/me/dashboard", auth, requireMembership, async (c) => {
       unreadMessages: Number(unread.rows[0]?.n ?? 0),
       profileViews: 0,
     },
-    matches: await withAvatarUrls(scored.slice(0, 12)),
+    matches: topMatches,
     pendingRequests: pendingWithAvatar,
   });
 });
@@ -182,7 +197,9 @@ discoveryRoutes.get("/members", auth, requireMembership, async (c) => {
       return publicMatch(cd, score, matched);
     })
     .sort((a, b) => b.score - a.score || (a.firstName ?? "").localeCompare(b.firstName ?? "", "tr"));
-  return c.json({ members: await withAvatarUrls(members) });
+  const withUrls = await withAvatarUrls(members);
+  await translateFields(withUrls, MEMBER_TEXT, reqLang(c));
+  return c.json({ members: withUrls });
 });
 
 // PUBLIC teaser (no auth): safe projection of eligible members for the marketing
@@ -205,7 +222,9 @@ discoveryRoutes.get("/public/members", async (c) => {
       dir,
     };
   });
-  return c.json({ members: await withAvatarUrls(rows) });
+  const withUrls = await withAvatarUrls(rows);
+  await translateFields(withUrls, ["headline", "country"], reqLang(c));
+  return c.json({ members: withUrls });
 });
 
 // Single member public view (contact stays hidden until an accepted connection).
@@ -224,12 +243,14 @@ discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
     loadPhotos(cd.id),
     query("SELECT 1 FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, cd.id]),
   ]);
-  return c.json({
+  const dto = {
     ...publicMatch(cd, score, matched),
     avatarUrl,
     photos,
     connection,
     contact,
     saved: (savedRow.rowCount ?? 0) > 0,
-  });
+  };
+  await translateFields([dto], MEMBER_TEXT, reqLang(c));
+  return c.json(dto);
 });

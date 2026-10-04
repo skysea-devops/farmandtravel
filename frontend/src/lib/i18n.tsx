@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { setApiLang } from "@/lib/api";
 
 // Two markets, one codebase:
 //   topraklayeniden.com   -> Turkish, TR pricing
@@ -37,6 +38,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = lang === "en" ? "Reconnect with Soil" : "Toprakla Yeniden";
+    setApiLang(lang); // backend machine-translates content for the English site
   }, [lang]);
 
   const value = useMemo<I18nCtx>(() => ({

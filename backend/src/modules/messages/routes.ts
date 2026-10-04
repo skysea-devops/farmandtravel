@@ -5,6 +5,8 @@ import { auth, currentUser, requireAdmin, requireMembership } from "../../shared
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
 import { broadcast, messageMember, getOfficialId } from "./official.js";
+import { reqLang } from "../../shared/http/lang.js";
+import { translateFields } from "../../shared/text/translate.js";
 
 export const messagesRoutes = new Hono();
 
@@ -178,6 +180,7 @@ messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
       };
     }),
   );
+  await translateFields(conversations, ["lastBody"], reqLang(c));
   return c.json({ conversations });
 });
 
@@ -233,6 +236,7 @@ messagesRoutes.get("/messages/:connectionId", auth, requireMembership, async (c)
     );
     otherRow = om.rows[0] ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) } : null;
   }
+  await translateFields(messages as Record<string, unknown>[], ["body"], reqLang(c));
   return c.json({ connectionId: cid, me: memberId, other: otherRow, messages, hasMore });
 });
 

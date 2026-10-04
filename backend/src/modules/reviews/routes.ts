@@ -6,6 +6,8 @@ import { safeUrl } from "../../shared/media/s3.js";
 import { isProfane } from "../../shared/text/profanity.js";
 import { notify } from "../notifications/service.js";
 import { isUuid } from "../../shared/validation.js";
+import { reqLang } from "../../shared/http/lang.js";
+import { translateFields } from "../../shared/text/translate.js";
 
 export const reviewsRoutes = new Hono();
 
@@ -128,6 +130,10 @@ reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
   const count = received.length;
   const avg = count ? Math.round((received.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
 
+  const lang = reqLang(c);
+  await translateFields(received, ["comment"], lang);
+  await translateFields(written, ["comment"], lang);
+
   return c.json({
     received: { summary: { avg, count }, reviews: received },
     written,
@@ -171,6 +177,10 @@ reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => 
   );
   const mine = mineRow.rows[0];
   const myReview = mine ? { rating: mine.rating, comment: mine.comment, state: mine.moderation } : null;
+
+  // English site: translate others' comments (my own stays as I wrote it).
+  const lang = reqLang(c);
+  await translateFields(reviews, ["comment"], lang);
 
   return c.json({
     summary: { avg, count },
