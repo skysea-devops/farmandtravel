@@ -56,6 +56,8 @@ module "rds" {
   subnet_ids             = module.network.private_subnet_ids
   vpc_security_group_ids = [module.network.rds_sg_id]
   master_password        = random_password.db_master.result
+  instance_class         = var.rds_instance_class
+  multi_az               = var.rds_multi_az
 }
 
 # Media storage — private bucket, presigned uploads.

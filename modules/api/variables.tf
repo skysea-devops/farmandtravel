@@ -79,6 +79,18 @@ variable "frontier_cutoff" {
   default     = "2027-01-01T00:00:00+03:00"
 }
 
+variable "throttle_rate" {
+  description = "API Gateway steady-state requests/sec across the stage."
+  type        = number
+  default     = 50
+}
+
+variable "throttle_burst" {
+  description = "API Gateway burst capacity (concurrent spike)."
+  type        = number
+  default     = 100
+}
+
 variable "log_retention_days" {
   type    = number
   default = 14

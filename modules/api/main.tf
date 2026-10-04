@@ -173,6 +173,13 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default"
   auto_deploy = true
+
+  # Account-wide safety throttle: caps sustained req/s + burst so a flood (abuse or a
+  # runaway client) can't overwhelm Lambda/RDS. Per-user limits are a later addition.
+  default_route_settings {
+    throttling_rate_limit  = var.throttle_rate
+    throttling_burst_limit = var.throttle_burst
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {

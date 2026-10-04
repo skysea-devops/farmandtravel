@@ -16,6 +16,12 @@ variable "instance_class" {
   default = "db.t4g.micro"
 }
 
+variable "multi_az" {
+  description = "Multi-AZ failover standby. Doubles instance cost; enable for production availability."
+  type        = bool
+  default     = false
+}
+
 variable "allocated_storage" {
   type    = number
   default = 20

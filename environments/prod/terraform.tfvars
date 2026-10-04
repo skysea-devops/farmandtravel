@@ -28,5 +28,11 @@ bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 # set to the real launch date (e.g. 2026-10-10T00:00:00+03:00) to start requiring pay.
 frontier_cutoff = "2027-01-01T00:00:00+03:00"
 
+# RDS ölçekleme — büyüdükçe çevir (kod değişmeden):
+#   büyüme → rds_instance_class = "db.t4g.small" / "db.t4g.medium"
+#   üretim dayanıklılığı → rds_multi_az = true (instance maliyetini ~2'ye katlar)
+rds_instance_class = "db.t4g.micro"
+rds_multi_az       = false
+
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"

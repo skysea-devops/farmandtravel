@@ -70,22 +70,78 @@ export function MesajlarPage() {
 }
 
 function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; onSent: () => void; onBack: () => void }) {
-  const [t, setT] = useState<Thread | null>(null);
+  const [meta, setMeta] = useState<{ me: string; other: Thread["other"] } | null>(null);
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const msgsRef = useRef<Message[]>([]);
+  const shouldScrollRef = useRef(true);
+  msgsRef.current = msgs;
 
-  function load() {
-    msgApi.thread<Thread>(connectionId).then(setT).catch(() => {});
+  // Merge new messages (by id), keeping chronological order. Returns true if anything was added.
+  function mergeAppend(incoming: Message[]) {
+    if (incoming.length === 0) return false;
+    const have = new Set(msgsRef.current.map((m) => m.id));
+    const fresh = incoming.filter((m) => !have.has(m.id));
+    if (fresh.length === 0) return false;
+    setMsgs((prev) => [...prev, ...fresh]);
+    return true;
   }
+
+  // Initial load: latest page.
   useEffect(() => {
-    load();
-    const iv = setInterval(load, 10000); // light poll for new messages
+    let alive = true;
+    shouldScrollRef.current = true;
+    msgApi.thread<Thread>(connectionId).then((r) => {
+      if (!alive) return;
+      setMeta({ me: r.me, other: r.other });
+      setMsgs(r.messages);
+      setHasMore(r.hasMore);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [connectionId]);
+
+  // Light poll: fetch only messages newer than the last one we have.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const last = msgsRef.current[msgsRef.current.length - 1];
+      msgApi.thread<Thread>(connectionId, last ? { after: last.createdAt } : undefined)
+        .then((r) => { if (mergeAppend(r.messages)) shouldScrollRef.current = true; })
+        .catch(() => {});
+    }, 10000);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionId]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [t?.messages.length]);
+  // Scroll to bottom only when something was appended (initial/new/sent), not on load-older.
+  useEffect(() => {
+    if (shouldScrollRef.current) {
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
+      shouldScrollRef.current = false;
+    }
+  }, [msgs]);
+
+  async function loadOlder() {
+    const first = msgs[0];
+    if (!first || loadingOlder) return;
+    setLoadingOlder(true);
+    const box = scrollRef.current;
+    const prevH = box?.scrollHeight ?? 0;
+    try {
+      const r = await msgApi.thread<Thread>(connectionId, { before: first.createdAt });
+      const have = new Set(msgsRef.current.map((m) => m.id));
+      const older = r.messages.filter((m) => !have.has(m.id));
+      shouldScrollRef.current = false;
+      setMsgs((prev) => [...older, ...prev]);
+      setHasMore(r.hasMore);
+      // Keep the viewport anchored where the user was (no jump to top).
+      requestAnimationFrame(() => { if (box) box.scrollTop = box.scrollHeight - prevH; });
+    } catch { /* ignore */ } finally { setLoadingOlder(false); }
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -93,27 +149,35 @@ function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; on
     if (!body) return;
     setSending(true);
     try {
-      await msgApi.send(connectionId, body);
+      const sent = await msgApi.send<Message>(connectionId, body);
       setText("");
-      load();
+      if (sent?.id) { shouldScrollRef.current = true; mergeAppend([sent]); }
       onSent();
     } finally { setSending(false); }
   }
 
-  if (!t) return <div className="py-10 text-center text-sm text-ink-500">Yükleniyor…</div>;
+  if (!meta) return <div className="py-10 text-center text-sm text-ink-500">Yükleniyor…</div>;
 
   return (
     <div className="flex h-[70vh] flex-col rounded-[var(--radius-lg)] border border-border bg-surface">
       <div className="flex items-center gap-3 border-b border-border p-3.5">
         <button onClick={onBack} className="text-ink-500 md:hidden">←</button>
-        <Avatar url={t.other?.avatarUrl} className="size-9" />
-        <div className="font-semibold">{t.other?.firstName ?? "Üye"}</div>
+        <Avatar url={meta.other?.avatarUrl} className="size-9" />
+        <div className="font-semibold">{meta.other?.firstName ?? "Üye"}</div>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-4">
-        {t.messages.length === 0 && <div className="py-8 text-center text-sm text-ink-500">İlk mesajı sen yaz 👋</div>}
-        {t.messages.map((m: Message) => {
-          const mine = m.senderId === t.me;
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
+        {hasMore && (
+          <div className="pb-2 text-center">
+            <button onClick={loadOlder} disabled={loadingOlder}
+              className="rounded-full border border-border px-3 py-1 text-xs text-ink-500 hover:bg-sand-100 disabled:opacity-50">
+              {loadingOlder ? "Yükleniyor…" : "Daha eski mesajlar"}
+            </button>
+          </div>
+        )}
+        {msgs.length === 0 && <div className="py-8 text-center text-sm text-ink-500">İlk mesajı sen yaz 👋</div>}
+        {msgs.map((m: Message) => {
+          const mine = m.senderId === meta.me;
           return (
             <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
               <div className={cn(

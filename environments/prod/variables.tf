@@ -98,6 +98,16 @@ variable "domain_name" {
   default     = "topraklayeniden.com"
 }
 
+# RDS scaling knobs — flip in tfvars as the user base grows (no code change).
+variable "rds_instance_class" {
+  type    = string
+  default = "db.t4g.micro"
+}
+variable "rds_multi_az" {
+  type    = bool
+  default = false
+}
+
 variable "secondary_domain" {
   description = "Second apex domain served by the same site (English market). Its Route53 zone must exist in this account. Set to reconnectwithsoil.com to enable; empty keeps a single domain so a missing zone can't block deploys."
   type        = string

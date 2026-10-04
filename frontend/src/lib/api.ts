@@ -213,9 +213,14 @@ export const reviews = {
 
 export const messages = {
   list: <T>() => api.getCached<T>("/messages", 30_000),
-  thread: <T>(connectionId: string) => api.get<T>(`/messages/${connectionId}`),
-  send: async (connectionId: string, body: string) => {
-    const r = await api.post(`/messages/${connectionId}`, { body });
+  thread: <T>(connectionId: string, params?: { before?: string; after?: string }) => {
+    const qs = params?.before ? `?before=${encodeURIComponent(params.before)}`
+      : params?.after ? `?after=${encodeURIComponent(params.after)}`
+      : "";
+    return api.get<T>(`/messages/${connectionId}${qs}`);
+  },
+  send: async <T>(connectionId: string, body: string) => {
+    const r = await api.post<T>(`/messages/${connectionId}`, { body });
     api.invalidate("/me/dashboard");
     return r;
   },
