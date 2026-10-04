@@ -45,23 +45,37 @@ connectionsRoutes.post("/connections", auth, async (c) => {
   const { toId, message } = createSchema.parse(await c.req.json());
   if (toId === memberId) return c.json({ error: "invalid", message: "Kendine istek gönderemezsin" }, 400);
 
+  // Target must be a real, usable member (not official/deleted/suspended).
+  const tgt = await query<{ status: string }>("SELECT status FROM members WHERE id=$1 AND is_official=false", [toId]);
+  const ts = tgt.rows[0]?.status;
+  if (!ts || !["active", "profile_complete"].includes(ts)) {
+    return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
+  }
+
+  // Race-safe: insert directly, relying on the unordered unique pair index. If two
+  // cross requests arrive at once, one inserts and the other hits the conflict and
+  // reads the existing row instead of 500ing.
+  const ins = await query<ConnRow>(
+    `INSERT INTO connections (requester_id, addressee_id, message) VALUES ($1,$2,$3)
+       ON CONFLICT (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id)) DO NOTHING
+       RETURNING *`,
+    [memberId, toId, message ?? null],
+  );
+  if (ins.rows[0]) {
+    await notify(toId, memberId, "connection_request", { connectionId: ins.rows[0].id });
+    return c.json({ status: "pending", connectionId: ins.rows[0].id, direction: "outgoing" });
+  }
+
+  // Conflict → a connection already exists; return its current state.
   const existing = await query<ConnRow>(
     `SELECT * FROM connections
       WHERE (requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1)
       LIMIT 1`,
     [memberId, toId],
   );
-  if (existing.rowCount && existing.rows[0]) {
-    const r = existing.rows[0];
-    return c.json({ status: r.status, connectionId: r.id, direction: r.requester_id === memberId ? "outgoing" : "incoming" });
-  }
-
-  const ins = await query<ConnRow>(
-    `INSERT INTO connections (requester_id, addressee_id, message) VALUES ($1,$2,$3) RETURNING *`,
-    [memberId, toId, message ?? null],
-  );
-  await notify(toId, memberId, "connection_request", { connectionId: ins.rows[0]!.id });
-  return c.json({ status: "pending", connectionId: ins.rows[0]!.id, direction: "outgoing" });
+  const r = existing.rows[0];
+  if (!r) return c.json({ error: "conflict", message: "İstek işlenemedi" }, 409);
+  return c.json({ status: r.status, connectionId: r.id, direction: r.requester_id === memberId ? "outgoing" : "incoming" });
 });
 
 // --- My connections: incoming pending, outgoing pending, accepted (with contact) ---

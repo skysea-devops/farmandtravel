@@ -32,8 +32,15 @@ notificationsRoutes.get("/notifications", auth, async (c) => {
         : null,
     })),
   );
-  // Mark all as read once fetched.
-  await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL", [memberId]);
+  // Mark only the notifications we actually returned as read — not every unread row —
+  // so unseen older ones (beyond this page of 50) aren't silently marked read.
+  const ids = r.rows.map((n) => n.id);
+  if (ids.length) {
+    await query(
+      "UPDATE notifications SET read_at=now() WHERE id = ANY($1::uuid[]) AND user_id=$2 AND read_at IS NULL",
+      [ids, memberId],
+    );
+  }
   return c.json({ notifications: items });
 });
 

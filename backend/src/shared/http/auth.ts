@@ -61,6 +61,9 @@ export async function auth(c: Context, next: Next) {
   const member = await ensureMember(sub, lang);
   // Suspended members are blocked at the door for every authenticated route.
   if (member.status === "suspended") throw Forbidden("Hesabın askıya alındı");
+  // A deleted (anonymized) account can't be used again, even if its Cognito user
+  // still exists (e.g. browser-side deleteUser failed) — prevents a ghost re-login.
+  if (member.status === "deleted") throw Forbidden("Bu hesap silindi");
   c.set("user", { memberId: member.id, sub, groups, isAdmin: groups.includes("admin") } satisfies AuthUser);
   await next();
 }

@@ -5,6 +5,7 @@ import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { isProfane } from "../../shared/text/profanity.js";
 import { notify } from "../notifications/service.js";
+import { isUuid } from "../../shared/validation.js";
 
 export const reviewsRoutes = new Hono();
 
@@ -139,7 +140,7 @@ reviewsRoutes.get("/reviews/me", auth, async (c) => {
 reviewsRoutes.get("/members/:id/reviews", auth, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
-  if (!id) return c.json({ error: "not_found" }, 404);
+  if (!isUuid(id)) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
 
   const rows = await query<{
     rating: number; comment: string | null; createdAt: string;

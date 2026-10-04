@@ -41,8 +41,9 @@ export const handler: Handler = async () => {
   const applied: string[] = [];
   const skipped: string[] = [];
 
+  const client = await pool.connect();
   try {
-    await pool.query(
+    await client.query(
       `CREATE TABLE IF NOT EXISTS _migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`,
     );
 
@@ -51,24 +52,34 @@ export const handler: Handler = async () => {
       .sort();
 
     for (const f of files) {
-      const done = await pool.query("SELECT 1 FROM _migrations WHERE name=$1", [f]);
+      const done = await client.query("SELECT 1 FROM _migrations WHERE name=$1", [f]);
       if (done.rowCount) {
         skipped.push(f);
         continue;
       }
-      await pool.query(readFileSync(join(dir, f), "utf8"));
-      await pool.query("INSERT INTO _migrations(name) VALUES($1)", [f]);
-      applied.push(f);
+      // Atomic: the migration SQL and its marker commit together, so a mid-file
+      // failure rolls back fully and the migration re-runs cleanly next deploy.
+      try {
+        await client.query("BEGIN");
+        await client.query(readFileSync(join(dir, f), "utf8"));
+        await client.query("INSERT INTO _migrations(name) VALUES($1)", [f]);
+        await client.query("COMMIT");
+        applied.push(f);
+      } catch (e) {
+        await client.query("ROLLBACK");
+        throw e;
+      }
     }
 
-    // Seeds (idempotent).
-    await pool.query(readFileSync(join(dir, "seed_taxonomy.sql"), "utf8"));
-    await pool.query(readFileSync(join(dir, "seed_demo_members.sql"), "utf8"));
+    // Seeds: taxonomy only (idempotent). Demo members are DEV-ONLY — never seeded in
+    // prod, so fake profiles can't leak into the real Keşfet.
+    await client.query(readFileSync(join(dir, "seed_taxonomy.sql"), "utf8"));
 
     const result = { ok: true, applied, skipped, seeded: true };
     console.log("migrate:", JSON.stringify(result));
     return result;
   } finally {
+    client.release();
     await pool.end();
   }
 };
