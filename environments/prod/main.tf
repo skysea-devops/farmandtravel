@@ -115,5 +115,6 @@ module "api" {
   ls_webhook_secret = var.ls_webhook_secret
 
   ai_mode            = var.ai_mode
+  bedrock_model_id   = var.bedrock_model_id
   log_retention_days = var.log_retention_days
 }

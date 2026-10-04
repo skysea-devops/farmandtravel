@@ -20,6 +20,9 @@ mobile_callback_urls  = ["topraklayeniden://callback"]
 # extra interface-endpoint cost. Flip to "bedrock" once model access is granted
 # (that also turns on the bedrock-runtime VPC endpoint automatically).
 ai_mode = "bedrock"
+# Haiku 4.5 via the EU cross-region inference profile. Verify the exact id in the
+# Bedrock console (Inference profiles) and grant model access before relying on it.
+bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"

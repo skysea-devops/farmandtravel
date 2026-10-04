@@ -75,6 +75,15 @@ variable "ai_mode" {
   default     = "bedrock"
 }
 
+# Bedrock model for tag inference. Newer Claude models in eu-central-1 are invoked via a
+# cross-region INFERENCE PROFILE (region-group prefix, here "eu."). Confirm the exact id
+# from the Bedrock console (Inference profiles) and grant model access for it.
+variable "bedrock_model_id" {
+  description = "Bedrock model / EU inference profile id for tag inference."
+  type        = string
+  default     = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
+}
+
 variable "domain_name" {
   description = "Public apex domain for the frontend."
   type        = string
