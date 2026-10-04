@@ -47,7 +47,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::191072269876:role/farmandtravel-prod-tf-deploy
+          # Read-only role (PRs can't assume the admin deploy role). -lock=false below
+          # avoids the S3 state-lock write that read-only can't do.
+          role-to-assume: arn:aws:iam::191072269876:role/farmandtravel-prod-tf-plan
           aws-region: ${{ env.AWS_REGION }}
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -57,7 +59,7 @@ jobs:
         run: terraform init
       - name: plan
         working-directory: ${{ env.WORKDIR }}
-        run: terraform plan -no-color -input=false
+        run: terraform plan -no-color -input=false -lock=false
 
   apply:
     name: apply (prod)
