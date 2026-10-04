@@ -5,7 +5,7 @@ import { auth, currentUser, requireAdmin, requireMembership } from "../../shared
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
 import { broadcast, messageMember, getOfficialId } from "./official.js";
-import { reqLang } from "../../shared/http/lang.js";
+import { reqLang, brandName } from "../../shared/http/lang.js";
 import { translateFields } from "../../shared/text/translate.js";
 
 export const messagesRoutes = new Hono();
@@ -150,7 +150,8 @@ messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
   const r = await query(
     `SELECT c.id AS "connectionId",
             json_build_object('id', o.id, 'firstName', o.first_name, 'country', o.country,
-                              'city', o.city, 'headline', o.headline, 'avatarKey', o.avatar_key) AS member,
+                              'city', o.city, 'headline', o.headline, 'avatarKey', o.avatar_key,
+                              'isOfficial', o.is_official) AS member,
             lm.body AS "lastBody", lm.created_at AS "lastAt", lm.sender_id AS "lastSender",
             COALESCE(u.n, 0) AS "unread"
        FROM connections c
@@ -167,12 +168,17 @@ messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
       ORDER BY lm.created_at DESC NULLS LAST`,
     [memberId],
   );
+  const lang = reqLang(c);
   const conversations = await Promise.all(
     r.rows.map(async (row: Record<string, unknown>) => {
-      const member = row.member as { avatarKey?: string | null };
+      const member = row.member as { avatarKey?: string | null; isOfficial?: boolean; firstName?: string | null };
       return {
         connectionId: row.connectionId,
-        member: { ...member, avatarUrl: await safeUrl(member?.avatarKey) },
+        member: {
+          ...member,
+          firstName: member?.isOfficial ? brandName(lang) : member?.firstName,
+          avatarUrl: await safeUrl(member?.avatarKey),
+        },
         lastBody: row.lastBody ?? null,
         lastAt: row.lastAt ?? null,
         lastSender: row.lastSender ?? null,
@@ -180,7 +186,7 @@ messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
       };
     }),
   );
-  await translateFields(conversations, ["lastBody"], reqLang(c));
+  await translateFields(conversations, ["lastBody"], lang);
   return c.json({ conversations });
 });
 
@@ -226,17 +232,22 @@ messagesRoutes.get("/messages/:connectionId", auth, requireMembership, async (c)
     messages = r.rows.slice(0, PAGE).reverse(); // oldest→newest for display
   }
 
+  const lang = reqLang(c);
   // Other-member info only on the first/older page (not every poll).
   let otherRow = null;
   if (!after) {
-    const om = await query<{ avatarKey: string | null }>(
-      `SELECT id, first_name AS "firstName", country, city, headline, avatar_key AS "avatarKey"
+    const om = await query<{ firstName: string | null; avatarKey: string | null; isOfficial: boolean }>(
+      `SELECT id, first_name AS "firstName", country, city, headline,
+              avatar_key AS "avatarKey", is_official AS "isOfficial"
          FROM members WHERE id=$1`,
       [other],
     );
-    otherRow = om.rows[0] ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) } : null;
+    const o = om.rows[0];
+    otherRow = o
+      ? { ...o, firstName: o.isOfficial ? brandName(lang) : o.firstName, avatarUrl: await safeUrl(o.avatarKey) }
+      : null;
   }
-  await translateFields(messages as Record<string, unknown>[], ["body"], reqLang(c));
+  await translateFields(messages as Record<string, unknown>[], ["body"], lang);
   return c.json({ connectionId: cid, me: memberId, other: otherRow, messages, hasMore });
 });
 

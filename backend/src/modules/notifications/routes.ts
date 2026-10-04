@@ -2,18 +2,21 @@ import { Hono } from "hono";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
+import { reqLang, brandName } from "../../shared/http/lang.js";
 
 export const notificationsRoutes = new Hono();
 
 // List my notifications (newest first) with actor info; also mark them read.
 notificationsRoutes.get("/notifications", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
+  const lang = reqLang(c);
   const r = await query<{
     id: string; type: string; data: Record<string, unknown>; createdAt: string; readAt: string | null;
-    actorId: string | null; actorName: string | null; actorAvatarKey: string | null;
+    actorId: string | null; actorName: string | null; actorAvatarKey: string | null; actorOfficial: boolean | null;
   }>(
     `SELECT n.id, n.type, n.data, n.created_at AS "createdAt", n.read_at AS "readAt",
-            a.id AS "actorId", a.first_name AS "actorName", a.avatar_key AS "actorAvatarKey"
+            a.id AS "actorId", a.first_name AS "actorName", a.avatar_key AS "actorAvatarKey",
+            a.is_official AS "actorOfficial"
        FROM notifications n LEFT JOIN members a ON a.id = n.actor_id
       WHERE n.user_id = $1
       ORDER BY n.created_at DESC
@@ -28,7 +31,7 @@ notificationsRoutes.get("/notifications", auth, requireMembership, async (c) => 
       createdAt: n.createdAt,
       read: Boolean(n.readAt),
       actor: n.actorId
-        ? { id: n.actorId, firstName: n.actorName, avatarUrl: await safeUrl(n.actorAvatarKey) }
+        ? { id: n.actorId, firstName: n.actorOfficial ? brandName(lang) : n.actorName, avatarUrl: await safeUrl(n.actorAvatarKey) }
         : null,
     })),
   );
