@@ -165,6 +165,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
   const [open, setOpen] = useState(false);
   const [rateErr, setRateErr] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
+  const [subErr, setSubErr] = useState<string | null>(null);
 
   function load() {
     reviewsApi.list<ReviewsData>(memberId).then((d) => {
@@ -179,6 +180,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
     // silently doing nothing (users thought "Gönder" was broken).
     if (!rating) { setRateErr(true); return; }
     setSaving(true);
+    setSubErr(null); setSent(null);
     try {
       const r = await reviewsApi.submit(memberId, rating, comment.trim() || undefined);
       setOpen(false);
@@ -189,10 +191,11 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
       );
       load();
     } catch (e) {
-      // One-time guard (409) or any failure: refresh so the submitted review shows.
-      setOpen(false);
-      setSent(e instanceof Error && /zaten|already/i.test(e.message) ? e.message : t("Değerlendirme gönderilemedi.", "Couldn't submit review."));
-      load();
+      const m = e instanceof Error ? e.message : String(e);
+      // Already reviewed (one-time guard): informational, refresh to show it.
+      if (/zaten|already/i.test(m)) { setOpen(false); setSent(m); load(); }
+      // Any other failure: surface the REAL backend message (don't hide it as success).
+      else setSubErr(`${t("Gönderilemedi", "Couldn't send")}: ${m}`);
     } finally { setSaving(false); }
   }
 
@@ -250,8 +253,9 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
               </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" disabled={saving} onClick={submit}>{saving ? t("Kaydediliyor…", "Saving…") : t("Gönder", "Send")}</Button>
-                <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setRateErr(false); }}>{t("Vazgeç", "Cancel")}</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setRateErr(false); setSubErr(null); }}>{t("Vazgeç", "Cancel")}</Button>
               </div>
+              {subErr && <p className="mt-2 rounded-lg border border-[#eec4c0] bg-[#f7e2e0] px-3 py-2 text-sm text-[#8a2f29]">{subErr}</p>}
             </div>
           )}
           {sent && <p className="mt-2 text-sm text-forest-700">✓ {sent}</p>}
