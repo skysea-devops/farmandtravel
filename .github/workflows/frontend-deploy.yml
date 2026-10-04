@@ -59,11 +59,14 @@ jobs:
             exit 0
           fi
 
-          # Hashed assets: cache forever. index.html: never cache (always fresh).
+          # Hashed assets: cache forever. HTML entries (index.html + the English
+          # index.en.html): never cache — they change every deploy (new asset hashes).
           aws s3 sync frontend/dist "s3://$BUCKET" --delete \
             --cache-control "public,max-age=31536000,immutable" \
-            --exclude index.html
+            --exclude index.html --exclude index.en.html
           aws s3 cp frontend/dist/index.html "s3://$BUCKET/index.html" \
+            --cache-control "no-cache"
+          aws s3 cp frontend/dist/index.en.html "s3://$BUCKET/index.en.html" \
             --cache-control "no-cache"
 
           DIST_ID=$(aws cloudfront list-distributions \
