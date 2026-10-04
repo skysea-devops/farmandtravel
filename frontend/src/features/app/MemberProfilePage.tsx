@@ -139,7 +139,7 @@ export function MemberProfilePage() {
         );
       })}
 
-      <ReviewsSection memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
+      <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
 
       <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
         {t("👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı kabul edildikten sonra görünür.", "👁️ Contact details (email, phone, full address) are visible only after a mutual connection is accepted.")}
@@ -148,11 +148,13 @@ export function MemberProfilePage() {
   );
 }
 
+// Keys are the backend's NORMALIZED review states (same as /reviews/me).
 const myReviewState = (t: (tr: string, en: string) => string): Record<string, string> => ({
-  approved: t("Yayında", "Published"),
-  auto: t("Gönderildi", "Submitted"),
+  published: t("Yayında", "Published"),
+  pending: t("Karşılıklı değerlendirince görünür", "Visible once mutual"),
   held: t("Admin onayında", "Awaiting admin review"),
   rejected: t("Yayınlanmadı", "Not published"),
+  removed: t("Kaldırıldı", "Removed"),
 });
 
 function ReviewsSection({ memberId, name }: { memberId: string; name: string }) {
@@ -179,6 +181,14 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
     // Keep the button clickable; if no star is picked, say so clearly instead of
     // silently doing nothing (users thought "Gönder" was broken).
     if (!rating) { setRateErr(true); return; }
+    // One-time review: confirm before locking it in.
+    const ok = window.confirm(
+      t(
+        `Bu değerlendirme gönderildikten sonra değiştirilemez. ${rating} yıldız olarak göndermek istediğine emin misin?`,
+        `This review can't be changed once sent. Send it as ${rating} star${rating === 1 ? "" : "s"}?`,
+      ),
+    );
+    if (!ok) return;
     setSaving(true);
     setSubErr(null); setSent(null);
     try {
@@ -242,9 +252,10 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
               <label className="mb-1.5 block text-sm font-semibold text-ink-700">
                 {t("2. Yorumun", "2. Your comment")} <span className="font-normal text-ink-400">{t("(isteğe bağlı)", "(optional)")}</span>
               </label>
-              <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3}
+              <textarea value={comment} onChange={(e) => setComment(e.target.value.slice(0, 1000))} rows={3} maxLength={1000}
                 placeholder={t(`${name} ile deneyimini birkaç cümleyle anlat…`, `Describe your experience with ${name} in a few sentences…`)}
                 className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
+              <div className="mt-1 text-right text-xs text-ink-400">{comment.length}/1000</div>
               <p className="mt-3 text-xs text-ink-500">
                 {t(
                   "Değerlendirme tek seferliktir, sonradan değiştirilemez. Karşılıklıdır: karşı taraf da seni değerlendirdiğinde (ya da 15 gün sonra) yayınlanır. 4 yıldız ve altı ya da uygunsuz yorumlar, yayınlanmadan önce ekip tarafından incelenir.",

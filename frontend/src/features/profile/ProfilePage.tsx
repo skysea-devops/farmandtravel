@@ -223,6 +223,7 @@ const reviewState = (t: (tr: string, en: string) => string): Record<string, { la
   pending: { label: t("Karşı taraf değerlendirince görünür", "Visible once they review you"), cls: "bg-sand-100 text-ink-600" },
   held: { label: t("Admin onayında", "Awaiting admin review"), cls: "bg-clay-500/15 text-clay-600" },
   rejected: { label: t("Yayınlanmadı", "Not published"), cls: "bg-sand-100 text-ink-400" },
+  removed: { label: t("Kaldırıldı", "Removed"), cls: "bg-sand-100 text-ink-400" },
 });
 
 // My reviews on my own profile: "Hakkımdaki" (received) + "Yazdıklarım" (written),

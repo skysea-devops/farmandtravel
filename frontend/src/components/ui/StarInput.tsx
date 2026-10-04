@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-
-const LABELS = ["", "Kötü", "İdare eder", "Fena değil", "İyi", "Harika"];
+import { useI18n } from "@/lib/i18n";
 
 // Interactive star picker. Big tap targets, hover preview, and a live text label
 // so it's obvious that a rating registered — users kept missing that the send
@@ -15,6 +14,8 @@ export function StarInput({
   onChange: (v: number) => void;
   className?: string;
 }) {
+  const { t } = useI18n();
+  const LABELS = ["", t("Kötü", "Poor"), t("İdare eder", "Fair"), t("Fena değil", "Okay"), t("İyi", "Good"), t("Harika", "Great")];
   const [hover, setHover] = useState(0);
   const shown = hover || value;
   return (
@@ -24,7 +25,7 @@ export function StarInput({
           <button
             key={i}
             type="button"
-            aria-label={`${i} yıldız`}
+            aria-label={t(`${i} yıldız`, `${i} stars`)}
             aria-pressed={i <= value}
             onClick={() => onChange(i)}
             onMouseEnter={() => setHover(i)}
@@ -38,7 +39,7 @@ export function StarInput({
         ))}
       </div>
       <span className="text-sm font-medium text-ink-600">
-        {shown ? `${shown}/5 · ${LABELS[shown]}` : "Yıldıza dokun"}
+        {shown ? `${shown}/5 · ${LABELS[shown]}` : t("Yıldıza dokun", "Tap a star")}
       </span>
     </div>
   );
