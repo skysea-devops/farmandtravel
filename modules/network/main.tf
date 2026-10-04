@@ -81,7 +81,34 @@ resource "aws_security_group" "rds" {
   tags = { Name = "${local.name}-rds-sg" }
 }
 
-# No interface VPC endpoints: the Lambda gets DB credentials injected as env vars at
-# deploy time (see api module + prod data source), so it makes no AWS API calls at
-# runtime. Lambda->RDS is intra-VPC and S3 uses the free gateway endpoint above.
-# (When AI_MODE=bedrock later, add a bedrock-runtime interface endpoint here.)
+# --- Bedrock interface endpoint (AI_MODE=bedrock) ----------------------------
+# Closed VPC has no internet egress, so the Lambda reaches the Bedrock runtime API
+# over a private interface endpoint (no NAT needed). ~$0.011/hr per AZ.
+resource "aws_security_group" "vpce" {
+  count       = var.ai_mode == "bedrock" ? 1 : 0
+  name        = "${local.name}-vpce-sg"
+  description = "HTTPS from Lambda to interface VPC endpoints"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description     = "HTTPS from Lambda"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lambda.id]
+  }
+
+  tags = { Name = "${local.name}-vpce-sg" }
+}
+
+resource "aws_vpc_endpoint" "bedrock_runtime" {
+  count               = var.ai_mode == "bedrock" ? 1 : 0
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${var.aws_region}.bedrock-runtime"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpce[0].id]
+  private_dns_enabled = true
+
+  tags = { Name = "${local.name}-bedrock-runtime-vpce" }
+}

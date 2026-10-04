@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser } from "../../shared/http/auth.js";
+import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl, withAvatarUrls } from "../../shared/media/s3.js";
 import { loadPhotos } from "../members/interface/routes.js";
 import { scoreCandidate, type Tag } from "./matchmaker.js";
@@ -114,7 +114,7 @@ function publicMatch(cd: CandidateRow, score: number, matched: Tag[]) {
 
 // Panel/dashboard payload: stats + top matches + pending requests.
 // Connections/messages/views land in later sprints (0 for now).
-discoveryRoutes.get("/me/dashboard", auth, async (c) => {
+discoveryRoutes.get("/me/dashboard", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const mine = await myTags(memberId);
   const scored = (await candidates(memberId))
@@ -173,7 +173,7 @@ discoveryRoutes.get("/me/dashboard", auth, async (c) => {
 
 // Discovery list: all active members with my match score (Keşfet). Filtering is
 // done client-side for now (small dataset).
-discoveryRoutes.get("/members", auth, async (c) => {
+discoveryRoutes.get("/members", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const mine = await myTags(memberId);
   const members = (await candidates(memberId))
@@ -209,7 +209,7 @@ discoveryRoutes.get("/public/members", async (c) => {
 });
 
 // Single member public view (contact stays hidden until an accepted connection).
-discoveryRoutes.get("/members/:id", auth, async (c) => {
+discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
   // Reject malformed ids up front — a non-UUID would otherwise blow up the pg query.

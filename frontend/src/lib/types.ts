@@ -250,4 +250,5 @@ export interface Thread {
   me: string;
   other: MiniMember | null;
   messages: Message[];
+  hasMore: boolean;
 }

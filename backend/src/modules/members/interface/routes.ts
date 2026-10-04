@@ -98,11 +98,12 @@ membersRoutes.delete("/profile", auth, async (c) => {
   const photos = await query<{ s3_key: string }>("SELECT s3_key FROM member_photos WHERE member_id=$1", [memberId]);
   const me = await query<{ avatar_key: string | null }>("SELECT avatar_key FROM members WHERE id=$1", [memberId]);
 
-  // Scrub all PII; break the Cognito linkage so the sub can't match a future login.
+  // Scrub all PII. Keep cognito_sub so a re-login with the same Cognito user maps back
+  // to this row and is blocked by the status='deleted' guard in auth (prevents a ghost
+  // account if the browser-side Cognito deleteUser failed). The sub is an opaque id.
   await query(
     `UPDATE members SET
        status='deleted', deleted_at=now(),
-       cognito_sub = 'deleted:' || id::text,
        first_name='Silinmiş üye', last_name=NULL, headline=NULL, bio=NULL, avatar_key=NULL,
        country=NULL, city=NULL, languages='{}',
        contact_email=NULL, phone=NULL, socials=NULL, employer=NULL, address_exact=NULL,

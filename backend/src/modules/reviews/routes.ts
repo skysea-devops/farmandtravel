@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
+import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { isProfane } from "../../shared/text/profanity.js";
 import { notify } from "../notifications/service.js";
+import { isUuid } from "../../shared/validation.js";
 
 export const reviewsRoutes = new Hono();
 
@@ -29,7 +30,7 @@ const schema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
 });
-reviewsRoutes.post("/reviews", auth, async (c) => {
+reviewsRoutes.post("/reviews", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const { revieweeId, rating, comment } = schema.parse(await c.req.json());
   if (revieweeId === memberId) return c.json({ error: "invalid" }, 400);
@@ -59,7 +60,7 @@ reviewsRoutes.post("/reviews", auth, async (c) => {
 
 // My own reviews: received (about me, only the visible ones) + written (all mine,
 // each tagged with its publishing state so I can see what's pending/held).
-reviewsRoutes.get("/reviews/me", auth, async (c) => {
+reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
 
   const recv = await query<{
@@ -136,10 +137,10 @@ reviewsRoutes.get("/reviews/me", auth, async (c) => {
 
 // Public reviews for a member: only the visible ones (+ summary over visible).
 // My own review of them is returned separately so I can always see/edit it.
-reviewsRoutes.get("/members/:id/reviews", auth, async (c) => {
+reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
-  if (!id) return c.json({ error: "not_found" }, 404);
+  if (!isUuid(id)) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
 
   const rows = await query<{
     rating: number; comment: string | null; createdAt: string;

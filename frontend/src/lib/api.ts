@@ -17,6 +17,13 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    // Paywall: a 'membership_required' 403 means the user needs a subscription —
+    // send them to the membership page (the billing/profile routes stay accessible).
+    if (res.status === 403 && data?.error === "membership_required") {
+      try {
+        if (!location.pathname.endsWith("/abonelik")) location.assign("/app/abonelik");
+      } catch { /* non-browser context */ }
+    }
     throw new Error(msg);
   }
   return data as T;
@@ -143,6 +150,7 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
     kind,
     contentType,
+    size: blob.size,
   });
   const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": contentType }, body: blob });
   if (!res.ok) throw new Error("Yükleme başarısız");
@@ -205,9 +213,14 @@ export const reviews = {
 
 export const messages = {
   list: <T>() => api.getCached<T>("/messages", 30_000),
-  thread: <T>(connectionId: string) => api.get<T>(`/messages/${connectionId}`),
-  send: async (connectionId: string, body: string) => {
-    const r = await api.post(`/messages/${connectionId}`, { body });
+  thread: <T>(connectionId: string, params?: { before?: string; after?: string }) => {
+    const qs = params?.before ? `?before=${encodeURIComponent(params.before)}`
+      : params?.after ? `?after=${encodeURIComponent(params.after)}`
+      : "";
+    return api.get<T>(`/messages/${connectionId}${qs}`);
+  },
+  send: async <T>(connectionId: string, body: string) => {
+    const r = await api.post<T>(`/messages/${connectionId}`, { body });
     api.invalidate("/me/dashboard");
     return r;
   },

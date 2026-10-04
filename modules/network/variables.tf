@@ -8,3 +8,10 @@ variable "azs" {
   description = "List of AZ names to place subnets in (length must be >= az_count)."
   type        = list(string)
 }
+
+# When "bedrock", provision the bedrock-runtime interface endpoint (closed VPC needs it
+# for AI calls). "stub" leaves it out to avoid the endpoint cost.
+variable "ai_mode" {
+  type    = string
+  default = "stub"
+}

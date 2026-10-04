@@ -13,6 +13,7 @@ module "network" {
   vpc_cidr    = var.vpc_cidr
   az_count    = var.az_count
   azs         = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  ai_mode     = var.ai_mode
 }
 
 module "observability" {
@@ -55,6 +56,8 @@ module "rds" {
   subnet_ids             = module.network.private_subnet_ids
   vpc_security_group_ids = [module.network.rds_sg_id]
   master_password        = random_password.db_master.result
+  instance_class         = var.rds_instance_class
+  multi_az               = var.rds_multi_az
 }
 
 # Media storage — private bucket, presigned uploads.
@@ -114,5 +117,7 @@ module "api" {
   ls_webhook_secret = var.ls_webhook_secret
 
   ai_mode            = var.ai_mode
+  bedrock_model_id   = var.bedrock_model_id
+  frontier_cutoff    = var.frontier_cutoff
   log_retention_days = var.log_retention_days
 }

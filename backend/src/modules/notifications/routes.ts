@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser } from "../../shared/http/auth.js";
+import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 
 export const notificationsRoutes = new Hono();
 
 // List my notifications (newest first) with actor info; also mark them read.
-notificationsRoutes.get("/notifications", auth, async (c) => {
+notificationsRoutes.get("/notifications", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query<{
     id: string; type: string; data: Record<string, unknown>; createdAt: string; readAt: string | null;
@@ -32,13 +32,20 @@ notificationsRoutes.get("/notifications", auth, async (c) => {
         : null,
     })),
   );
-  // Mark all as read once fetched.
-  await query("UPDATE notifications SET read_at=now() WHERE user_id=$1 AND read_at IS NULL", [memberId]);
+  // Mark only the notifications we actually returned as read — not every unread row —
+  // so unseen older ones (beyond this page of 50) aren't silently marked read.
+  const ids = r.rows.map((n) => n.id);
+  if (ids.length) {
+    await query(
+      "UPDATE notifications SET read_at=now() WHERE id = ANY($1::uuid[]) AND user_id=$2 AND read_at IS NULL",
+      [ids, memberId],
+    );
+  }
   return c.json({ notifications: items });
 });
 
 // Unread count (for the bell badge).
-notificationsRoutes.get("/notifications/unread", auth, async (c) => {
+notificationsRoutes.get("/notifications/unread", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query<{ n: string }>(
     "SELECT count(*)::int AS n FROM notifications WHERE user_id=$1 AND read_at IS NULL",

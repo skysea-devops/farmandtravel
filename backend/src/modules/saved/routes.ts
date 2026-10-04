@@ -1,17 +1,22 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser } from "../../shared/http/auth.js";
+import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
+import { isUuid } from "../../shared/validation.js";
 
 export const savedRoutes = new Hono();
 
 const schema = z.object({ memberId: z.string().uuid() });
 
-savedRoutes.post("/saved", auth, async (c) => {
+savedRoutes.post("/saved", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const { memberId: target } = schema.parse(await c.req.json());
   if (target === memberId) return c.json({ error: "invalid" }, 400);
+  // Target must exist and be a real, usable member (else the FK insert would 500).
+  const t = await query<{ status: string }>("SELECT status FROM members WHERE id=$1 AND is_official=false", [target]);
+  const ts = t.rows[0]?.status;
+  if (!ts || ts === "deleted" || ts === "suspended") return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
   await query(
     "INSERT INTO saved_members (saver_id, saved_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
     [memberId, target],
@@ -19,14 +24,16 @@ savedRoutes.post("/saved", auth, async (c) => {
   return c.json({ saved: true });
 });
 
-savedRoutes.delete("/saved/:memberId", auth, async (c) => {
+savedRoutes.delete("/saved/:memberId", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
-  await query("DELETE FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, c.req.param("memberId")]);
+  const target = c.req.param("memberId");
+  if (!isUuid(target)) return c.json({ error: "not_found" }, 404);
+  await query("DELETE FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, target]);
   return c.json({ saved: false });
 });
 
 // Saved members as cards.
-savedRoutes.get("/saved", auth, async (c) => {
+savedRoutes.get("/saved", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query<{
     id: string; firstName: string | null; country: string | null; city: string | null;

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
+import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
 import { broadcast, messageMember, getOfficialId } from "./official.js";
@@ -143,7 +143,7 @@ async function participant(me: string, connectionId: string): Promise<string | n
 }
 
 // Conversation list: accepted connections + last message + unread count.
-messagesRoutes.get("/messages", auth, async (c) => {
+messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query(
     `SELECT c.id AS "connectionId",
@@ -182,7 +182,7 @@ messagesRoutes.get("/messages", auth, async (c) => {
 });
 
 // Thread: messages of a connection. Marks incoming messages read.
-messagesRoutes.get("/messages/:connectionId", auth, async (c) => {
+messagesRoutes.get("/messages/:connectionId", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const cid = c.req.param("connectionId");
   const other = cid ? await participant(memberId, cid) : null;
@@ -194,25 +194,51 @@ messagesRoutes.get("/messages/:connectionId", auth, async (c) => {
     [cid, memberId],
   );
 
-  const r = await query(
-    `SELECT id, sender_id AS "senderId", body, created_at AS "createdAt"
-       FROM messages WHERE connection_id=$1 ORDER BY created_at ASC`,
-    [cid],
-  );
-  const om = await query<{ avatarKey: string | null }>(
-    `SELECT id, first_name AS "firstName", country, city, headline, avatar_key AS "avatarKey"
-       FROM members WHERE id=$1`,
-    [other],
-  );
-  const otherRow = om.rows[0]
-    ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) }
-    : null;
-  return c.json({ connectionId: cid, me: memberId, other: otherRow, messages: r.rows });
+  // Paginated so a long conversation never loads thousands of rows:
+  //   (default)        → latest PAGE messages + hasMore
+  //   ?before=<ISO>    → the PAGE older than that cursor (load-older)
+  //   ?after=<ISO>     → only messages newer than that cursor (lightweight poll)
+  const PAGE = 50;
+  const after = c.req.query("after");
+  const before = c.req.query("before");
+  let messages: unknown[];
+  let hasMore = false;
+
+  if (after) {
+    const r = await query(
+      `SELECT id, sender_id AS "senderId", body, created_at AS "createdAt"
+         FROM messages WHERE connection_id=$1 AND created_at > $2
+        ORDER BY created_at ASC LIMIT 200`,
+      [cid, after],
+    );
+    messages = r.rows;
+  } else {
+    const r = await query(
+      `SELECT id, sender_id AS "senderId", body, created_at AS "createdAt"
+         FROM messages WHERE connection_id=$1 ${before ? "AND created_at < $3" : ""}
+        ORDER BY created_at DESC LIMIT $2`,
+      before ? [cid, PAGE + 1, before] : [cid, PAGE + 1],
+    );
+    hasMore = r.rows.length > PAGE;
+    messages = r.rows.slice(0, PAGE).reverse(); // oldest→newest for display
+  }
+
+  // Other-member info only on the first/older page (not every poll).
+  let otherRow = null;
+  if (!after) {
+    const om = await query<{ avatarKey: string | null }>(
+      `SELECT id, first_name AS "firstName", country, city, headline, avatar_key AS "avatarKey"
+         FROM members WHERE id=$1`,
+      [other],
+    );
+    otherRow = om.rows[0] ? { ...om.rows[0], avatarUrl: await safeUrl(om.rows[0].avatarKey) } : null;
+  }
+  return c.json({ connectionId: cid, me: memberId, other: otherRow, messages, hasMore });
 });
 
 // Send a message.
 const sendSchema = z.object({ body: z.string().min(1).max(4000) });
-messagesRoutes.post("/messages/:connectionId", auth, async (c) => {
+messagesRoutes.post("/messages/:connectionId", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const cid = c.req.param("connectionId");
   const other = cid ? await participant(memberId, cid) : null;

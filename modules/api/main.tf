@@ -85,6 +85,7 @@ resource "aws_lambda_function" "api" {
       AI_MODE          = var.ai_mode
       BEDROCK_REGION   = var.aws_region
       BEDROCK_MODEL_ID = var.bedrock_model_id
+      FRONTIER_CUTOFF  = var.frontier_cutoff
       MEDIA_BUCKET     = var.media_bucket_name
       ALLOWED_ORIGINS  = join(",", var.allowed_origins)
       # Lemon Squeezy billing (empty until configured → checkout returns 503).
@@ -172,6 +173,13 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default"
   auto_deploy = true
+
+  # Account-wide safety throttle: caps sustained req/s + burst so a flood (abuse or a
+  # runaway client) can't overwhelm Lambda/RDS. Per-user limits are a later addition.
+  default_route_settings {
+    throttling_rate_limit  = var.throttle_rate
+    throttling_burst_limit = var.throttle_burst
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {

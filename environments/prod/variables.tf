@@ -75,10 +75,37 @@ variable "ai_mode" {
   default     = "bedrock"
 }
 
+# Members joining before this ISO date are free "frontier". Kept far out until Lemon
+# Squeezy billing is live; set to the real launch date to start requiring subscriptions.
+variable "frontier_cutoff" {
+  description = "ISO date; sign-ups before it are free 'frontier'."
+  type        = string
+  default     = "2027-01-01T00:00:00+03:00"
+}
+
+# Bedrock model for tag inference. Newer Claude models in eu-central-1 are invoked via a
+# cross-region INFERENCE PROFILE (region-group prefix, here "eu."). Confirm the exact id
+# from the Bedrock console (Inference profiles) and grant model access for it.
+variable "bedrock_model_id" {
+  description = "Bedrock model / EU inference profile id for tag inference."
+  type        = string
+  default     = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
+}
+
 variable "domain_name" {
   description = "Public apex domain for the frontend."
   type        = string
   default     = "topraklayeniden.com"
+}
+
+# RDS scaling knobs — flip in tfvars as the user base grows (no code change).
+variable "rds_instance_class" {
+  type    = string
+  default = "db.t4g.micro"
+}
+variable "rds_multi_az" {
+  type    = bool
+  default = false
 }
 
 variable "secondary_domain" {

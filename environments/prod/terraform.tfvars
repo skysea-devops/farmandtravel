@@ -19,7 +19,20 @@ mobile_callback_urls  = ["topraklayeniden://callback"]
 # Kept "stub" for launch: onboarding works without Bedrock model access or the
 # extra interface-endpoint cost. Flip to "bedrock" once model access is granted
 # (that also turns on the bedrock-runtime VPC endpoint automatically).
-ai_mode = "stub"
+ai_mode = "bedrock"
+# Haiku 4.5 via the EU cross-region inference profile. Verify the exact id in the
+# Bedrock console (Inference profiles) and grant model access before relying on it.
+bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+# Paywall: free "frontier" until this date. Kept far out until Lemon Squeezy is live;
+# set to the real launch date (e.g. 2026-10-10T00:00:00+03:00) to start requiring pay.
+frontier_cutoff = "2027-01-01T00:00:00+03:00"
+
+# RDS ölçekleme — büyüdükçe çevir (kod değişmeden):
+#   büyüme → rds_instance_class = "db.t4g.small" / "db.t4g.medium"
+#   üretim dayanıklılığı → rds_multi_az = true (instance maliyetini ~2'ye katlar)
+rds_instance_class = "db.t4g.micro"
+rds_multi_az       = false
 
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"

@@ -25,16 +25,29 @@ export function AppLayout() {
   const location = useLocation();
   const [unread, setUnread] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [plan, setPlan] = useState<string>("");
 
   // Refresh the bell badge on navigation (cheap, cached 30s).
   useEffect(() => {
     notifApi.unread<{ unread: number }>().then((r) => setUnread(r.unread)).catch(() => {});
   }, [location.pathname]);
 
-  // Show the admin link only to admins.
+  // Load profile: admin link, plan badge, and bounce unfinished onboarding to /onboarding.
   useEffect(() => {
-    api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
-  }, []);
+    api.getCached<Profile>("/profile/me")
+      .then((p) => {
+        setIsAdmin(!!p.isAdmin);
+        setPlan(p.plan ?? "");
+        if (p.status === "onboarding") navigate("/onboarding", { replace: true });
+      })
+      .catch(() => {});
+  }, [navigate]);
+
+  const planBadge =
+    plan === "frontier" ? { text: "🌱 Öncü üye · ücretsiz", cls: "text-moss-300" }
+    : plan === "active" ? { text: "● Üyelik aktif", cls: "text-moss-300" }
+    : plan === "none" ? { text: "Üyelik gerekli", cls: "text-clay-300" }
+    : { text: "", cls: "text-moss-300" };
 
   const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: "Admin Panel", icon: "🛡️" }] : [];
 
@@ -77,7 +90,7 @@ export function AppLayout() {
           <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? "Üye"}</div>
-            <div className="text-xs text-moss-300">● Üyelik aktif</div>
+            {planBadge.text && <div className={cn("text-xs", planBadge.cls)}>{planBadge.text}</div>}
           </div>
         </div>
         <button

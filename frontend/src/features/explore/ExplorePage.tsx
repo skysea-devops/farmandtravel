@@ -33,6 +33,7 @@ export function ExplorePage() {
   const [farm, setFarm] = useState(false);
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ members: PublicMember[] }>("/public/members")
@@ -41,8 +42,15 @@ export function ExplorePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Clicking anyone: guests get the join prompt; members go to the real profile.
-  const open = (id: string) => (user ? navigate(`/app/uye/${id}`) : setModal(true));
+  // Know my own member id so clicking my own card goes to my profile, not /uye/<me>.
+  useEffect(() => {
+    if (!user) { setMyId(null); return; }
+    api.getCached<{ id: string }>("/profile/me").then((p) => setMyId(p.id)).catch(() => {});
+  }, [user]);
+
+  // Clicking: guests get the join prompt; my own card → my profile; others → their profile.
+  const open = (id: string) =>
+    !user ? setModal(true) : navigate(id === myId ? "/app/profil" : `/app/uye/${id}`);
 
   // Filter option lists derived from real data.
   const countries = useMemo(
