@@ -91,7 +91,7 @@ function Row({ c, children }: { c: ConnItem; children: React.ReactNode }) {
             badge, not a clickable link. Everyone else links to their profile. */}
         {m.isOfficial ? (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">{m.firstName}</span>
+            <span className="font-semibold">{t("Toprakla Yeniden", "Reconnect with Soil")}</span>
             <span className="rounded-full bg-forest-600 px-2 py-0.5 text-[11px] font-semibold text-white">{t("Resmi hesap", "Official")}</span>
           </div>
         ) : (
