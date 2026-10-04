@@ -13,6 +13,7 @@ module "network" {
   vpc_cidr    = var.vpc_cidr
   az_count    = var.az_count
   azs         = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  ai_mode     = var.ai_mode
 }
 
 module "observability" {

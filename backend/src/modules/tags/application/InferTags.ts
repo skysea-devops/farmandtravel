@@ -12,7 +12,14 @@ export class InferTags {
     taxonomy: TaxonomyItem[];
   }> {
     const taxonomy = await this.taxonomyRepo.listActive();
-    const suggestions = await this.inferrer.infer(input.freeText ?? "", input.quickPicks ?? [], taxonomy);
+    // Best-effort: if the inferrer fails (e.g. Bedrock model access not yet granted),
+    // return no suggestions rather than 500 — onboarding still works via quick-picks.
+    let suggestions: InferredTag[] = [];
+    try {
+      suggestions = await this.inferrer.infer(input.freeText ?? "", input.quickPicks ?? [], taxonomy);
+    } catch {
+      suggestions = [];
+    }
     return { suggestions, taxonomy };
   }
 }

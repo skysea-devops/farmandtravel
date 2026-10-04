@@ -19,7 +19,7 @@ mobile_callback_urls  = ["topraklayeniden://callback"]
 # Kept "stub" for launch: onboarding works without Bedrock model access or the
 # extra interface-endpoint cost. Flip to "bedrock" once model access is granted
 # (that also turns on the bedrock-runtime VPC endpoint automatically).
-ai_mode = "stub"
+ai_mode = "bedrock"
 
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"
