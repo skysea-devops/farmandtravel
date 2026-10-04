@@ -143,6 +143,7 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
     kind,
     contentType,
+    size: blob.size,
   });
   const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": contentType }, body: blob });
   if (!res.ok) throw new Error("Yükleme başarısız");

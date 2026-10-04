@@ -15,10 +15,14 @@ export function mediaConfigured(): boolean {
   return Boolean(bucket);
 }
 
-export function presignPut(key: string, contentType: string, ttl = 300): Promise<string> {
-  return getSignedUrl(s3(), new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }), {
-    expiresIn: ttl,
-  });
+// contentLength is signed into the URL, so S3 rejects an upload whose body doesn't
+// match the declared size — this caps abusive large uploads (the caller validates max).
+export function presignPut(key: string, contentType: string, contentLength: number, ttl = 300): Promise<string> {
+  return getSignedUrl(
+    s3(),
+    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType, ContentLength: contentLength }),
+    { expiresIn: ttl },
+  );
 }
 
 export function presignGet(key: string, ttl = 3600): Promise<string> {
