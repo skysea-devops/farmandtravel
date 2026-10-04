@@ -22,12 +22,26 @@ set -euo pipefail
 PROJECT="farmandtravel"          # project slug (resource names + tags)
 GITHUB_ORG="skysea-devops"       # your GitHub org or username
 GITHUB_REPO="farmandtravel"      # the repo that runs Terraform
+# This org has GitHub's OIDC "subject claim" customization enabled, so the token
+# sub includes IMMUTABLE numeric ids: repo:ORG@<orgId>/REPO@<repoId>:<context>.
+# A trust policy without these ids will NOT match and STS returns
+# "Not authorized to perform sts:AssumeRoleWithWebIdentity".
+#   org id : https://api.github.com/orgs/skysea-devops        -> .id
+#   repo id: https://api.github.com/repos/skysea-devops/farmandtravel -> .id
+# Leave either blank to fall back to the plain repo:ORG/REPO form (no id customization).
+GITHUB_ORG_ID="67606913"         # skysea-devops org id
+GITHUB_REPO_ID="1311877836"      # farmandtravel repo id
 # ------------------------------------------------------------------------------
 
 OIDC_HOST="token.actions.githubusercontent.com"
 DEPLOY_ROLE_NAME="${PROJECT}-prod-tf-deploy"
 PLAN_ROLE_NAME="${PROJECT}-prod-tf-plan"
-REPO="repo:${GITHUB_ORG}/${GITHUB_REPO}"
+# Subject prefix, matching the org's OIDC subject-claim format (with ids when set).
+if [[ -n "${GITHUB_ORG_ID}" && -n "${GITHUB_REPO_ID}" ]]; then
+  REPO="repo:${GITHUB_ORG}@${GITHUB_ORG_ID}/${GITHUB_REPO}@${GITHUB_REPO_ID}"
+else
+  REPO="repo:${GITHUB_ORG}/${GITHUB_REPO}"
+fi
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 CALLER_ARN="$(aws sts get-caller-identity --query Arn --output text)"
