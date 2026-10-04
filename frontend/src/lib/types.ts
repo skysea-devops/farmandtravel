@@ -110,7 +110,7 @@ export interface ReviewsData {
   canReview: boolean;
   myReview: { rating: number; comment: string | null; state?: string } | null;
 }
-export type ReviewState = "published" | "held" | "pending" | "rejected";
+export type ReviewState = "published" | "held" | "pending" | "rejected" | "removed";
 export interface WrittenReview {
   rating: number;
   comment: string | null;

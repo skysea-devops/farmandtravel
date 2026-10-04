@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
@@ -22,6 +22,29 @@ async function accepted(a: string, b: string): Promise<boolean> {
   return (r.rowCount ?? 0) > 0;
 }
 
+// A reviewable / readable target must be a real, active member (not suspended, deleted,
+// or the official account). Guards against writing/reading reviews for a member who
+// deleted their account while an old accepted connection lingers.
+async function isActiveMember(id: string): Promise<boolean> {
+  const r = await query(
+    `SELECT 1 FROM members WHERE id=$1 AND status IN ('active','profile_complete') AND is_official=false`,
+    [id],
+  );
+  return (r.rowCount ?? 0) > 0;
+}
+
+// Normalized publishing state, shared by every endpoint so a review never shows one
+// state on its author's profile and a different one on the reviewee's page.
+//   moderation auto|approved  -> published once reciprocal OR 15 days, else pending
+//   held -> held, rejected -> rejected, removed -> removed
+type RevState = "published" | "pending" | "held" | "rejected" | "removed";
+function revState(moderation: string, reciprocal: boolean, windowPassed: boolean): RevState {
+  if (moderation === "rejected") return "rejected";
+  if (moderation === "removed") return "removed";
+  if (moderation === "held") return "held";
+  return reciprocal || windowPassed ? "published" : "pending";
+}
+
 // Create my review of a member (only if we have an accepted connection).
 // ONE-TIME: a review can't be edited once given (admin moderation would be
 // meaningless if it could change afterwards). A second attempt is rejected.
@@ -30,12 +53,18 @@ async function accepted(a: string, b: string): Promise<boolean> {
 const schema = z.object({
   revieweeId: z.string().uuid(),
   rating: z.number().int().min(1).max(5),
-  comment: z.string().max(1000).optional(),
+  // PostgreSQL text rejects NUL bytes; strip them out up front (a NUL-laden comment
+  // would otherwise 500 the insert despite being <=1000 chars).
+  comment: z.string().max(1000).transform((v) => v.replace(/\0/g, "")).optional(),
 });
 reviewsRoutes.post("/reviews", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const { revieweeId, rating, comment } = schema.parse(await c.req.json());
   if (revieweeId === memberId) return c.json({ error: "invalid" }, 400);
+  // Target must still be an active member (not deleted/suspended via a stale connection).
+  if (!(await isActiveMember(revieweeId))) {
+    return c.json({ error: "member_not_found", message: "Üye bulunamadı" }, 404);
+  }
   if (!(await accepted(memberId, revieweeId))) {
     return c.json({ error: "forbidden", message: "Yalnızca bağlantı kurduğun kişileri değerlendirebilirsin" }, 403);
   }
@@ -55,8 +84,9 @@ reviewsRoutes.post("/reviews", auth, requireMembership, async (c) => {
   if (!ins.rows[0]) {
     return c.json({ error: "already_reviewed", message: "Bu üyeyi zaten değerlendirdin; değerlendirme değiştirilemez." }, 409);
   }
-  // Only ping the reviewee for reviews that are (or may become) visible to them.
-  if (moderation === "auto") await notify(revieweeId, memberId, "review", {});
+  // Notify for EVERY new review with the same neutral text, regardless of rating — so the
+  // mere existence of a notification never leaks whether the rating was high or low.
+  await notify(revieweeId, memberId, "review", {});
   return c.json({ ok: true, status: moderation === "held" ? "held" : "pending" });
 });
 
@@ -84,19 +114,20 @@ reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
     `SELECT r.rating, r.comment, r.created_at AS "createdAt", r.moderation,
             (now() >= r.created_at + interval '15 days') AS "windowPassed",
             EXISTS (SELECT 1 FROM reviews r2
-                     WHERE r2.reviewer_id = r.reviewee_id AND r2.reviewee_id = r.reviewer_id
-                       AND r2.moderation <> 'rejected') AS "reciprocal",
+                     WHERE r2.reviewer_id = r.reviewee_id AND r2.reviewee_id = r.reviewer_id) AS "reciprocal",
             o.id AS "otherId", o.first_name AS "firstName", o.avatar_key AS "avatarKey"
        FROM reviews r JOIN members o ON o.id = r.reviewee_id
       WHERE r.reviewer_id = $1
       ORDER BY r.created_at DESC`,
     [memberId],
   );
-  // Reviews written about me that aren't visible yet because I haven't reciprocated.
+  // Reviews written about me that WILL publish but aren't revealed yet (I haven't
+  // reciprocated and 15 days haven't passed). Mirrors visible_reviews exactly, and
+  // counts auto+approved (not just 5-star auto) so the count never leaks the rating.
   const pend = await query<{ n: number }>(
     `SELECT count(*)::int AS n
        FROM reviews r
-      WHERE r.reviewee_id = $1 AND r.moderation = 'auto'
+      WHERE r.reviewee_id = $1 AND r.moderation IN ('auto','approved')
         AND now() < r.created_at + interval '15 days'
         AND NOT EXISTS (SELECT 1 FROM reviews r2
                          WHERE r2.reviewer_id = $1 AND r2.reviewee_id = r.reviewer_id)`,
@@ -112,20 +143,13 @@ reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
     })),
   );
   const written = await Promise.all(
-    sent.rows.map(async (r) => {
-      let state: "published" | "held" | "pending" | "rejected";
-      if (r.moderation === "rejected") state = "rejected";
-      else if (r.moderation === "held") state = "held";
-      else if (r.moderation === "approved") state = "published";
-      else state = r.reciprocal || r.windowPassed ? "published" : "pending";
-      return {
-        rating: r.rating,
-        comment: r.comment,
-        createdAt: r.createdAt,
-        state,
-        reviewee: { id: r.otherId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
-      };
-    }),
+    sent.rows.map(async (r) => ({
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      state: revState(r.moderation, r.reciprocal, r.windowPassed),
+      reviewee: { id: r.otherId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
+    })),
   );
   const count = received.length;
   const avg = count ? Math.round((received.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
@@ -147,6 +171,9 @@ reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => 
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
   if (!isUuid(id)) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
+  // Don't serve reviews for a deleted/suspended/official account (even to someone who
+  // still knows the old UUID and whose connection row lingers).
+  if (!(await isActiveMember(id))) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
 
   const rows = await query<{
     rating: number; comment: string | null; createdAt: string;
@@ -170,13 +197,22 @@ reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => 
   const count = reviews.length;
   const avg = count ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
 
-  // My existing review of this member (from base table, any state) for editing.
-  const mineRow = await query<{ rating: number; comment: string | null; moderation: string }>(
-    `SELECT rating, comment, moderation FROM reviews WHERE reviewer_id=$1 AND reviewee_id=$2`,
+  // My existing review of this member, with its NORMALIZED publishing state (same mapping
+  // as /reviews/me, so my review never shows "Gönderildi" here but "Yayında" there).
+  const mineRow = await query<{
+    rating: number; comment: string | null; moderation: string;
+    windowPassed: boolean; reciprocal: boolean;
+  }>(
+    `SELECT rating, comment, moderation,
+            (now() >= created_at + interval '15 days') AS "windowPassed",
+            EXISTS (SELECT 1 FROM reviews r2 WHERE r2.reviewer_id=$2 AND r2.reviewee_id=$1) AS "reciprocal"
+       FROM reviews WHERE reviewer_id=$1 AND reviewee_id=$2`,
     [memberId, id],
   );
   const mine = mineRow.rows[0];
-  const myReview = mine ? { rating: mine.rating, comment: mine.comment, state: mine.moderation } : null;
+  const myReview = mine
+    ? { rating: mine.rating, comment: mine.comment, state: revState(mine.moderation, mine.reciprocal, mine.windowPassed) }
+    : null;
 
   // English site: translate others' comments (my own stays as I wrote it).
   const lang = reqLang(c);
@@ -209,34 +245,29 @@ reviewsRoutes.get("/admin/reviews", auth, requireAdmin, async (c) => {
   return c.json({ reviews: rows.rows });
 });
 
-// Admin: approve a held review -> it becomes visible immediately.
-reviewsRoutes.post("/admin/reviews/:id/approve", auth, requireAdmin, async (c) => {
+// Admin moderation transitions. Reversible: any review can move to approved / rejected /
+// removed regardless of its current state, so a mis-click can be undone without touching
+// the DB. (approved => publishable on the normal reveal window; rejected/removed => never
+// visible.) moderated_by/at/note record who did it.
+async function setModeration(c: Context, next: "approved" | "rejected" | "removed") {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
+  if (!isUuid(id)) return c.json({ error: "not_found", message: "Değerlendirme bulunamadı" }, 404);
   const note = (await c.req.json().catch(() => ({}))) as { note?: string };
   const r = await query<{ reviewer_id: string; reviewee_id: string }>(
-    `UPDATE reviews SET moderation='approved', admin_note=$2, moderated_at=now(), moderated_by=$3
-      WHERE id=$1 AND moderation='held'
+    `UPDATE reviews SET moderation=$2, admin_note=$3, moderated_at=now(), moderated_by=$4
+      WHERE id=$1
       RETURNING reviewer_id, reviewee_id`,
-    [id, note.note ?? null, memberId],
+    [id, next, note.note ?? null, memberId],
   );
   const row = r.rows[0];
-  if (!row) return c.json({ error: "not_found" }, 404);
-  await notify(row.reviewee_id, row.reviewer_id, "review", {});
+  if (!row) return c.json({ error: "not_found", message: "Değerlendirme bulunamadı" }, 404);
+  // Approving may make it publishable; ping the reviewee (neutral, as on submit).
+  if (next === "approved") await notify(row.reviewee_id, row.reviewer_id, "review", {});
   return c.json({ ok: true });
-});
+}
 
-// Admin: reject a held review -> never visible.
-reviewsRoutes.post("/admin/reviews/:id/reject", auth, requireAdmin, async (c) => {
-  const { memberId } = currentUser(c);
-  const id = c.req.param("id");
-  const note = (await c.req.json().catch(() => ({}))) as { note?: string };
-  const r = await query(
-    `UPDATE reviews SET moderation='rejected', admin_note=$2, moderated_at=now(), moderated_by=$3
-      WHERE id=$1 AND moderation='held'
-      RETURNING id`,
-    [id, note.note ?? null, memberId],
-  );
-  if (!r.rows[0]) return c.json({ error: "not_found" }, 404);
-  return c.json({ ok: true });
-});
+reviewsRoutes.post("/admin/reviews/:id/approve", auth, requireAdmin, (c) => setModeration(c, "approved"));
+reviewsRoutes.post("/admin/reviews/:id/reject", auth, requireAdmin, (c) => setModeration(c, "rejected"));
+// Hide an ALREADY-PUBLISHED review (e.g. a 5-star the filter missed that turned abusive).
+reviewsRoutes.post("/admin/reviews/:id/hide", auth, requireAdmin, (c) => setModeration(c, "removed"));
