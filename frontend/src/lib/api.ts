@@ -4,8 +4,24 @@ import { getIdToken } from "@/lib/cognito";
 
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8787";
 
+// Target UI language, sent as x-lang so the backend can machine-translate user content
+// (bios, activities, reviews, messages) on the English site. Hostname decides it, with a
+// stored override for localhost; the LangProvider keeps it in sync via setApiLang.
+function detectApiLang(): string {
+  try {
+    const h = window.location.hostname.toLowerCase();
+    if (/(^|\.)reconnectwithsoil\.com$/.test(h)) return "en";
+    if (/(^|\.)topraklayeniden\.com$/.test(h)) return "tr";
+    const s = localStorage.getItem("ty:lang");
+    if (s === "en" || s === "tr") return s;
+  } catch { /* ignore */ }
+  return "tr";
+}
+let apiLang = detectApiLang();
+export function setApiLang(l: string) { apiLang = l === "en" ? "en" : "tr"; }
+
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { "content-type": "application/json" };
+  const headers: Record<string, string> = { "content-type": "application/json", "x-lang": apiLang };
   const token = await getIdToken();
   if (token) headers["authorization"] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -76,7 +92,7 @@ export function setCacheScope(sub: string | null) {
   if (wasReal) lsClearAll();
   scope = next;
 }
-const scoped = (p: string) => `${scope}::${p}`;
+const scoped = (p: string) => `${scope}:${apiLang}::${p}`;
 
 export const api = {
   get: <T>(p: string) => req<T>("GET", p),

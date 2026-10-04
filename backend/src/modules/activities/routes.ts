@@ -4,6 +4,12 @@ import { auth, currentUser, requireAdmin, requireMembership } from "../../shared
 import { query } from "../../shared/db/pool.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { Forbidden, NotFound } from "../../shared/errors/index.js";
+import { reqLang } from "../../shared/http/lang.js";
+import { translateFields } from "../../shared/text/translate.js";
+
+// Free-text fields of an activity DTO that get machine-translated on the English site.
+// `author` is a person's name and `kind`/`date` are structural, so they're left as-is.
+const ACTIVITY_TEXT = ["title", "desc", "place", "when"] as const;
 
 export const activitiesRoutes = new Hono();
 
@@ -99,6 +105,7 @@ activitiesRoutes.get("/activities", async (c) => {
     query<{ n: string }>("SELECT count(*)::int AS n FROM activities WHERE status='published'"),
   ]);
   const items = await Promise.all(rows.rows.map(toDto));
+  await translateFields(items, ACTIVITY_TEXT, reqLang(c));
   return c.json({ items, total: Number(count.rows[0]?.n ?? 0) });
 });
 
@@ -147,7 +154,9 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
 activitiesRoutes.get("/activities/mine", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query<ActivityRow>(`${SELECT} WHERE author_id=$1 ORDER BY created_at DESC`, [memberId]);
-  return c.json({ items: await Promise.all(r.rows.map(toDto)) });
+  const items = await Promise.all(r.rows.map(toDto));
+  await translateFields(items, ACTIVITY_TEXT, reqLang(c));
+  return c.json({ items });
 });
 
 // --- Admin: moderation queue (default: pending) ---
