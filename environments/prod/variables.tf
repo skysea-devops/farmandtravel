@@ -75,6 +75,14 @@ variable "ai_mode" {
   default     = "bedrock"
 }
 
+# Members joining before this ISO date are free "frontier". Kept far out until Lemon
+# Squeezy billing is live; set to the real launch date to start requiring subscriptions.
+variable "frontier_cutoff" {
+  description = "ISO date; sign-ups before it are free 'frontier'."
+  type        = string
+  default     = "2027-01-01T00:00:00+03:00"
+}
+
 # Bedrock model for tag inference. Newer Claude models in eu-central-1 are invoked via a
 # cross-region INFERENCE PROFILE (region-group prefix, here "eu."). Confirm the exact id
 # from the Bedrock console (Inference profiles) and grant model access for it.

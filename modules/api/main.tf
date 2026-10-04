@@ -85,6 +85,7 @@ resource "aws_lambda_function" "api" {
       AI_MODE          = var.ai_mode
       BEDROCK_REGION   = var.aws_region
       BEDROCK_MODEL_ID = var.bedrock_model_id
+      FRONTIER_CUTOFF  = var.frontier_cutoff
       MEDIA_BUCKET     = var.media_bucket_name
       ALLOWED_ORIGINS  = join(",", var.allowed_origins)
       # Lemon Squeezy billing (empty until configured → checkout returns 503).

@@ -10,6 +10,9 @@ const schema = z.object({
   COGNITO_REGION: z.string().default("eu-central-1"),
   COGNITO_USER_POOL_ID: z.string().optional(),
   COGNITO_CLIENT_ID: z.string().optional(),
+  // Members who join before this date are free "frontier"; later ones need a subscription.
+  // Kept far out until Lemon Squeezy billing is live, then set to the real launch date.
+  FRONTIER_CUTOFF: z.string().default("2027-01-01T00:00:00+03:00"),
   AI_MODE: z.enum(["stub", "bedrock"]).default("stub"),
   BEDROCK_REGION: z.string().default("eu-central-1"),
   BEDROCK_MODEL_ID: z.string().default("anthropic.claude-3-haiku-20240307-v1:0"),

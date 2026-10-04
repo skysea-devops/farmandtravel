@@ -73,6 +73,12 @@ variable "bedrock_model_id" {
   default = "anthropic.claude-3-haiku-20240307-v1:0"
 }
 
+variable "frontier_cutoff" {
+  description = "ISO date; members joining before it are free 'frontier'."
+  type        = string
+  default     = "2027-01-01T00:00:00+03:00"
+}
+
 variable "log_retention_days" {
   type    = number
   default = 14

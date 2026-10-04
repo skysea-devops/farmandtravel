@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser } from "../../shared/http/auth.js";
+import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
 
@@ -40,7 +40,7 @@ const MEMBER_JSON = `
 
 // --- Send a connection request ---
 const createSchema = z.object({ toId: z.string().uuid(), message: z.string().max(500).optional() });
-connectionsRoutes.post("/connections", auth, async (c) => {
+connectionsRoutes.post("/connections", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const { toId, message } = createSchema.parse(await c.req.json());
   if (toId === memberId) return c.json({ error: "invalid", message: "Kendine istek gönderemezsin" }, 400);
@@ -79,7 +79,7 @@ connectionsRoutes.post("/connections", auth, async (c) => {
 });
 
 // --- My connections: incoming pending, outgoing pending, accepted (with contact) ---
-connectionsRoutes.get("/connections", auth, async (c) => {
+connectionsRoutes.get("/connections", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
 
   const incoming = await query(
@@ -125,7 +125,7 @@ async function respond(memberId: string, id: string, status: "accepted" | "rejec
   return r.rowCount ? r.rows[0]! : null;
 }
 
-connectionsRoutes.post("/connections/:id/accept", auth, async (c) => {
+connectionsRoutes.post("/connections/:id/accept", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
   const updated = id ? await respond(memberId, id, "accepted") : null;
@@ -134,7 +134,7 @@ connectionsRoutes.post("/connections/:id/accept", auth, async (c) => {
   return c.json({ status: "accepted", connectionId: updated.id });
 });
 
-connectionsRoutes.post("/connections/:id/reject", auth, async (c) => {
+connectionsRoutes.post("/connections/:id/reject", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
   const updated = id ? await respond(memberId, id, "rejected") : null;

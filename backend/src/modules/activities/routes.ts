@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
+import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { query } from "../../shared/db/pool.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { Forbidden, NotFound } from "../../shared/errors/index.js";
@@ -38,7 +38,7 @@ async function eligibility(memberId: string) {
 }
 
 // Frontend uses this to show requirements + enable/disable the submit form.
-activitiesRoutes.get("/activities/eligibility", auth, async (c) => {
+activitiesRoutes.get("/activities/eligibility", auth, requireMembership, async (c) => {
   const { memberId, isAdmin } = currentUser(c);
   const e = await eligibility(memberId);
   return c.json({ ...e, isAdmin, canSubmit: isAdmin || e.eligible });
@@ -116,7 +116,7 @@ const submitSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("meeting"), when: z.string().min(1).max(120), online: z.boolean().optional(), ...base }),
   z.object({ kind: z.literal("announcement"), ...base }),
 ]);
-activitiesRoutes.post("/activities", auth, async (c) => {
+activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const { memberId, isAdmin } = currentUser(c);
   const b = submitSchema.parse(await c.req.json());
   if (!isAdmin) {
@@ -144,7 +144,7 @@ activitiesRoutes.post("/activities", auth, async (c) => {
 });
 
 // --- Member: my own submissions with their status ---
-activitiesRoutes.get("/activities/mine", auth, async (c) => {
+activitiesRoutes.get("/activities/mine", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query<ActivityRow>(`${SELECT} WHERE author_id=$1 ORDER BY created_at DESC`, [memberId]);
   return c.json({ items: await Promise.all(r.rows.map(toDto)) });

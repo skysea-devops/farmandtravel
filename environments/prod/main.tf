@@ -116,5 +116,6 @@ module "api" {
 
   ai_mode            = var.ai_mode
   bedrock_model_id   = var.bedrock_model_id
+  frontier_cutoff    = var.frontier_cutoff
   log_retention_days = var.log_retention_days
 }

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { query } from "../../shared/db/pool.js";
-import { auth, currentUser, requireAdmin } from "../../shared/http/auth.js";
+import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { notify } from "../notifications/service.js";
 import { broadcast, messageMember, getOfficialId } from "./official.js";
@@ -143,7 +143,7 @@ async function participant(me: string, connectionId: string): Promise<string | n
 }
 
 // Conversation list: accepted connections + last message + unread count.
-messagesRoutes.get("/messages", auth, async (c) => {
+messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query(
     `SELECT c.id AS "connectionId",
@@ -182,7 +182,7 @@ messagesRoutes.get("/messages", auth, async (c) => {
 });
 
 // Thread: messages of a connection. Marks incoming messages read.
-messagesRoutes.get("/messages/:connectionId", auth, async (c) => {
+messagesRoutes.get("/messages/:connectionId", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const cid = c.req.param("connectionId");
   const other = cid ? await participant(memberId, cid) : null;
@@ -212,7 +212,7 @@ messagesRoutes.get("/messages/:connectionId", auth, async (c) => {
 
 // Send a message.
 const sendSchema = z.object({ body: z.string().min(1).max(4000) });
-messagesRoutes.post("/messages/:connectionId", auth, async (c) => {
+messagesRoutes.post("/messages/:connectionId", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const cid = c.req.param("connectionId");
   const other = cid ? await participant(memberId, cid) : null;

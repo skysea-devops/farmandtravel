@@ -24,5 +24,9 @@ ai_mode = "bedrock"
 # Bedrock console (Inference profiles) and grant model access before relying on it.
 bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 
+# Paywall: free "frontier" until this date. Kept far out until Lemon Squeezy is live;
+# set to the real launch date (e.g. 2026-10-10T00:00:00+03:00) to start requiring pay.
+frontier_cutoff = "2027-01-01T00:00:00+03:00"
+
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"
