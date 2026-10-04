@@ -30,7 +30,7 @@ interface ConnRow {
 const MEMBER_JSON = `
   json_build_object(
     'id', o.id, 'firstName', o.first_name, 'country', o.country, 'city', o.city,
-    'headline', o.headline, 'avatarKey', o.avatar_key,
+    'headline', o.headline, 'avatarKey', o.avatar_key, 'isOfficial', o.is_official,
     'tags', COALESCE((
       SELECT json_agg(json_build_object('axis', mt.axis, 'value', mt.value,
                                         'labelTr', tx.label_tr, 'labelEn', tx.label_en))

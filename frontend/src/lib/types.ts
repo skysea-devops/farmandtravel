@@ -96,6 +96,7 @@ export interface MatchCard {
   tags: MatchTag[];
   score: number;
   matched: MatchTag[];
+  isOfficial?: boolean;
 }
 
 export interface Review {

@@ -80,14 +80,26 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 function Row({ c, children }: { c: ConnItem; children: React.ReactNode }) {
+  const { t } = useI18n();
   const m = c.member;
   const loc = [m.city, m.country].filter(Boolean).join(", ");
   return (
     <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
       <Avatar url={m.avatarUrl} className="size-11" />
       <div className="min-w-0 flex-1">
-        <Link to={`/app/uye/${m.id}`} className="font-semibold hover:underline">{m.firstName}</Link>
-        <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>
+        {/* The official "Toprakla Yeniden" account has no public profile — show it as a
+            badge, not a clickable link. Everyone else links to their profile. */}
+        {m.isOfficial ? (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{m.firstName}</span>
+            <span className="rounded-full bg-forest-600 px-2 py-0.5 text-[11px] font-semibold text-white">{t("Resmi hesap", "Official")}</span>
+          </div>
+        ) : (
+          <Link to={`/app/uye/${m.id}`} className="font-semibold hover:underline">{m.firstName}</Link>
+        )}
+        <div className="truncate text-[13px] text-ink-500">
+          {m.isOfficial ? t("Topluluk ekibi", "Community team") : `${loc}${m.headline ? ` · ${m.headline}` : ""}`}
+        </div>
         {c.message && <div className="mt-1 text-[13px] text-ink-600 italic">"{c.message}"</div>}
       </div>
       <div className="shrink-0">{children}</div>
