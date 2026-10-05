@@ -102,8 +102,8 @@ export function HomePage() {
               <Link to="/kesfet" className="hidden sm:inline-block"><Button variant="onDark" size="lg">{t("Haritada keşfet →", "Explore the map →")}</Button></Link>
             </div>
           </div>
-          {/* Community preview panel — desktop only; mobile keeps the hero clean per mockup. */}
-          <div className="hidden rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px] md:block">
+          {/* Community preview panel — shown on all sizes (on mobile it sits below the hero). */}
+          <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px]">
             <img src={U + "photo-1500382017468-9049fed747ef?w=900&q=80"} alt="" onError={hide}
               className="mb-3.5 h-40 w-full rounded-xl object-cover" />
             <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">{t("TOPLULUKTAN", "FROM THE COMMUNITY")}</div>
