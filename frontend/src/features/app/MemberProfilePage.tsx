@@ -274,7 +274,11 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
       ) : null}
 
       {data.reviews.length === 0 ? (
-        <p className="text-sm text-ink-500">{t("Henüz değerlendirme yok.", "No reviews yet.")}</p>
+        <p className="text-sm text-ink-500">
+          {data.myReview
+            ? t("Başka değerlendirme yok.", "No other reviews yet.")
+            : t("Henüz değerlendirme yok.", "No reviews yet.")}
+        </p>
       ) : (
         <div className="space-y-3">
           {data.reviews.map((r, i) => (
