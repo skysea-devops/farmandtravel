@@ -14,6 +14,10 @@ export function AppLayout() {
   const [unread, setUnread] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [plan, setPlan] = useState<string>("");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the mobile menu whenever the route changes (i.e. after tapping an item).
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   const nav = [
     { to: "/app", label: t("Panel", "Home"), icon: "🏠", end: true },
@@ -105,21 +109,45 @@ export function AppLayout() {
 
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-border bg-forest-900 px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-forest-900 px-4 py-3 md:hidden">
           <Link to="/" className="font-display flex items-center gap-2 text-[17px] font-semibold text-white">
             <span className="grid size-7 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
             {t("Toprakla Yeniden", "Reconnect with Soil")}
           </Link>
-          <button onClick={() => { logout(); navigate("/"); }} className="ml-auto text-sm text-moss-100">{t("Çıkış", "Log out")}</button>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={t("Menü", "Menu")}
+            aria-expanded={menuOpen}
+            className="relative ml-auto grid size-9 place-items-center rounded-lg text-white transition hover:bg-white/10"
+          >
+            <span className="text-xl leading-none">{menuOpen ? "✕" : "☰"}</span>
+            {!menuOpen && unread > 0 && <span className="absolute right-1 top-1 size-2 rounded-full bg-clay-500" />}
+          </button>
         </header>
-        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
-          {[...nav, ...adminNav].map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end}
-              className={({ isActive }) => cn("whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium", isActive ? "bg-forest-600 text-white" : "text-ink-700 hover:bg-sand-100")}>
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
+        {/* Mobile dropdown menu: the full nav (everything in the sidebar), so no item is
+            hidden behind a cut-off scroll bar. Closes on navigation. */}
+        {menuOpen && (
+          <nav className="flex flex-col gap-1 border-b border-border bg-forest-900 p-3 md:hidden">
+            {nav.map(item)}
+            {adminNav.map(item)}
+            <div className="mt-1 flex flex-col gap-1 border-t border-white/10 pt-2">
+              {navBottom.map(item)}
+            </div>
+            <div className="mt-2 flex items-center gap-2.5 border-t border-white/10 pt-3">
+              <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? t("Üye", "Member")}</div>
+                {planBadge.text && <div className={cn("text-xs", planBadge.cls)}>{planBadge.text}</div>}
+              </div>
+            </div>
+            <button
+              onClick={() => { logout(); navigate("/"); }}
+              className="mt-1 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
+            >
+              {t("↪ Çıkış", "↪ Log out")}
+            </button>
+          </nav>
+        )}
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-6">
           <Outlet />
