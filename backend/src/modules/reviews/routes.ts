@@ -185,16 +185,21 @@ reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => 
       ORDER BY r.created_at DESC`,
     [id],
   );
+  // Summary is over ALL visible reviews (including mine, so the rating is complete), but
+  // the LIST excludes my own review — it's shown separately in the "Senin değerlendirmen"
+  // box, so including it here would duplicate it.
+  const count = rows.rows.length;
+  const avg = count ? Math.round((rows.rows.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
   const reviews = await Promise.all(
-    rows.rows.map(async (r) => ({
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt,
-      reviewer: { id: r.reviewerId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
-    })),
+    rows.rows
+      .filter((r) => r.reviewerId !== memberId)
+      .map(async (r) => ({
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        reviewer: { id: r.reviewerId, firstName: r.firstName, avatarUrl: await safeUrl(r.avatarKey) },
+      })),
   );
-  const count = reviews.length;
-  const avg = count ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10 : 0;
 
   // My existing review of this member, with its NORMALIZED publishing state (same mapping
   // as /reviews/me, so my review never shows "Gönderildi" here but "Yayında" there).
