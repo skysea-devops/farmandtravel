@@ -4,7 +4,6 @@ import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { isProfane } from "../../shared/text/profanity.js";
-import { notify } from "../notifications/service.js";
 import { isUuid } from "../../shared/validation.js";
 import { reqLang } from "../../shared/http/lang.js";
 import { translateFields } from "../../shared/text/translate.js";
@@ -84,9 +83,9 @@ reviewsRoutes.post("/reviews", auth, requireMembership, async (c) => {
   if (!ins.rows[0]) {
     return c.json({ error: "already_reviewed", message: "Bu üyeyi zaten değerlendirdin; değerlendirme değiştirilemez." }, 409);
   }
-  // Notify for EVERY new review with the same neutral text, regardless of rating — so the
-  // mere existence of a notification never leaks whether the rating was high or low.
-  await notify(revieweeId, memberId, "review", {});
+  // No notification to the reviewee: in a blind/mutual review system the other side must
+  // not learn they were reviewed (it would pressure reciprocity and leak that a review
+  // exists). They'll simply see reviews on their profile once mutually revealed.
   return c.json({ ok: true, status: moderation === "held" ? "held" : "pending" });
 });
 
@@ -262,8 +261,7 @@ async function setModeration(c: Context, next: "approved" | "rejected" | "remove
   );
   const row = r.rows[0];
   if (!row) return c.json({ error: "not_found", message: "Değerlendirme bulunamadı" }, 404);
-  // Approving may make it publishable; ping the reviewee (neutral, as on submit).
-  if (next === "approved") await notify(row.reviewee_id, row.reviewer_id, "review", {});
+  // No reviewee notification (blind/mutual reviews — see POST /reviews).
   return c.json({ ok: true });
 }
 
