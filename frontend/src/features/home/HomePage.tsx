@@ -86,14 +86,24 @@ export function HomePage() {
               {t("Toprakla yeniden buluşan insanları bir araya getiriyoruz.", "Bringing together people reconnecting with the soil.")}
             </h1>
             <p className="mb-7 max-w-lg text-[17px] text-moss-300">
-              {t("Çiftliğinde birlikte üretecek insan arayan, bir projeye destek arayan ya da bilgisini paylaşmak isteyen — hepsi tek toplulukta.", "People looking for others to grow with on their farm, seeking support for a project, or wanting to share what they know — all in one community.")}
+              {t("Çiftliğinde birlikte üretmek isteyen, projelere destek arayan ya da bilgisini paylaşmak isteyen insanları tek toplulukta buluşturuyoruz.", "We bring people together in one community — those who want to grow together on their farm, those seeking support for a project, and those who want to share what they know.")}
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/kayit"><Button size="lg">{t("Topluluğa katıl", "Join the community")}</Button></Link>
-              <Link to="/kesfet"><Button variant="onDark" size="lg">{t("Haritada keşfet →", "Explore the map →")}</Button></Link>
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+              <Link to="/kayit" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğa katıl", "Join the community")}</Button>
+              </Link>
+              {/* Mobile: map link (matches the hero mockup). Desktop: outlined button. */}
+              <Link to="/kesfet" className="inline-flex items-center gap-2 px-1 font-semibold text-white underline decoration-moss-300/50 underline-offset-[6px] sm:hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14" /><path d="M15 6v14" />
+                </svg>
+                {t("Haritada keşfet", "Explore the map")} <span aria-hidden>→</span>
+              </Link>
+              <Link to="/kesfet" className="hidden sm:inline-block"><Button variant="onDark" size="lg">{t("Haritada keşfet →", "Explore the map →")}</Button></Link>
             </div>
           </div>
-          <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px]">
+          {/* Community preview panel — desktop only; mobile keeps the hero clean per mockup. */}
+          <div className="hidden rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px] md:block">
             <img src={U + "photo-1500382017468-9049fed747ef?w=900&q=80"} alt="" onError={hide}
               className="mb-3.5 h-40 w-full rounded-xl object-cover" />
             <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">{t("TOPLULUKTAN", "FROM THE COMMUNITY")}</div>
