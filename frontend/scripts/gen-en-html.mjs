@@ -18,6 +18,8 @@ html = html
   .replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${EN_DESC}" />`)
   .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/, '<meta property="og:title" content="Reconnect with Soil" />')
   .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${EN_OG_DESC}" />`)
+  .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/, '<meta property="og:url" content="https://reconnectwithsoil.com/" />')
+  .replace(/<meta property="og:image" content="[^"]*"\s*\/?>/, '<meta property="og:image" content="https://reconnectwithsoil.com/og-en.jpg" />')
   .replace(/<title>[^<]*<\/title>/, "<title>Reconnect with Soil</title>");
 
 writeFileSync(out, html);

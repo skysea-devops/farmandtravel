@@ -82,7 +82,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col bg-forest-900 p-4 md:flex">
         <Link to="/" className="font-display mb-6 flex items-center gap-2 px-1.5 text-[19px] font-semibold text-white">
-          <span className="grid size-8 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
+          <img src="/logo-mark.png" alt="" className="size-8 shrink-0 rounded-full bg-white object-contain p-1" />
           {t("Toprakla Yeniden", "Reconnect with Soil")}
         </Link>
         <nav className="flex flex-1 flex-col gap-1">
@@ -111,7 +111,7 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-forest-900 px-4 py-3 md:hidden">
           <Link to="/" className="font-display flex items-center gap-2 text-[17px] font-semibold text-white">
-            <span className="grid size-7 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
+            <img src="/logo-mark.png" alt="" className="size-7 shrink-0 rounded-full bg-white object-contain p-0.5" />
             {t("Toprakla Yeniden", "Reconnect with Soil")}
           </Link>
           <button

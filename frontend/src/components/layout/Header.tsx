@@ -25,7 +25,7 @@ export function Header() {
     <nav className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
       <div className="container-x flex items-center gap-4 py-3.5">
         <Link to="/" onClick={() => setOpen(false)} className="font-display flex items-center gap-2 text-lg font-semibold sm:text-[21px]">
-          <span className="grid size-[30px] shrink-0 place-items-center rounded-full bg-moss-500 text-forest-900">🌿</span>
+          <img src="/logo-mark.png" alt="" className="size-[30px] shrink-0 rounded-full bg-white object-contain p-0.5" />
           {t("Toprakla Yeniden", "Reconnect with Soil")}
         </Link>
 
