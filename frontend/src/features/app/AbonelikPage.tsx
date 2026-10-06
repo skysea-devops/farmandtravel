@@ -42,8 +42,8 @@ export function AbonelikPage() {
           <h2 className="font-display text-xl font-semibold text-forest-700">{t("Frontier üyelik · Ücretsiz", "Frontier membership · Free")}</h2>
           <p className="mt-2 text-sm text-ink-700">
             {t(
-              "Topluluğun ilk üyelerindensin (Frontier). Erişimin ömür boyu ücretsiz — hiçbir ödeme yapman gerekmez. Tüm özellikler (keşfet, bağlantı, mesaj, değerlendirme) açık.",
-              "You're one of the community's first members (Frontier). Your access is free for life — no payment needed. Everything (explore, connect, message, review) is open.",
+              "Topluluğun ilk üyelerindensin (Frontier). Tüm özellikler (keşfet, bağlantı, mesaj, değerlendirme) açık.",
+              "You're one of the community's first members (Frontier). Everything (explore, connect, message, review) is open.",
             )}
           </p>
         </div>
@@ -72,13 +72,6 @@ export function AbonelikPage() {
           {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
         </div>
       )}
-
-      <p className="mt-4 text-xs text-ink-500">
-        {t(
-          "Topluluğun ilk üyeleri (Frontier) ömür boyu ücretsizdir. Ücretli üyelik yakında başlayacak.",
-          "The community's first members (Frontier) are free for life. Paid membership is coming soon.",
-        )}
-      </p>
     </div>
   );
 }

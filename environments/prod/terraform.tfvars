@@ -25,7 +25,9 @@ ai_mode = "bedrock"
 bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 # Paywall: free "frontier" until this date. Kept far out until Lemon Squeezy is live;
-# set to the real launch date (e.g. 2026-10-10T00:00:00+03:00) to start requiring pay.
+# set to the real launch date (e.g. 2026-10-15T00:00:00+03:00) to start requiring pay.
+# NOTE: only pull this forward once LS checkout is live, otherwise new members land on
+# a paywall with no way to pay.
 frontier_cutoff = "2027-01-01T00:00:00+03:00"
 
 # RDS ölçekleme — büyüdükçe çevir (kod değişmeden):
