@@ -33,7 +33,7 @@ export const ACTIVITIES: Activity[] = [
   {
     id: "meeting-monthly",
     kind: "meeting",
-    title: "Aylık topluluk buluşması (online)",
+    title: "Topluluk buluşması",
     desc: "Deneyim paylaşımı, yeni üyelerle tanışma ve soru-cevap. Herkes davetli.",
     date: "20 Eylül",
     when: "18 Eylül, 20:00 · Zoom",
