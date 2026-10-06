@@ -50,6 +50,7 @@ export class MemberRepositoryPg implements MemberRepository {
       addressExact: m.address_exact,
       profile: m.profile ?? {},
       draft: m.draft ?? {},
+      joinedAt: m.created_at,
       tags: await loadTags(id),
     };
   }

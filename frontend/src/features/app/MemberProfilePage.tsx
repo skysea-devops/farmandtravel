@@ -7,6 +7,7 @@ import { Stars } from "@/components/ui/Stars";
 import { StarInput } from "@/components/ui/StarInput";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { monthYear } from "@/lib/time";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -75,6 +76,7 @@ export function MemberProfilePage() {
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-semibold">{m.firstName}</h1>
           <div className="text-sm text-ink-500">{loc || t("Konum belirtilmedi", "No location")}{m.headline ? ` · ${m.headline}` : ""}</div>
+          {m.joinedAt && <div className="mt-0.5 text-xs text-ink-400">🗓️ {t("Üye:", "Member since")} {monthYear(m.joinedAt, lang)}</div>}
           <div className="mt-1 flex items-center gap-2">
             {(m.ratingCount ?? 0) > 0 && (
               <span className="flex items-center gap-1 text-[13px] text-ink-600"><Stars value={m.ratingAvg ?? 0} /> {m.ratingAvg} ({m.ratingCount})</span>

@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { monthYear } from "@/lib/time";
 import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -135,6 +136,7 @@ export function ProfilePage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">{p.firstName ?? t("İsimsiz", "Unnamed")}</h1>
           <div className="text-sm text-ink-500">{[p.city, p.country].filter(Boolean).join(", ") || t("Konum eklenmedi", "No location")}{p.headline ? ` · ${p.headline}` : ""}</div>
+          {p.joinedAt && <div className="mt-0.5 text-xs text-ink-400">🗓️ {t("Üye:", "Member since")} {monthYear(p.joinedAt, lang)}</div>}
           {rev && rev.received.summary.count > 0 && (
             <div className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-600">
               <Stars value={rev.received.summary.avg} />

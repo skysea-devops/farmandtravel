@@ -24,6 +24,7 @@ interface CandidateRow {
   headline: string | null;
   bio: string | null;
   avatar_key: string | null;
+  created_at: string;
   rating_avg: string | number | null;
   rating_count: number | null;
   tags: Tag[];
@@ -41,7 +42,7 @@ async function myTags(memberId: string): Promise<Tag[]> {
 }
 
 const CARD_SELECT = `
-  SELECT m.id, m.first_name, m.country, m.city, m.headline, m.bio, m.avatar_key,
+  SELECT m.id, m.first_name, m.country, m.city, m.headline, m.bio, m.avatar_key, m.created_at,
          COALESCE((SELECT round(avg(rating)::numeric, 1) FROM visible_reviews WHERE reviewee_id = m.id), 0) AS rating_avg,
          (SELECT count(*)::int FROM visible_reviews WHERE reviewee_id = m.id) AS rating_count,
          COALESCE(
@@ -110,6 +111,7 @@ function publicMatch(cd: CandidateRow, score: number, matched: Tag[]) {
     headline: cd.headline,
     bio: cd.bio,
     avatarKey: cd.avatar_key,
+    joinedAt: cd.created_at,
     ratingAvg: Number(cd.rating_avg ?? 0),
     ratingCount: Number(cd.rating_count ?? 0),
     tags: cd.tags,

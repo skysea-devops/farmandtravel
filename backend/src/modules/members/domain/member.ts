@@ -29,6 +29,7 @@ export interface MemberFull {
   addressExact: string | null;
   profile: Record<string, unknown>;
   draft: Record<string, unknown>;
+  joinedAt: string;
   tags: MemberTag[];
 }
 
