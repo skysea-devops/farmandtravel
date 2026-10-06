@@ -30,6 +30,7 @@ export function AppLayout() {
   ];
   const navBottom = [
     { to: "/app/abonelik", label: t("Abonelik", "Membership"), icon: "💳" },
+    { to: "/kurallar", label: t("Topluluk Kuralları", "Community Rules"), icon: "📜" },
     { to: "/app/ayarlar", label: t("Ayarlar", "Settings"), icon: "⚙️" },
   ];
 
