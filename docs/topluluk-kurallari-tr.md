@@ -67,7 +67,7 @@ Bir yere emeğini, zamanını ya da deneyimini sunmak için gidiyorsan:
 
 ## 5. Ev sahibi–gönüllü anlaşması
 
-Toprakla Yeniden **insanları buluşturur; anlaşmanın şartlarını iki taraf kendi arasında belirler.** Sağlıklı bir deneyim için, buluşmadan önce şunları **yazılı olarak** netleştirmenizi öneririz:
+Toprakla Yeniden **insanları buluşturur; anlaşmanın şartlarını iki taraf kendi arasında belirler.** Sağlıklı bir deneyim için, buluşmadan önce şunları **karşılıklı** netleştirmenizi öneririz:
 
 - Yapılacak işin kapsamı ve günlük/haftalık süre
 - İzin günleri

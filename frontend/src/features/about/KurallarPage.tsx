@@ -153,8 +153,8 @@ export function KurallarPage() {
 
       <Section n={5} title={t("Ev sahibi–gönüllü anlaşması", "Host–volunteer agreement")}>
         <p className="mb-3 text-[15px] text-ink-700">
-          {t("Toprakla Yeniden insanları buluşturur; anlaşmanın şartlarını iki taraf kendi arasında belirler. Sağlıklı bir deneyim için, buluşmadan önce şunları yazılı olarak netleştirmenizi öneririz:",
-             "Reconnect with Soil brings people together; the terms of the agreement are set between the two sides. For a healthy experience, we recommend clarifying the following in writing before you meet:")}
+          {t("Toprakla Yeniden insanları buluşturur; anlaşmanın şartlarını iki taraf kendi arasında belirler. Sağlıklı bir deneyim için, buluşmadan önce şunları karşılıklı netleştirmenizi öneririz:",
+             "Reconnect with Soil brings people together; the terms of the agreement are set between the two sides. For a healthy experience, we recommend clarifying the following together before you meet:")}
         </p>
         <Bullets plain items={[
           [t("Yapılacak işin kapsamı ve günlük/haftalık süre", "The scope of the work and the daily/weekly hours"), ""],
