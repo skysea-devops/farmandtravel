@@ -3,6 +3,7 @@ import { RootLayout } from "@/components/layout/RootLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { HomePage } from "@/features/home/HomePage";
 import { AboutPage } from "@/features/about/AboutPage";
+import { KurallarPage } from "@/features/about/KurallarPage";
 import { ExplorePage } from "@/features/explore/ExplorePage";
 import { ActivitiesPage } from "@/features/activities/ActivitiesPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
@@ -29,6 +30,7 @@ export default function App() {
       <Route element={<RootLayout />}>
         <Route index element={<HomePage />} />
         <Route path="hakkimizda" element={<AboutPage />} />
+        <Route path="kurallar" element={<KurallarPage />} />
         <Route path="kesfet" element={<ExplorePage />} />
         <Route path="aktiviteler" element={<ActivitiesPage />} />
         <Route path="kayit" element={<SignUpPage />} />

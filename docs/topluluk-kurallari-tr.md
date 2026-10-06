@@ -2,7 +2,9 @@
 
 *Taslak · gözden geçirilecek. Onaylanınca site içinde iki dilli "Kurallar" sayfası olarak yayınlanacak.*
 
-Toprakla Yeniden; toprağa, doğaya ve birlikte üretmeye inanan insanları buluşturan bir topluluktur. Burada amaç ücretsiz iş gücü ya da bedava konaklama değil; **bilgi, emek ve deneyimin karşılıklı paylaşıldığı; doğaya saygılı, temiz üretime ve kendine yeterliliğe inanan bir dayanışma ağı** kurmaktır. Aşağıdaki kurallar, bu topluluğu herkes için güvenli, saygılı ve anlamlı kılmak içindir. Üye olarak bu ilkeleri kabul etmiş sayılırsın.
+Toprakla Yeniden; toprağa, doğaya ve birlikte üretmeye inanan insanları buluşturan bir topluluktur. Burada amaç ücretsiz iş gücü ya da bedava konaklama değil; **bilgi, emek ve deneyimin karşılıklı paylaşıldığı; doğaya saygılı, temiz üretime ve kendine yeterliliğe inanan bir dayanışma ağı** kurmaktır.
+
+Bu platform yalnızca çiftlik/yer sahibi ile gönüllüyü buluşturmaz; aynı zamanda üyelerin **birbirine maddi ve manevi destek olduğu, birlikte aktiviteler düzenlediği, eğitici/öğretici programlar paylaştığı** bir topluluktur. Aşağıdaki kurallar bu farklı etkileşim biçimlerinin hepsini kapsar ve topluluğu herkes için güvenli, saygılı ve anlamlı kılmak içindir. Üye olarak bu ilkeleri kabul etmiş sayılırsın.
 
 ---
 
@@ -30,7 +32,7 @@ Bu kurallar istisnasız tüm üyeler (ev sahipleri, gönüllüler, mentorlar, or
 8. **Tek hesap.** Her kişi tek gerçek hesapla katılır. Sahte veya sahte-çoklu hesaplarla puan/değerlendirme manipülasyonu yasaktır.
 9. **Çocukların ve hayvanların korunması.** Çocuk istismarına, hayvana kötü muameleye veya bunları teşvik eden içeriğe asla izin verilmez.
 
-> Bu kuralların ciddi ihlali hesabın askıya alınması veya kalıcı kapatılmasıyla sonuçlanabilir (bkz. Bölüm 7).
+> Bu kuralların ciddi ihlali hesabın askıya alınması veya kalıcı kapatılmasıyla sonuçlanabilir (bkz. Bölüm 9).
 
 ---
 
@@ -39,9 +41,9 @@ Bu kurallar istisnasız tüm üyeler (ev sahipleri, gönüllüler, mentorlar, or
 Bir yeri, çiftliği ya da projeyi gönüllüye açıyorsan:
 
 - **Dürüst profil.** Yerini, yapılacak işi, yaşam koşullarını ve beklentilerini profilinde olduğu gibi anlat. Gerçekle örtüşmeyen, yanıltıcı bilgi verme.
-- **Güvenli ve temiz konaklama.** Gönüllüye güvenli, temiz ve insana yakışır bir konaklama sun. Sunduklarını (yatak, ortak alanlar, olanaklar) baştan açıkça belirt.
-- **Beslenme konusunda netlik.** Yemek/erzak sağlıyorsan bunu; sağlamıyorsan koşulları baştan açıkça yaz. Gönüllüyü aç veya belirsiz bırakma.
-- **Adil ve makul katkı.** Gönüllünün emeği karşılıklı bir değişimdir, tam zamanlı iş değildir. **Öneri:** günde ~4–5 saat, haftada ~5 gün; gönüllüye haftada en az 1–2 tam izin günü. Kesin süre ve program iki taraf arasında baştan netleştirilmelidir.
+- **Uygun misafir konaklaması.** Gönüllüye güvenli, temiz ve insana yakışır, uygun bir misafir konaklaması sun. Sunduklarını (yatak, oda/ortak alan, olanaklar) baştan açıkça belirt.
+- **Günde 3 öğün yemek.** Değişimin standardı, gönüllüye **günde 3 öğün yemek** sağlamaktır. Özel beslenme (vejetaryen, vegan, alerji vb.) durumlarını baştan konuşun. Bu standardın dışında bir düzen uygulayacaksan koşulları profilinde ve anlaşmada açıkça yaz; gönüllüyü aç veya belirsiz bırakma.
+- **Adil ve makul katkı.** Gönüllünün emeği karşılıklı bir değişimdir, tam zamanlı iş değildir. **Standart:** günde **6 saat**, haftada **5 gün** çalışma; karşılığında **günde 3 öğün yemek + uygun bir misafir konaklaması**. Haftada **2 tam izin günü** verilir. Bu ölçü topluluğun genel kabulüdür; farklı bir düzen uygulanacaksa iki taraf baştan açıkça anlaşmalı ve profilde belirtilmelidir.
 - **İlk gün yönlendirme.** Gönüllüye işi, ev kurallarını ve güvenlik bilgilerini ilk gün açıkça anlat.
 - **İstismar yok.** Gönüllüyü ucuz/bedava iş gücü gibi görme; ağır, tehlikeli ya da anlaşılandan çok farklı işlere zorlama. Değişim karşılığında gönüllüden **para talep etme**.
 - **Değişiklikte şeffaflık.** Profilinde paylaştığın ya da anlaştığınız koşullarda bir değişiklik olursa gönüllüye önceden ve açıkça bildir.
@@ -79,7 +81,37 @@ Beklentiler baştan net olduğunda sorunların çoğu hiç yaşanmaz. Anlaşmazl
 
 ---
 
-## 6. Değerlendirme ve yorum kuralları
+## 6. Destek, mentorluk ve ortaklık
+
+Bu topluluk yalnızca ev sahibi–gönüllü buluşması için değil; üyelerin **birbirine maddi ve manevi destek olması** için de vardır. Bilgini, deneyimini, zamanını ya da imkânlarını paylaşabilir; bir başkasının üretimine, projesine ya da yolculuğuna destek olabilirsin.
+
+- **Gönüllülük esastır.** Verilen destek karşılıksız ve gönüllüdür; kimse destek vermeye ya da almaya zorlanamaz.
+- **Açık ve dürüst ol.** Ne tür bir destek sunduğunu ya da aradığını net yaz. Karşılığında bir beklentin varsa bunu baştan açıkça konuş.
+- **Maddi destekte şeffaflık.** Bağış, ortak üretim, kaynak paylaşımı ya da mali destek söz konusuysa koşulları iki taraf baştan yazılı olarak netleştirmeli. Topluluğu dilencilik, zincirleme bağış, yatırım vaadi veya dolandırıcılık için araç yapmak yasaktır.
+- **Mentorluk saygı ister.** Bilgi ve deneyim paylaşırken karşındakini küçümseme; öğrenen de paylaşanın emeğine ve zamanına saygı gösterir.
+- **Ortaklıklar yazılı olsun.** Ortak bir proje, üretim ya da iş kurulacaksa; emek, pay, sorumluluk ve olası riskleri baştan açıkça konuşup yazın. Platform bu ortaklıkların tarafı veya garantörü değildir.
+
+---
+
+## 7. Aktiviteler, etkinlikler ve eğitici/öğretici programlar
+
+Üyeler topluluk içinde **aktiviteler, buluşmalar, atölyeler ve eğitici/öğretici programlar** düzenleyebilir veya bunlara katılabilir. Amaç; öğrenmeyi, üretmeyi ve doğayla yeniden bağ kurmayı birlikte güçlendirmektir.
+
+**Düzenleyen (organizatör) için:**
+- **Dürüst tanıtım.** Etkinliğin içeriğini, süresini, seviyesini, yerini (veya çevrimiçi olup olmadığını) ve varsa katılım koşullarını olduğu gibi anlat. Yanıltıcı başlık ya da abartılı vaat verme.
+- **Güvenlik önceliklidir.** Fiziksel etkinliklerde (tarla çalışması, atölye, doğa yürüyüşü vb.) katılımcıların güvenliğini gözet; riskleri önceden bildir.
+- **Erişilebilir ve kapsayıcı ol.** Mümkün olduğunca herkese açık, ayrımcılıktan uzak bir ortam kur.
+- **Ticari sınır.** Platform bir reklam/satış panosu değildir. Ücretli bir program düzenleyeceksen bunu baştan şeffaf biçimde belirt; gizli ücret, zorunlu satış ya da çok seviyeli pazarlama yasaktır.
+- **Eğitici içerikte dürüstlük.** Öğrettiğin konuda gerçek deneyim/bilgi sahibi ol. Sağlık, güvenlik veya hukuk gibi konularda yanıltıcı ya da tehlikeli bilgi verme.
+
+**Katılımcı için:**
+- **Sözüne sadık ol.** Katılacağını söylediğin etkinliğe gel; gelemeyeceksen önceden haber ver.
+- **Saygılı katıl.** Düzenleyene, diğer katılımcılara ve mekâna/doğaya saygı göster. Ortak kaynakları özenle kullan.
+- **Kendi sorumluluğun.** Kendi sağlık ve güvenlik sınırlarını bil; sana uygun olmayan bir aktiviteye katılma.
+
+---
+
+## 8. Değerlendirme ve yorum kuralları
 
 Değerlendirmeler, topluluktaki güvenin temelidir. Bu yüzden gerçek ve adil olmaları gerekir.
 
@@ -97,7 +129,7 @@ Değerlendirmeler, topluluktaki güvenin temelidir. Bu yüzden gerçek ve adil o
 
 ---
 
-## 7. İhlaller ve yaptırımlar
+## 9. İhlaller ve yaptırımlar
 
 Kurallara aykırı davranışlarda, ihlalin ağırlığına göre şu adımlar uygulanabilir:
 
@@ -110,7 +142,7 @@ Kurallara aykırı davranışlarda, ihlalin ağırlığına göre şu adımlar u
 
 ---
 
-## 8. Sorumluluk reddi
+## 10. Sorumluluk reddi
 
 Toprakla Yeniden bir **buluşma ve tanışma platformudur.** Üyeler arasındaki anlaşmaların, buluşmaların ve çalışmaların içeriğinden, güvenliğinden ve sonuçlarından **taraflar kendileri sorumludur.** Platform bir iş/işçi ilişkisi kurmaz, taraflar adına garanti vermez. Kendi güvenliğin için gerekli özeni göstermek senin sorumluluğundadır: önceden iyi iletişim kur, referansları/değerlendirmeleri incele ve kendini güvende hissetmediğin bir durumdan çekil.
 

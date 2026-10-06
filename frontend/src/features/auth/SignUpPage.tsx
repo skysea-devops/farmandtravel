@@ -67,9 +67,11 @@ export function SignUpPage() {
                 <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-1" />
                 <span>
                   <a className="text-forest-600 underline">{t("Kullanım Koşulları", "Terms of Use")}</a>
-                  {t(" ve ", " and ")}
+                  {t(", ", ", ")}
                   <a className="text-forest-600 underline">{t("Gizlilik Politikası", "Privacy Policy")}</a>
-                  {t("'nı (KVKK/GDPR) kabul ediyorum.", " (GDPR/KVKK) — I accept.")}
+                  {t(" (KVKK/GDPR) ve ", " (GDPR/KVKK) and the ")}
+                  <Link to="/kurallar" target="_blank" className="text-forest-600 underline">{t("Topluluk Kuralları", "Community Rules")}</Link>
+                  {t("'nı kabul ediyorum.", " — I accept.")}
                 </span>
               </label>
               <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? t("Gönderiliyor…", "Sending…") : t("Hesabı oluştur", "Create account")}</Button>
