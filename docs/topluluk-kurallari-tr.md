@@ -11,7 +11,7 @@ Toprakla Yeniden; toprağa, doğaya ve birlikte üretmeye inanan insanları bulu
 - **Toprağa ve doğaya saygı.** Temiz, doğayla uyumlu ve sürdürülebilir üretimi destekleriz. Toprağı, suyu, hayvanları ve ekosistemi koruyan uygulamaları önemseriz.
 - **Karşılıklılık.** Herkes hem verir hem alır. Gönüllü emeğini, deneyimini ya da bilgisini paylaşır; ev sahibi de yerini, bilgisini ve emeğini paylaşır. İlişki bir "işveren–işçi" ilişkisi değil, bir **değişim ve öğrenme** ilişkisidir.
 - **Kendine yeterlilik ve farkındalık.** Üretmeyi, paylaşmayı ve doğayla yeniden bağ kurmayı öğrenmek isteyenleri destekleriz. Burada maddi veya manevi destek sunmak da, almak da değerlidir.
-- **Dürüstlük ve açıklık.** Profilinde, ilanında ve mesajlarında gerçeği yaz. Beklentileri baştan net konuş.
+- **Dürüstlük ve açıklık.** Profilinde ve mesajlarında gerçeği yaz. Beklentileri baştan net konuş.
 - **Saygı.** Farklı kültür, inanç, yaşam biçimi ve deneyim seviyelerine açık ol. "Farklı olmak, yanlış olmak değildir."
 
 ---
@@ -38,13 +38,13 @@ Bu kurallar istisnasız tüm üyeler (ev sahipleri, gönüllüler, mentorlar, or
 
 Bir yeri, çiftliği ya da projeyi gönüllüye açıyorsan:
 
-- **Dürüst ilan.** Yerini, yapılacak işi, yaşam koşullarını ve beklentilerini olduğu gibi anlat. Gerçekle örtüşmeyen ilan verme.
+- **Dürüst profil.** Yerini, yapılacak işi, yaşam koşullarını ve beklentilerini profilinde olduğu gibi anlat. Gerçekle örtüşmeyen, yanıltıcı bilgi verme.
 - **Güvenli ve temiz konaklama.** Gönüllüye güvenli, temiz ve insana yakışır bir konaklama sun. Sunduklarını (yatak, ortak alanlar, olanaklar) baştan açıkça belirt.
 - **Beslenme konusunda netlik.** Yemek/erzak sağlıyorsan bunu; sağlamıyorsan koşulları baştan açıkça yaz. Gönüllüyü aç veya belirsiz bırakma.
 - **Adil ve makul katkı.** Gönüllünün emeği karşılıklı bir değişimdir, tam zamanlı iş değildir. **Öneri:** günde ~4–5 saat, haftada ~5 gün; gönüllüye haftada en az 1–2 tam izin günü. Kesin süre ve program iki taraf arasında baştan netleştirilmelidir.
 - **İlk gün yönlendirme.** Gönüllüye işi, ev kurallarını ve güvenlik bilgilerini ilk gün açıkça anlat.
 - **İstismar yok.** Gönüllüyü ucuz/bedava iş gücü gibi görme; ağır, tehlikeli ya da anlaşılandan çok farklı işlere zorlama. Değişim karşılığında gönüllüden **para talep etme**.
-- **Değişiklikte şeffaflık.** İlanda belirtilen koşullarda bir değişiklik olursa gönüllüye önceden ve açıkça bildir.
+- **Değişiklikte şeffaflık.** Profilinde paylaştığın ya da anlaştığınız koşullarda bir değişiklik olursa gönüllüye önceden ve açıkça bildir.
 - **Saygılı ortam.** Gönüllüye bir topluluk üyesi gibi davran; onu ailenin/işin bir parçası gibi gör ama bir çalışan gibi değil.
 
 ---
@@ -101,7 +101,7 @@ Değerlendirmeler, topluluktaki güvenin temelidir. Bu yüzden gerçek ve adil o
 
 Kurallara aykırı davranışlarda, ihlalin ağırlığına göre şu adımlar uygulanabilir:
 
-1. **Uyarı** ve içeriğin (yorum, mesaj, ilan) kaldırılması
+1. **Uyarı** ve içeriğin (yorum, mesaj, profil bilgisi) kaldırılması
 2. Özelliklere **geçici kısıtlama**
 3. Hesabın **askıya alınması**
 4. Ciddi veya tekrarlayan ihlallerde hesabın **kalıcı olarak kapatılması**
