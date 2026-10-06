@@ -46,6 +46,7 @@ export interface Profile {
   status: "onboarding" | "profile_complete" | "active" | "suspended";
   plan?: "none" | "frontier" | "active";
   isAdmin?: boolean;
+  joinedAt?: string;
   firstName: string | null;
   country: string | null;
   city: string | null;
@@ -97,6 +98,7 @@ export interface MatchCard {
   score: number;
   matched: MatchTag[];
   isOfficial?: boolean;
+  joinedAt?: string;
 }
 
 export interface Review {
