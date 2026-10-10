@@ -40,6 +40,73 @@ messagesRoutes.get("/admin/members", auth, requireAdmin, async (c) => {
   });
 });
 
+// Admin: full member roster with the APP-side status (onboarding/profile_complete/active/
+// suspended), join date and Cognito sub. The Cognito console only shows Cognito's own
+// Confirmed/Enabled state — not whether someone finished onboarding — so this is how an
+// admin sees who signed up and where they're stuck (e.g. confirmed e-mail but never
+// completed their profile → status 'onboarding' → invisible in Keşfet).
+const ROSTER_STATUSES = ["onboarding", "profile_complete", "active", "suspended", "deleted"];
+messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
+  const status = (c.req.query("status") ?? "").trim();
+  const q = (c.req.query("q") ?? "").trim();
+  const where: string[] = ["m.is_official = false"];
+  const params: unknown[] = [];
+  if (ROSTER_STATUSES.includes(status)) {
+    params.push(status);
+    where.push(`m.status = $${params.length}`);
+  }
+  if (q.length >= 2) {
+    params.push(`%${q}%`);
+    where.push(
+      `(m.first_name ILIKE $${params.length} OR m.last_name ILIKE $${params.length}
+        OR m.contact_email ILIKE $${params.length} OR m.cognito_sub ILIKE $${params.length})`,
+    );
+  }
+  const rows = await query<{
+    id: string; cognito_sub: string; first_name: string | null; last_name: string | null;
+    contact_email: string | null; city: string | null; country: string | null;
+    status: string; plan: string; created_at: string; connections: number;
+  }>(
+    `SELECT m.id, m.cognito_sub, m.first_name, m.last_name, m.contact_email, m.city, m.country,
+            m.status, m.plan, m.created_at,
+            (SELECT count(*)::int FROM connections c
+               WHERE c.status = 'accepted' AND (c.requester_id = m.id OR c.addressee_id = m.id)) AS connections
+       FROM members m
+      WHERE ${where.join(" AND ")}
+      ORDER BY m.created_at DESC
+      LIMIT 500`,
+    params,
+  );
+  const sum = await query<{ status: string; n: number }>(
+    `SELECT status, count(*)::int AS n FROM members WHERE is_official = false GROUP BY status`,
+  );
+  const s: Record<string, number> = {};
+  for (const r of sum.rows) s[r.status] = r.n;
+  return c.json({
+    summary: {
+      total: Object.values(s).reduce((a, b) => a + b, 0),
+      onboarding: s.onboarding ?? 0,
+      profileComplete: s.profile_complete ?? 0,
+      active: s.active ?? 0,
+      suspended: s.suspended ?? 0,
+      deleted: s.deleted ?? 0,
+    },
+    members: rows.rows.map((m) => ({
+      id: m.id,
+      sub: m.cognito_sub,
+      firstName: m.first_name,
+      lastName: m.last_name,
+      email: m.contact_email,
+      city: m.city,
+      country: m.country,
+      status: m.status,
+      plan: m.plan,
+      connections: m.connections,
+      createdAt: m.created_at,
+    })),
+  });
+});
+
 // Admin: message a single member from the official account (no connection needed).
 const dmSchema = z.object({ memberId: z.string().uuid(), body: z.string().min(1).max(4000) });
 messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
