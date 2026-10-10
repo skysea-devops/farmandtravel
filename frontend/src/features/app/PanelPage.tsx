@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
+import { MemberCard } from "@/components/MemberCard";
 import { api, connections } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import type { Dashboard, MatchCard } from "@/lib/types";
+import type { Dashboard } from "@/lib/types";
 
 export function PanelPage() {
   const { t } = useI18n();
@@ -61,7 +61,7 @@ export function PanelPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {d.matches.slice(0, 6).map((m) => <MatchCardView key={m.id} m={m} />)}
+            {d.matches.slice(0, 6).map((m) => <MemberCard key={m.id} m={m} highlight />)}
           </div>
         )}
       </section>
@@ -101,26 +101,3 @@ export function PanelPage() {
   );
 }
 
-function MatchCardView({ m }: { m: MatchCard }) {
-  const { t, lang } = useI18n();
-  const loc = [m.city, m.country].filter(Boolean).join(", ");
-  return (
-    <div className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <div className="mb-3 flex items-center gap-3">
-        <Avatar url={m.avatarUrl} className="size-11" />
-        <div className="min-w-0">
-          <div className="truncate font-semibold">{m.firstName}</div>
-          <div className="truncate text-[13px] text-ink-500">{loc}{m.headline ? ` · ${m.headline}` : ""}</div>
-        </div>
-      </div>
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {(m.matched.length ? m.matched : m.tags).slice(0, 3).map((tg) => (
-          <Tag key={`${tg.axis}:${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>
-        ))}
-      </div>
-      <div className="mt-auto flex items-center gap-2">
-        <Link to={`/app/uye/${m.id}`} className="flex-1"><Button size="sm" className="w-full">{t("Profili gör", "View profile")}</Button></Link>
-      </div>
-    </div>
-  );
-}
