@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
+import { Avatar } from "@/components/ui/Avatar";
 import { CATEGORIES } from "@/data/demo";
 import { youtubeThumb } from "@/data/activities";
 import { useI18n } from "@/lib/i18n";
-import { activities as actApi } from "@/lib/api";
-import type { ActivityItem } from "@/lib/types";
+import { activities as actApi, api } from "@/lib/api";
+import type { ActivityItem, PublicMember } from "@/lib/types";
 import { BandSlider } from "./BandSlider";
 
 // Community photos for the "life on the farm" slider band.
@@ -30,7 +31,16 @@ const CAT_EN: Record<string, string> = {
 const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
 
 export function HomePage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+
+  // Real community members for the "TOPLULUKTAN" panel (newest first from the API).
+  // Falls back to the static sample cards below when none load yet / platform is empty.
+  const [community, setCommunity] = useState<PublicMember[]>([]);
+  useEffect(() => {
+    api.get<{ members: PublicMember[] }>("/public/members")
+      .then((r) => setCommunity(r.members.slice(0, 3)))
+      .catch(() => {});
+  }, []);
 
   const miniCards = [
     { name: "Marta · 🇵🇹", role: t("Permakültür çiftliği", "Permaculture farm"), photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", t("yer & deneyim sunuyor", "offering place & experience")], ["seek", t("gönüllü arıyor", "looking for volunteers")]] },
@@ -108,20 +118,37 @@ export function HomePage() {
               className="mb-3.5 h-40 w-full rounded-xl object-cover" />
             <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">{t("TOPLULUKTAN", "FROM THE COMMUNITY")}</div>
             <div className="flex flex-col gap-2.5">
-              {miniCards.map((m) => (
-                <div key={m.name} className="rounded-xl bg-surface p-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-10 shrink-0 rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${m.photo})`, backgroundColor: "#a9c99a" }} />
-                    <div>
-                      <div className="text-sm font-semibold text-ink-900">{m.name}</div>
-                      <div className="text-xs text-ink-500">{m.role}</div>
+              {community.length > 0 ? (
+                community.map((m) => (
+                  <Link key={m.id} to="/kesfet" className="block rounded-xl bg-surface p-3 transition hover:shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <Avatar url={m.avatarUrl} className="size-10 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-ink-900">{m.firstName}</div>
+                        <div className="truncate text-xs text-ink-500">{[m.city, m.country].filter(Boolean).join(", ") || m.headline}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {m.tags.slice(0, 2).map((tag) => <Tag key={`${tag.axis}-${tag.value}`} axis={tag.axis}>{lang === "en" ? tag.labelEn : tag.labelTr}</Tag>)}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                miniCards.map((m) => (
+                  <div key={m.name} className="rounded-xl bg-surface p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-10 shrink-0 rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${m.photo})`, backgroundColor: "#a9c99a" }} />
+                      <div>
+                        <div className="text-sm font-semibold text-ink-900">{m.name}</div>
+                        <div className="text-xs text-ink-500">{m.role}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {m.tags.map(([axis, label]) => <Tag key={label} axis={axis as any}>{label}</Tag>)}
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {m.tags.map(([axis, label]) => <Tag key={label} axis={axis as any}>{label}</Tag>)}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
