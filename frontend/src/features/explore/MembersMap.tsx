@@ -81,7 +81,7 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
       <div className="absolute bottom-3.5 left-3.5 z-[500] rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
         <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.host, transform: "rotate(-45deg)" }} /> {t("Çiftlik / yer sahipleri", "Farm / place owners")}</div>
         <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.volunteer, transform: "rotate(-45deg)" }} /> {t("Gönüllüler", "Volunteers")}</div>
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.other, transform: "rotate(-45deg)" }} /> {t("Öğrenmek / destek", "Learning / support")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.other, transform: "rotate(-45deg)" }} /> {t("Öğrenen & destekçiler", "Learners & supporters")}</div>
       </div>
     </div>
   );

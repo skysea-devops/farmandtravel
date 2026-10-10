@@ -14,7 +14,8 @@ import type { MapPin } from "./MembersMap";
 // Leaflet is heavy; load it only when this page renders (keeps it out of the app bundle).
 const MembersMap = lazy(() => import("./MembersMap"));
 
-type Dir = "all" | "offer" | "seek";
+type Cat = "all" | "host" | "volunteer" | "other";
+const CAT_COLOR: Record<"host" | "volunteer" | "other", string> = { host: "#3a7d44", volunteer: "#e08a3c", other: "#9a9a90" };
 
 // Static (non-scrolling) photo strip for the Keşfet banner.
 const BANNER_IMAGES = ["/community/s1.jpg", "/community/s7.jpg", "/community/s4.jpg", "/community/s6.jpg"];
@@ -26,11 +27,10 @@ export function ExplorePage() {
   const [all, setAll] = useState<PublicMember[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [dir, setDir] = useState<Dir>("all");
+  const [cat, setCat] = useState<Cat>("all");
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [topic, setTopic] = useState("");
-  const [farm, setFarm] = useState(false);
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
   const [myId, setMyId] = useState<string | null>(null);
@@ -70,18 +70,17 @@ export function ExplorePage() {
   const results = useMemo(() => {
     const needle = q.toLocaleLowerCase("tr").trim();
     return all.filter((m) => {
-      if (dir !== "all" && m.dir !== dir) return false;
+      if (cat !== "all" && m.category !== cat) return false;
       if (country && m.country !== country) return false;
       if (city && m.city !== city) return false;
       if (topic && !m.tags.some((t) => t.axis === "topic" && t.value === topic)) return false;
-      if (farm && !m.tags.some((t) => t.axis === "situation" && t.value === "farm-owner")) return false;
       if (needle) {
         const hay = `${m.firstName ?? ""} ${m.city ?? ""} ${m.country ?? ""} ${m.headline ?? ""} ${m.tags.map((t) => t.labelTr).join(" ")}`.toLocaleLowerCase("tr");
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [all, dir, country, city, topic, farm, q]);
+  }, [all, cat, country, city, topic, q]);
 
   const pins = useMemo<MapPin[]>(() => {
     const out: MapPin[] = [];
@@ -96,7 +95,7 @@ export function ExplorePage() {
     <div className="mx-auto max-w-[1200px] px-6 py-7">
       <div className="mb-4">
         <h1 className="font-display text-[28px] font-semibold">{t("Keşfet", "Explore")}</h1>
-        <p className="text-sm text-ink-500">{t("Ülkeye, şehre ve etiketlere göre destek sunanları ve arayanları haritada bul. Bağlanmak için üyelik gerekir.", "Find people offering and seeking support on the map, by country, city and tags. Membership is required to connect.")}</p>
+        <p className="text-sm text-ink-500">{t("Çiftlik sahiplerini, gönüllüleri ve destekçileri haritada bul; ülkeye, şehre ve konuya göre filtrele. Bağlanmak için üyelik gerekir.", "Find farm owners, volunteers and supporters on the map; filter by country, city and topic. Membership is required to connect.")}</p>
       </div>
 
       {/* çalışan-insan bandı — sabit fotoğraf şeridi (kaymaz) */}
@@ -122,13 +121,15 @@ export function ExplorePage() {
 
       {/* filtreler */}
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <div className="inline-flex gap-0.5 rounded-full bg-sand-200 p-0.5">
-          {(["all", "offer", "seek"] as Dir[]).map((d) => (
-            <button key={d} onClick={() => setDir(d)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold ${dir === d ? "bg-surface shadow-sm" : "text-ink-700"}`}>
-              {d === "offer" && <span className="size-2.5 rounded-full bg-offer" />}
-              {d === "seek" && <span className="size-2.5 rounded-full bg-seek" />}
-              {d === "all" ? t("Tümü", "All") : d === "offer" ? t("Destek sunanlar", "Offering support") : t("Destek arayanlar", "Seeking support")}
+        <div className="inline-flex flex-wrap gap-0.5 rounded-full bg-sand-200 p-0.5">
+          {(["all", "host", "volunteer", "other"] as Cat[]).map((d) => (
+            <button key={d} onClick={() => setCat(d)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold ${cat === d ? "bg-surface shadow-sm" : "text-ink-700"}`}>
+              {d !== "all" && <span className="size-2.5 rounded-full" style={{ background: CAT_COLOR[d] }} />}
+              {d === "all" ? t("Tümü", "All")
+                : d === "host" ? t("Çiftlik / yer sahipleri", "Farm / place owners")
+                : d === "volunteer" ? t("Gönüllüler", "Volunteers")
+                : t("Öğrenen & destekçiler", "Learners & supporters")}
             </button>
           ))}
         </div>
@@ -143,10 +144,6 @@ export function ExplorePage() {
           <option value="">{t("🌱 Tüm konular", "🌱 All topics")}</option>
           {topics.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
         </select>
-        <button onClick={() => setFarm((f) => !f)}
-          className={`rounded-full border px-3.5 py-2 text-[13px] ${farm ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700"}`}>
-          {t("🚜 Çiftlik sahipleri", "🚜 Farm owners")}
-        </button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
