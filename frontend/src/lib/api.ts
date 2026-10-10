@@ -190,6 +190,14 @@ export const admin = {
   message: (memberId: string, body: string) => api.post<{ connectionId: string }>("/admin/message", { memberId, body }),
   // Search members by name/email to pick a recipient.
   searchMembers: <T>(q: string) => api.get<T>(`/admin/members?q=${encodeURIComponent(q)}`),
+  // Full member roster with app-side status + join date (who signed up, who's stuck in onboarding).
+  roster: <T>(status = "", q = "") => {
+    const p = new URLSearchParams();
+    if (status) p.set("status", status);
+    if (q) p.set("q", q);
+    const qs = p.toString();
+    return api.get<T>(`/admin/roster${qs ? `?${qs}` : ""}`);
+  },
   // Official "Toprakla Yeniden" account inbox (admin sees sent + replies).
   inbox: <T>() => api.get<T>("/admin/inbox"),
   inboxThread: <T>(connectionId: string) => api.get<T>(`/admin/inbox/${connectionId}`),

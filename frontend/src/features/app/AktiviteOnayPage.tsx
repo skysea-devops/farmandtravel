@@ -6,7 +6,8 @@ import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
-import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile } from "@/lib/types";
+import { monthYear } from "@/lib/time";
+import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember } from "@/lib/types";
 
 const KIND: Record<string, string> = {
   video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
@@ -17,8 +18,9 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
-type TabId = "reviews" | "activities" | "messages" | "inbox";
+type TabId = "members" | "reviews" | "activities" | "messages" | "inbox";
 const TABS: { id: TabId; label: string }[] = [
+  { id: "members", label: "👥 Üyeler" },
   { id: "reviews", label: "⚖️ Değerlendirmeler" },
   { id: "activities", label: "📅 Aktiviteler" },
   { id: "messages", label: "📣 Duyuru & Mesaj" },
@@ -28,7 +30,7 @@ const TABS: { id: TabId; label: string }[] = [
 export function AktiviteOnayPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<TabId>("reviews");
+  const [tab, setTab] = useState<TabId>("members");
 
   useEffect(() => {
     api.get<Profile>("/profile/me")
@@ -68,6 +70,7 @@ export function AktiviteOnayPage() {
         ))}
       </div>
 
+      {tab === "members" && <MembersSection />}
       {tab === "reviews" && <ReviewModerationCard />}
       {tab === "activities" && <ActivitiesSection />}
       {tab === "messages" && (
@@ -77,6 +80,141 @@ export function AktiviteOnayPage() {
         </>
       )}
       {tab === "inbox" && <InboxSection />}
+    </div>
+  );
+}
+
+// ── Üyeler ───────────────────────────────────────────────────────────────────
+// Tüm üyeler, uygulama tarafı durumuyla (onboarding/profil tamam/aktif/askıda) +
+// katılım tarihi. Cognito konsolu yalnızca Cognito'nun kendi durumunu (Confirmed/
+// Enabled) gösterir; burası kimin onboarding'de takılı olduğunu görmek içindir.
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  onboarding:       { label: "Onboarding'de (profil yarım)", cls: "bg-clay-500/15 text-clay-600" },
+  profile_complete: { label: "Profil tamam",                 cls: "bg-moss-500/20 text-forest-700" },
+  active:           { label: "Aktif",                        cls: "bg-forest-600/15 text-forest-700" },
+  suspended:        { label: "Askıda",                       cls: "bg-[#f7e2e0] text-[#8a2f29]" },
+  deleted:          { label: "Silindi",                      cls: "bg-ink-500/10 text-ink-500" },
+};
+
+type RosterFilter = "" | "onboarding" | "profile_complete" | "active" | "suspended";
+const FILTERS: { id: RosterFilter; label: string }[] = [
+  { id: "", label: "Tümü" },
+  { id: "onboarding", label: "Onboarding'de" },
+  { id: "profile_complete", label: "Profil tamam" },
+  { id: "active", label: "Aktif" },
+  { id: "suspended", label: "Askıda" },
+];
+
+function MembersSection() {
+  const [data, setData] = useState<RosterData | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [status, setStatus] = useState<RosterFilter>("");
+  const [q, setQ] = useState("");
+  const seq = useRef(0);
+
+  useEffect(() => {
+    const id = ++seq.current;
+    setLoaded(false);
+    const term = q.trim();
+    const t = setTimeout(() => {
+      adminApi.roster<RosterData>(status, term.length >= 2 ? term : "")
+        .then((r) => { if (id === seq.current) setData(r); })
+        .catch(() => { if (id === seq.current) setData(null); })
+        .finally(() => { if (id === seq.current) setLoaded(true); });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [status, q]);
+
+  const sum = data?.summary;
+
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="font-display text-lg font-semibold">Üyeler</h2>
+        <p className="text-sm text-ink-500">
+          Kaydolan herkes — uygulama durumuyla birlikte. <b>Onboarding'de</b> olanlar e-postasını doğrulamış ama
+          profilini bitirmemiştir; bu yüzden Keşfet'te görünmezler. (Cognito'daki sub, kullanıcı adıyla eşleşir.)
+        </p>
+      </div>
+
+      {sum && (
+        <div className="mb-4 flex flex-wrap gap-2 text-sm">
+          <Stat label="Toplam" n={sum.total} />
+          <Stat label="Onboarding'de" n={sum.onboarding} tone="clay" />
+          <Stat label="Profil tamam" n={sum.profileComplete} />
+          <Stat label="Aktif" n={sum.active} tone="forest" />
+          {sum.suspended > 0 && <Stat label="Askıda" n={sum.suspended} tone="red" />}
+        </div>
+      )}
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatus(f.id)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                status === f.id ? "bg-forest-600 text-white" : "bg-sand-100 text-ink-600 hover:bg-sand-200",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="İsim, e-posta veya sub ara…"
+          className="ml-auto w-full max-w-xs rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600"
+        />
+      </div>
+
+      {!loaded ? (
+        <div className="py-8 text-center text-ink-500">Yükleniyor…</div>
+      ) : !data || data.members.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Üye bulunamadı.
+        </div>
+      ) : (
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+          {data.members.map((m) => <RosterRow key={m.id} m={m} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, n, tone }: { label: string; n: number; tone?: "clay" | "forest" | "red" }) {
+  const cls = tone === "clay" ? "text-clay-600" : tone === "forest" ? "text-forest-700" : tone === "red" ? "text-[#8a2f29]" : "text-ink-900";
+  return (
+    <div className="rounded-lg border border-border bg-surface px-3 py-2">
+      <span className={cn("text-base font-semibold", cls)}>{n}</span>
+      <span className="ml-1.5 text-xs text-ink-500">{label}</span>
+    </div>
+  );
+}
+
+function RosterRow({ m }: { m: RosterMember }) {
+  const meta = STATUS_META[m.status] ?? STATUS_META.onboarding;
+  const name = [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz (profil yok)";
+  const where = [m.city, m.country].filter(Boolean).join(", ");
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className={cn("truncate font-semibold", !m.firstName && "italic text-ink-400")}>{name}</span>
+          <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.cls)}>{meta.label}</span>
+          {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
+        </div>
+        <div className="mt-0.5 truncate text-xs text-ink-500">
+          {[m.email, where, `${m.connections} bağlantı`].filter(Boolean).join(" · ")}
+        </div>
+        <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
+      </div>
+      <div className="shrink-0 text-right text-xs text-ink-500">
+        {monthYear(m.createdAt, "tr")}
+      </div>
     </div>
   );
 }

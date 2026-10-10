@@ -149,6 +149,23 @@ export interface AdminInboxThread {
   member: AdminInboxMember | null;
   messages: Message[];
 }
+export interface RosterMember {
+  id: string;
+  sub: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  city: string | null;
+  country: string | null;
+  status: "onboarding" | "profile_complete" | "active" | "suspended" | "deleted";
+  plan: "none" | "frontier" | "active";
+  connections: number;
+  createdAt: string;
+}
+export interface RosterData {
+  summary: { total: number; onboarding: number; profileComplete: number; active: number; suspended: number; deleted: number };
+  members: RosterMember[];
+}
 export interface AdminReviewItem {
   id: string;
   rating: number;
