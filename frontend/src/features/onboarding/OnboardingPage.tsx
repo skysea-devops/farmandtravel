@@ -115,6 +115,20 @@ export function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
+      <div className="mb-6 rounded-[var(--radius-lg)] border border-moss-500/40 bg-sand-100 p-4 text-sm text-ink-700">
+        <p className="font-semibold text-forest-700">
+          {t(
+            "🌱 Profilini tamamla, aradığın kişilerle seni anında eşleştirelim — dünyanın dört bir yanındaki çiftlikler, gönüllüler ve birlikte üretmek isteyenlerle bağ kur.",
+            "🌱 Complete your profile and we'll match you instantly with the people you're looking for — connect with farms, volunteers and growers all around the world.",
+          )}
+        </p>
+        <p className="mt-1.5 text-ink-600">
+          {t(
+            "Profilini bitirene kadar Keşfet'te ve aramalarda görünmezsin, seni doğru kişilerle eşleştirebilmemiz için birkaç adım kaldı. 👇",
+            "Until you finish your profile you won't appear in Discover or searches — just a few steps left so we can match you with the right people. 👇",
+          )}
+        </p>
+      </div>
       <Progress step={step} t={t} />
       {err && <div className="mb-4 rounded-lg border border-[#eec4c0] bg-[#f7e2e0] px-4 py-3 text-sm text-[#8a2f29]">{err}</div>}
 
