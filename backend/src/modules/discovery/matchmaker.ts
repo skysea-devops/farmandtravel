@@ -34,6 +34,24 @@ export interface MatchScore {
   matched: Tag[]; // the candidate's tags that matched me (for "why matched" chips)
 }
 
+// A believable, spread-out match percentage for the UI. The raw score is a small
+// integer (often 1), so a flat score→% map clusters everyone at the same number.
+// Here complementary need/offer matches weigh most, shared topics less, and same
+// city/country plus a small quality nudge break ties so cards don't all read alike.
+export function matchPercent(
+  matched: Tag[],
+  opts: { sameCity?: boolean; sameCountry?: boolean; ratingAvg?: number },
+): number {
+  if (matched.length === 0) return 0;
+  const topics = matched.filter((t) => t.axis === "topic").length;
+  const needs = matched.length - topics; // complementary (seek↔offer) matches
+  let pct = 52 + needs * 13 + topics * 7;
+  if (opts.sameCity) pct += 8;
+  else if (opts.sameCountry) pct += 5;
+  pct += Math.min(3, Math.max(0, Math.round(((opts.ratingAvg ?? 0) - 4) * 2)));
+  return Math.max(55, Math.min(97, pct));
+}
+
 export function scoreCandidate(myTags: Tag[], theirTags: Tag[]): MatchScore {
   const theirByKey = new Map(theirTags.map((t) => [`${t.axis}:${t.value}`, t]));
   const matched = new Map<string, Tag>();

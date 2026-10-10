@@ -98,6 +98,7 @@ export interface MatchCard {
   tags: MatchTag[];
   score: number;
   matched: MatchTag[];
+  matchPct?: number;
   isOfficial?: boolean;
   joinedAt?: string;
 }
