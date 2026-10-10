@@ -34,6 +34,7 @@ export function ExplorePage() {
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(false);
   const [myId, setMyId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ members: PublicMember[] }>("/public/members")
@@ -51,6 +52,15 @@ export function ExplorePage() {
   // Clicking: guests get the join prompt; my own card → my profile; others → their profile.
   const open = (id: string) =>
     !user ? setModal(true) : navigate(id === myId ? "/app/profil" : `/app/uye/${id}`);
+
+  // Clicking a map pin previews the person in the list (select + scroll + highlight)
+  // instead of leaving the map — the user can look around before opening a profile.
+  const selectFromPin = (id: string) => {
+    setSelectedId(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`xm-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
 
   // Filter option lists derived from real data.
   const countries = useMemo(
@@ -149,15 +159,15 @@ export function ExplorePage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Harita */}
         <Suspense fallback={<div className="h-[720px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
-          <MembersMap pins={pins} onPinClick={open} />
+          <MembersMap pins={pins} onPinClick={selectFromPin} />
         </Suspense>
 
         {/* Liste */}
         <div className="flex max-h-[720px] flex-col gap-2.5 overflow-y-auto">
           <div className="text-sm text-ink-500">{loading ? t("Yükleniyor…", "Loading…") : t(`${results.length} sonuç`, `${results.length} results`)}</div>
           {results.map((m) => (
-            <button key={m.id} onClick={() => open(m.id)}
-              className="flex gap-3 rounded-xl border border-border bg-surface p-3 text-left transition hover:border-forest-500 hover:shadow-sm">
+            <button key={m.id} id={`xm-${m.id}`} onClick={() => open(m.id)}
+              className={`flex gap-3 rounded-xl border bg-surface p-3 text-left transition hover:border-forest-500 hover:shadow-sm ${selectedId === m.id ? "border-forest-600 ring-2 ring-forest-500/30" : "border-border"}`}>
               <Avatar url={m.avatarUrl} className="size-14 rounded-lg" />
               <div>
                 <div className="flex items-center gap-2 text-sm font-semibold">
