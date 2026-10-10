@@ -3,7 +3,7 @@ import { query } from "../../shared/db/pool.js";
 import { auth, currentUser, requireMembership } from "../../shared/http/auth.js";
 import { safeUrl, withAvatarUrls } from "../../shared/media/s3.js";
 import { loadPhotos } from "../members/interface/routes.js";
-import { scoreCandidate, type Tag } from "./matchmaker.js";
+import { scoreCandidate, matchPercent, type Tag } from "./matchmaker.js";
 import { reqLang } from "../../shared/http/lang.js";
 import { translateFields } from "../../shared/text/translate.js";
 
@@ -41,6 +41,14 @@ interface CandidateRow {
   rating_avg: string | number | null;
   rating_count: number | null;
   tags: Tag[];
+}
+
+async function myLocation(memberId: string): Promise<{ country: string | null; city: string | null }> {
+  const r = await query<{ country: string | null; city: string | null }>(
+    `SELECT country, city FROM members WHERE id = $1`,
+    [memberId],
+  );
+  return r.rows[0] ?? { country: null, city: null };
 }
 
 async function myTags(memberId: string): Promise<Tag[]> {
@@ -138,11 +146,18 @@ function publicMatch(cd: CandidateRow, score: number, matched: Tag[]) {
 // Connections/messages/views land in later sprints (0 for now).
 discoveryRoutes.get("/me/dashboard", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
-  const mine = await myTags(memberId);
+  const [mine, meLoc] = await Promise.all([myTags(memberId), myLocation(memberId)]);
   const scored = (await candidates(memberId))
     .map((cd) => {
       const { score, matched } = scoreCandidate(mine, cd.tags);
-      return publicMatch(cd, score, matched);
+      return {
+        ...publicMatch(cd, score, matched),
+        matchPct: matchPercent(matched, {
+          sameCity: !!meLoc.city && meLoc.city === cd.city,
+          sameCountry: !!meLoc.country && meLoc.country === cd.country,
+          ratingAvg: Number(cd.rating_avg ?? 0),
+        }),
+      };
     })
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -206,11 +221,18 @@ discoveryRoutes.get("/me/dashboard", auth, requireMembership, async (c) => {
 // done client-side for now (small dataset).
 discoveryRoutes.get("/members", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
-  const mine = await myTags(memberId);
+  const [mine, meLoc] = await Promise.all([myTags(memberId), myLocation(memberId)]);
   const members = (await candidates(memberId))
     .map((cd) => {
       const { score, matched } = scoreCandidate(mine, cd.tags);
-      return publicMatch(cd, score, matched);
+      return {
+        ...publicMatch(cd, score, matched),
+        matchPct: matchPercent(matched, {
+          sameCity: !!meLoc.city && meLoc.city === cd.city,
+          sameCountry: !!meLoc.country && meLoc.country === cd.country,
+          ratingAvg: Number(cd.rating_avg ?? 0),
+        }),
+      };
     })
     .sort((a, b) => b.score - a.score || (a.firstName ?? "").localeCompare(b.firstName ?? "", "tr"));
   const withUrls = await withAvatarUrls(members);
