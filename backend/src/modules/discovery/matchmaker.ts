@@ -19,13 +19,18 @@ const COMPLEMENTS: Record<string, string[]> = {
   "seek:equipment": ["offer:equipment"],
   "seek:funding": ["offer:funding"],
   "seek:hosting": ["offer:place-experience"],
-  "seek:networking": ["seek:networking"], // networking is mutual
+  "seek:workshops": ["offer:workshops"],
+  "seek:logistics": ["offer:logistics"],
+  "seek:networking": ["seek:networking"],       // networking is mutual
+  "seek:international": ["seek:international"],   // "open to abroad" is mutual
   "offer:volunteer-labor": ["seek:volunteers"],
   "offer:mentoring": ["seek:mentor"],
   "offer:expertise": ["seek:knowledge"],
   "offer:partnership": ["seek:partner"],
   "offer:equipment": ["seek:equipment"],
   "offer:funding": ["seek:funding"],
+  "offer:workshops": ["seek:workshops"],
+  "offer:logistics": ["seek:logistics"],
   "offer:place-experience": ["seek:hosting"],
 };
 
