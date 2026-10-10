@@ -153,7 +153,7 @@ export function OnboardingPage() {
       )}
 
       {step === 1 && (
-        <Panel title={t("Etiketlerini onayla ya da düzenle", "Confirm or edit your tags")} lead={t("Yazdıklarından bunları çıkardık. Yanlışı çıkar, eksiği ekle.", "We derived these from what you wrote. Remove what's wrong, add what's missing.")}>
+        <Panel title={t("Etiketlerini onayla ya da düzenle", "Confirm or edit your tags")}>
           {AXES.map((axis) => (
             <Group key={axis} label={AXIS_LABEL[axis]}>
               <div className="flex flex-wrap items-center gap-2">
@@ -233,11 +233,11 @@ function Progress({ step, t }: { step: number; t: (tr: string, en: string) => st
     </div>
   );
 }
-function Panel({ title, lead, children }: { title: string; lead: string; children: React.ReactNode }) {
+function Panel({ title, lead, children }: { title: string; lead?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-7">
       <h1 className="font-display text-2xl font-semibold">{title}</h1>
-      <p className="mb-6 mt-1 text-sm text-ink-500">{lead}</p>
+      {lead ? <p className="mb-6 mt-1 text-sm text-ink-500">{lead}</p> : <div className="mb-6" />}
       {children}
     </div>
   );

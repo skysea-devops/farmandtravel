@@ -22,6 +22,7 @@ export function KesfetPage() {
   const [q, setQ] = useState("");
   const [country, setCountry] = useState("");
   const [active, setActive] = useState<string | null>(null); // `${axis}:${value}`
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     api.getCached<{ members: MatchCard[] }>("/members")
@@ -46,6 +47,7 @@ export function KesfetPage() {
     return grouped;
   }, [members]);
 
+  const filtering = !!(q || country || active);
   const filtered = members.filter((m) => {
     if (country && m.country !== country) return false;
     if (active && !m.tags.some((tg) => `${tg.axis}:${tg.value}` === active)) return false;
@@ -56,37 +58,60 @@ export function KesfetPage() {
     return true;
   });
 
+  // Backend already sorts by match score. Split so the best matches lead the page
+  // and the rest follow — the member shouldn't have to search to find good matches.
+  const matches = filtered.filter((m) => m.score > 0);
+  const others = filtered.filter((m) => m.score === 0);
+
   return (
     <>
-      <h1 className="font-display mb-1 text-2xl font-semibold">{t("Keşfet", "Discover")}</h1>
-      <p className="mb-5 text-sm text-ink-500">{t("Topluluktaki insanları etiket ve konuma göre keşfet.", "Explore people in the community by tags and location.")}</p>
-
-      {/* Filters */}
-      <div className="mb-5 space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <input
-            value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder={t("İsim, ilgi, konum ara…", "Search name, interest, location…")}
-            className="min-w-[200px] flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600"
-          />
-          <select value={country} onChange={(e) => setCountry(e.target.value)}
-            className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600">
-            <option value="">{t("Tüm ülkeler", "All countries")}</option>
-            {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display mb-1 text-2xl font-semibold">{t("Keşfet", "Discover")}</h1>
+          <p className="text-sm text-ink-500">{t("Sana en uygun kişileri üste topladık — aramana gerek yok.", "We've put the people who fit you best up top — no need to search.")}</p>
         </div>
-        {AXES.map((axis) => tagsByAxis[axis].length > 0 && (
-          <div key={axis} className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-semibold text-ink-500">{AXIS_LABEL[axis]}:</span>
-            {tagsByAxis[axis].map((tg) => (
-              <button key={tg.key} onClick={() => setActive(active === tg.key ? null : tg.key)}
-                className={`rounded-full border px-2.5 py-1 text-xs transition ${active === tg.key ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500"}`}>
-                {tagLabel(tg)}
-              </button>
-            ))}
-          </div>
-        ))}
+        <button
+          onClick={() => setShowFilters((s) => !s)}
+          className={`shrink-0 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${showFilters || filtering ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700 hover:border-forest-500"}`}
+        >
+          {t("🔍 Filtrele", "🔍 Filter")}{filtering ? " •" : ""}
+        </button>
       </div>
+
+      {/* Filters — collapsed by default so the page leads with matches, not a search form. */}
+      {showFilters && (
+        <div className="mb-5 space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={q} onChange={(e) => setQ(e.target.value)}
+              placeholder={t("İsim, ilgi, konum ara…", "Search name, interest, location…")}
+              className="min-w-[200px] flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600"
+            />
+            <select value={country} onChange={(e) => setCountry(e.target.value)}
+              className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600">
+              <option value="">{t("Tüm ülkeler", "All countries")}</option>
+              {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {filtering && (
+              <button onClick={() => { setQ(""); setCountry(""); setActive(null); }}
+                className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-clay-600 hover:border-clay-500">
+                {t("Temizle", "Clear")}
+              </button>
+            )}
+          </div>
+          {AXES.map((axis) => tagsByAxis[axis].length > 0 && (
+            <div key={axis} className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-semibold text-ink-500">{AXIS_LABEL[axis]}:</span>
+              {tagsByAxis[axis].map((tg) => (
+                <button key={tg.key} onClick={() => setActive(active === tg.key ? null : tg.key)}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition ${active === tg.key ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500"}`}>
+                  {tagLabel(tg)}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
@@ -97,20 +122,41 @@ export function KesfetPage() {
           {t("Bu filtreye uygun kişi bulunamadı.", "No one matches this filter.")}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((m) => <Card key={m.id} m={m} />)}
+        <div className="space-y-8">
+          {matches.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <h2 className="font-display text-lg font-semibold">{t("✨ Senin için en iyi eşleşmeler", "✨ Your best matches")}</h2>
+                <span className="rounded-full bg-moss-500/15 px-2 py-0.5 text-xs font-semibold text-forest-700">{matches.length}</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {matches.map((m) => <Card key={m.id} m={m} highlight />)}
+              </div>
+            </section>
+          )}
+          {others.length > 0 && (
+            <section>
+              <h2 className="font-display mb-3 text-lg font-semibold">
+                {matches.length > 0 ? t("Topluluktaki diğer üyeler", "Other people in the community") : t("Topluluk", "Community")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {others.map((m) => <Card key={m.id} m={m} />)}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </>
   );
 }
 
-function Card({ m }: { m: MatchCard }) {
+function Card({ m, highlight = false }: { m: MatchCard; highlight?: boolean }) {
   const { t, lang } = useI18n();
   const loc = [m.city, m.country].filter(Boolean).join(", ");
   const shown = m.matched.length ? m.matched : m.tags;
+  const pct = Math.min(99, m.score * 40 + 20);
   return (
-    <div className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5">
+    <div className={`flex flex-col rounded-[var(--radius-lg)] border bg-surface p-5 ${highlight ? "border-moss-500 ring-1 ring-moss-500/30" : "border-border"}`}>
       <div className="mb-3 flex items-center gap-3">
         <Avatar url={m.avatarUrl} className="size-11" />
         <div className="min-w-0">
@@ -120,7 +166,7 @@ function Card({ m }: { m: MatchCard }) {
             <div className="flex items-center gap-1 text-[12px] text-ink-500"><Stars value={m.ratingAvg ?? 0} className="text-[11px]" /> {m.ratingAvg} ({m.ratingCount})</div>
           )}
         </div>
-        {m.score > 0 && <span className="ml-auto rounded-full bg-moss-500/15 px-2 py-0.5 text-[11px] font-semibold text-forest-700">{t(`%${Math.min(99, m.score * 40 + 20)} uyum`, `${Math.min(99, m.score * 40 + 20)}% match`)}</span>}
+        {m.score > 0 && <span className="ml-auto shrink-0 rounded-full bg-moss-500 px-2 py-0.5 text-[11px] font-semibold text-white">{t(`%${pct} uyum`, `${pct}% match`)}</span>}
       </div>
       <div className="mb-4 flex flex-wrap gap-1.5">
         {shown.slice(0, 4).map((tg) => <Tag key={`${tg.axis}:${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}

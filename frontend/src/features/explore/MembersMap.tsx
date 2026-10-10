@@ -3,21 +3,23 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "@/lib/i18n";
 
+export type MapCategory = "host" | "volunteer" | "other";
 export interface MapPin {
   id: string;
   name: string;
   city: string | null;
-  dir: "offer" | "seek";
+  category: MapCategory;
   lat: number;
   lng: number;
 }
 
-const COLORS = { offer: "#3a7d44", seek: "#3a6b7e" } as const;
+// host = çiftlik/yer sahibi (yeşil), volunteer = gönüllü (turuncu), other = diğer (gri)
+const COLORS: Record<MapCategory, string> = { host: "#3a7d44", volunteer: "#e08a3c", other: "#9a9a90" };
 
-function pinIcon(dir: "offer" | "seek") {
+function pinIcon(category: MapCategory) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg);background:${COLORS[dir]}"></span>`,
+    html: `<span style="display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg);background:${COLORS[category]}"></span>`,
     iconSize: [20, 20],
     iconAnchor: [10, 20],
   });
@@ -58,7 +60,7 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
     if (!pins.length) return;
     const latlngs: L.LatLngExpression[] = [];
     for (const p of pins) {
-      const m = L.marker([p.lat, p.lng], { icon: pinIcon(p.dir) })
+      const m = L.marker([p.lat, p.lng], { icon: pinIcon(p.category) })
         .bindTooltip(`${p.name}${p.city ? " · " + p.city : ""}`, { direction: "top", offset: [0, -18] })
         .on("click", () => onPinClick(p.id));
       layer.addLayer(m);
@@ -70,15 +72,16 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
   const locate = () => mapRef.current?.locate({ setView: true, maxZoom: 9 });
 
   return (
-    <div className="relative h-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-border">
+    <div className="relative h-[720px] overflow-hidden rounded-[var(--radius-lg)] border border-border">
       <div ref={boxRef} className="h-full w-full" />
       <button onClick={locate}
         className="absolute top-3.5 right-3.5 z-[500] rounded-full border border-border bg-white/95 px-3.5 py-2 text-[13px] font-semibold text-forest-700 shadow-sm">
         {t("📍 Konumuma git", "📍 Go to my location")}
       </button>
       <div className="absolute bottom-3.5 left-3.5 z-[500] rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.offer, transform: "rotate(-45deg)" }} /> {t("Destek sunanlar", "Offering support")}</div>
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.seek, transform: "rotate(-45deg)" }} /> {t("Destek arayanlar", "Seeking support")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.host, transform: "rotate(-45deg)" }} /> {t("Çiftlik / yer sahipleri", "Farm / place owners")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.volunteer, transform: "rotate(-45deg)" }} /> {t("Gönüllüler", "Volunteers")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.other, transform: "rotate(-45deg)" }} /> {t("Öğrenmek / destek", "Learning / support")}</div>
       </div>
     </div>
   );
