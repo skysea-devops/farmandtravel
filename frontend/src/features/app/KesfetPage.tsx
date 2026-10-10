@@ -18,7 +18,6 @@ export function KesfetPage() {
   const [q, setQ] = useState("");
   const [country, setCountry] = useState("");
   const [active, setActive] = useState<string | null>(null); // `${axis}:${value}`
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     api.getCached<{ members: MatchCard[] }>("/members")
@@ -61,22 +60,13 @@ export function KesfetPage() {
 
   return (
     <>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display mb-1 text-2xl font-semibold">{t("Keşfet", "Discover")}</h1>
-          <p className="text-sm text-ink-500">{t("Sana en uygun kişileri üste topladık — aramana gerek yok.", "We've put the people who fit you best up top — no need to search.")}</p>
-        </div>
-        <button
-          onClick={() => setShowFilters((s) => !s)}
-          className={`shrink-0 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${showFilters || filtering ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface text-ink-700 hover:border-forest-500"}`}
-        >
-          {t("🔍 Filtrele", "🔍 Filter")}{filtering ? " •" : ""}
-        </button>
+      <div className="mb-4">
+        <h1 className="font-display mb-1 text-2xl font-semibold">{t("Keşfet", "Discover")}</h1>
+        <p className="text-sm text-ink-500">{t("Sana en uygun kişileri üste topladık — aramana gerek yok.", "We've put the people who fit you best up top — no need to search.")}</p>
       </div>
 
-      {/* Filters — collapsed by default so the page leads with matches, not a search form. */}
-      {showFilters && (
-        <div className="mb-5 space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+      {/* Filters are always visible. */}
+      <div className="mb-5 space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
           <div className="flex flex-wrap gap-2">
             <input
               value={q} onChange={(e) => setQ(e.target.value)}
@@ -107,7 +97,6 @@ export function KesfetPage() {
             </div>
           ))}
         </div>
-      )}
 
       {loading ? (
         <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
