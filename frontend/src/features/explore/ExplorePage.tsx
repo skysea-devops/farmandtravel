@@ -87,7 +87,7 @@ export function ExplorePage() {
     const out: MapPin[] = [];
     for (const m of results) {
       const c = coordsFor(m.country, m.city, m.id);
-      if (c) out.push({ id: m.id, name: m.firstName ?? "Üye", city: m.city, dir: m.dir, lat: c[0], lng: c[1] });
+      if (c) out.push({ id: m.id, name: m.firstName ?? "Üye", city: m.city, category: m.category, lat: c[0], lng: c[1] });
     }
     return out;
   }, [results]);
@@ -151,12 +151,12 @@ export function ExplorePage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Harita */}
-        <Suspense fallback={<div className="h-[560px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
+        <Suspense fallback={<div className="h-[720px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
           <MembersMap pins={pins} onPinClick={open} />
         </Suspense>
 
         {/* Liste */}
-        <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto">
+        <div className="flex max-h-[720px] flex-col gap-2.5 overflow-y-auto">
           <div className="text-sm text-ink-500">{loading ? t("Yükleniyor…", "Loading…") : t(`${results.length} sonuç`, `${results.length} results`)}</div>
           {results.map((m) => (
             <button key={m.id} onClick={() => open(m.id)}

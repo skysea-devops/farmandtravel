@@ -16,6 +16,19 @@ const MEMBER_TEXT = ["bio", "headline", "country"] as const;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string | undefined): s is string => !!s && UUID_RE.test(s);
 
+// Map colour category for the public Keşfet map:
+//   host      → çiftlik/yer sahibi (green)
+//   volunteer → gönüllü / deneyim-konaklama arayan (orange)
+//   other     → öğrenen, mentor, ortak, destekçi, aktivite takip eden… (gray)
+// A member can carry several tags; host wins over volunteer wins over other.
+export type MemberCategory = "host" | "volunteer" | "other";
+export function categoryOf(tags: Tag[]): MemberCategory {
+  const has = (axis: string, value: string) => tags.some((t) => t.axis === axis && t.value === value);
+  if (has("situation", "farm-owner") || has("offer", "place-experience")) return "host";
+  if (has("offer", "volunteer-labor") || has("situation", "seeking-experience") || has("seek", "hosting")) return "volunteer";
+  return "other";
+}
+
 interface CandidateRow {
   id: string;
   first_name: string | null;
@@ -62,7 +75,8 @@ async function candidates(excludeId: string): Promise<CandidateRow[]> {
         AND m.status IN ('profile_complete','active')
         AND m.first_name IS NOT NULL
         AND m.is_official = false
-      GROUP BY m.id`,
+      GROUP BY m.id
+      ORDER BY m.created_at DESC`,
     [excludeId],
   );
   return r.rows;
@@ -222,6 +236,7 @@ discoveryRoutes.get("/public/members", async (c) => {
       ratingCount: Number(cd.rating_count ?? 0),
       tags,
       dir,
+      category: categoryOf(tags),
     };
   });
   const withUrls = await withAvatarUrls(rows);

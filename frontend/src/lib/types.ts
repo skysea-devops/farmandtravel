@@ -81,6 +81,7 @@ export interface PublicMember {
   ratingCount: number;
   tags: MatchTag[];
   dir: "offer" | "seek";
+  category: "host" | "volunteer" | "other";
 }
 export interface Photo { id: string; url: string | null; caption: string | null }
 export interface MatchCard {
