@@ -34,3 +34,12 @@ INSERT INTO taxonomy (axis, value, label_tr, label_en, synonyms) VALUES
 ('topic','regenerative','Rejeneratif tarım','Regenerative agriculture','{rejeneratif,regeneratif,toprak sağlığı}'),
 ('topic','animal-sanctuary','Hayvan barınağı','Animal sanctuary','{barınak,hayvan kurtarma,sığınak}')
 ON CONFLICT (axis, value) DO NOTHING;
+
+-- Ek boyutlar (eğitim/atölye, araç/lojistik, yurt dışı) — eşleştirme çeşitliliği için.
+INSERT INTO taxonomy (axis, value, label_tr, label_en, synonyms) VALUES
+('offer','workshops','Eğitim/atölye veriyorum','Offering workshops/training','{eğitim,atölye,workshop,kurs,öğretiyorum,eğitim veriyorum,atölye düzenliyorum}'),
+('seek','workshops','Eğitim/atölye arıyorum','Looking for workshops/training','{eğitim,atölye,workshop,kurs,eğitim arıyorum,atölye arıyorum}'),
+('offer','logistics','Araç/lojistik sağlayabilirim','Offering vehicle/logistics support','{araç,lojistik,ulaşım,nakliye,taşıma,araç desteği,araç sağlayabilirim}'),
+('seek','logistics','Araç/lojistik arıyorum','Looking for vehicle/logistics support','{araç,lojistik,ulaşım,nakliye,taşıma,araç arıyorum}'),
+('seek','international','Yurt dışına açığım','Open to abroad / international','{yurt dışı,yurtdışı,uluslararası,abroad,international,yurt dışına açık,yurt dışında}')
+ON CONFLICT (axis, value) DO NOTHING;

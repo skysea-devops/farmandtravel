@@ -34,6 +34,9 @@ export function OnboardingPage() {
     t("Finansal destekçi arıyorum", "Looking for a backer"),
     t("Konaklama fırsatı arıyorum", "Looking for a place to stay"),
     t("Çiftlik hayatını deneyimlemek istiyorum", "Want to experience farm life"),
+    t("Eğitim/atölye arıyorum", "Looking for workshops/training"),
+    t("Araç/lojistik arıyorum", "Looking for vehicle/logistics support"),
+    t("Yurt dışına açığım", "Open to abroad / international"),
   ];
   const OFFER_PICKS = [
     t("Yer & deneyim sunuyorum", "Offering a place & experience"),
@@ -43,6 +46,8 @@ export function OnboardingPage() {
     t("Ortaklık kurabilirim", "Open to partnership"),
     t("Ekipman sağlayabilirim", "Can provide equipment"),
     t("Finansal destek olabilirim", "Can offer financial support"),
+    t("Eğitim/atölye veriyorum", "Offering workshops/training"),
+    t("Araç/lojistik sağlayabilirim", "Offering vehicle/logistics support"),
   ];
   const COUNTRIES = [
     t("Türkiye", "Türkiye"), t("Portekiz", "Portugal"), t("Almanya", "Germany"),
