@@ -1,5 +1,7 @@
 import { useI18n } from "@/lib/i18n";
-import { HELP_TYPES, AMENITIES, labelOf, hostIsEmpty, type HostDetails } from "@/data/host";
+import { HELP_TYPES, AMENITIES, LANGUAGES, labelOf, hostIsEmpty, type HostDetails } from "@/data/host";
+
+type ChipField = "helpTypes" | "amenities" | "languages";
 
 const ta = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600 resize-y";
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
@@ -8,12 +10,12 @@ const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.
 export function HostDetailsForm({ value, onChange }: { value: HostDetails; onChange: (h: HostDetails) => void }) {
   const { t, lang } = useI18n();
   const set = (patch: Partial<HostDetails>) => onChange({ ...value, ...patch });
-  const toggle = (field: "helpTypes" | "amenities", key: string) => {
+  const toggle = (field: ChipField, key: string) => {
     const cur = value[field] ?? [];
     set({ [field]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] } as Partial<HostDetails>);
   };
 
-  const chip = (field: "helpTypes" | "amenities", k: { key: string; tr: string; en: string }) => {
+  const chip = (field: ChipField, k: { key: string; tr: string; en: string }) => {
     const active = (value[field] ?? []).includes(k.key);
     return (
       <button key={k.key} type="button" onClick={() => toggle(field, k.key)}
@@ -49,6 +51,11 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
 
       <Field label={t("Olanaklar", "Amenities")}>
         <div className="flex flex-wrap gap-2">{AMENITIES.map((k) => chip("amenities", k))}</div>
+      </Field>
+
+      <Field label={t("Konuşulan diller", "Languages spoken")}
+        hint={t("Gönüllüyle hangi dil(ler)de iletişim kurabilirsin?", "Which language(s) can you communicate in with volunteers?")}>
+        <div className="flex flex-wrap gap-2">{LANGUAGES.map((k) => chip("languages", k))}</div>
       </Field>
 
       <Field label={t("Yemek", "Meals")}
@@ -93,6 +100,7 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
   if (hostIsEmpty(host)) return null;
   const helpLabels = (host.helpTypes ?? []).map((k) => labelOf(HELP_TYPES, k, lang));
   const amenLabels = (host.amenities ?? []).map((k) => labelOf(AMENITIES, k, lang));
+  const langLabels = (host.languages ?? []).map((k) => labelOf(LANGUAGES, k, lang));
   return (
     <div className="space-y-4 text-sm">
       {host.work && <Row label={t("Yapılacak işler", "The help")}><p className="whitespace-pre-wrap text-ink-700">{host.work}</p></Row>}
@@ -109,6 +117,13 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
         <Row label={t("Olanaklar", "Amenities")}>
           <div className="flex flex-wrap gap-1.5">
             {amenLabels.map((l) => <span key={l} className="rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{l}</span>)}
+          </div>
+        </Row>
+      )}
+      {langLabels.length > 0 && (
+        <Row label={t("Konuşulan diller", "Languages spoken")}>
+          <div className="flex flex-wrap gap-1.5">
+            {langLabels.map((l) => <span key={l} className="rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{l}</span>)}
           </div>
         </Row>
       )}

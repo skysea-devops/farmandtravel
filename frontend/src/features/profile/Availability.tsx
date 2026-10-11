@@ -38,7 +38,10 @@ export function availabilityText(a: Availability, lang: string, t: (tr: string, 
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
 
 export function AvailabilityField({ value, onChange, label }: { value: Availability; onChange: (a: Availability) => void; label: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // Native date picker uses its own locale; set lang on the input so the EN site's
+  // calendar shows English months/format (and the TR site stays Turkish).
+  const locale = lang === "en" ? "en-GB" : "tr-TR";
   const set = (patch: Partial<Availability>) => onChange({ ...value, ...patch });
   return (
     <div>
@@ -46,12 +49,12 @@ export function AvailabilityField({ value, onChange, label }: { value: Availabil
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs text-ink-500">
           <span className="mb-1 block">{t("Başlangıç", "From")}</span>
-          <input type="date" className={inp} value={value.from ?? ""} disabled={value.flexible}
+          <input type="date" lang={locale} className={inp} value={value.from ?? ""} disabled={value.flexible}
             onChange={(e) => set({ from: e.target.value || undefined })} />
         </label>
         <label className="text-xs text-ink-500">
           <span className="mb-1 block">{t("Bitiş", "To")}</span>
-          <input type="date" className={inp} value={value.to ?? ""} disabled={value.flexible} min={value.from || undefined}
+          <input type="date" lang={locale} className={inp} value={value.to ?? ""} disabled={value.flexible} min={value.from || undefined}
             onChange={(e) => set({ to: e.target.value || undefined })} />
         </label>
         <label className="flex items-center gap-2 pb-2.5 text-[13px] text-ink-700">

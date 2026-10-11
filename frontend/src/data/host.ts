@@ -10,6 +10,7 @@ export interface HostDetails {
   learn?: string;         // öğrenilebilecekler (ekmek, peynir, permakültür…)
   nearby?: string;        // çevrede gezilecek yerler / boş zaman
   amenities?: string[];   // olanaklar (AMENITIES key'leri)
+  languages?: string[];   // konuşulan diller (LANGUAGES key'leri)
 }
 
 export interface LabeledKey { key: string; tr: string; en: string }
@@ -40,6 +41,19 @@ export const AMENITIES: LabeledKey[] = [
   { key: "transport",      tr: "Ulaşım yardımı",    en: "Help with transport" },
 ];
 
+export const LANGUAGES: LabeledKey[] = [
+  { key: "tr", tr: "Türkçe",      en: "Turkish" },
+  { key: "en", tr: "İngilizce",   en: "English" },
+  { key: "de", tr: "Almanca",     en: "German" },
+  { key: "fr", tr: "Fransızca",   en: "French" },
+  { key: "es", tr: "İspanyolca",  en: "Spanish" },
+  { key: "pt", tr: "Portekizce",  en: "Portuguese" },
+  { key: "it", tr: "İtalyanca",   en: "Italian" },
+  { key: "ar", tr: "Arapça",      en: "Arabic" },
+  { key: "ru", tr: "Rusça",       en: "Russian" },
+  { key: "other", tr: "Diğer",    en: "Other" },
+];
+
 export function labelOf(list: LabeledKey[], key: string, lang: string): string {
   const f = list.find((x) => x.key === key);
   return f ? (lang === "en" ? f.en : f.tr) : key;
@@ -50,6 +64,7 @@ export function hostIsEmpty(h?: HostDetails | null): boolean {
   if (!h) return true;
   return !(
     h.work || h.hoursNote || h.accommodation || h.meals || h.learn || h.nearby ||
-    (h.helpTypes && h.helpTypes.length) || (h.amenities && h.amenities.length)
+    (h.helpTypes && h.helpTypes.length) || (h.amenities && h.amenities.length) ||
+    (h.languages && h.languages.length)
   );
 }
