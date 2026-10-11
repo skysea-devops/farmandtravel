@@ -66,9 +66,9 @@ export function SignUpPage() {
               <label className="mb-4 flex items-start gap-2 text-[13px] text-ink-700">
                 <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-1" />
                 <span>
-                  <a className="text-forest-600 underline">{t("Kullanım Koşulları", "Terms of Use")}</a>
+                  <Link to="/kosullar" target="_blank" className="text-forest-600 underline">{t("Kullanım Koşulları", "Terms of Use")}</Link>
                   {t(", ", ", ")}
-                  <a className="text-forest-600 underline">{t("Gizlilik Politikası", "Privacy Policy")}</a>
+                  <Link to="/gizlilik" target="_blank" className="text-forest-600 underline">{t("Gizlilik Politikası", "Privacy Policy")}</Link>
                   {t(" (KVKK/GDPR) ve ", " (GDPR/KVKK) and the ")}
                   <Link to="/kurallar" target="_blank" className="text-forest-600 underline">{t("Topluluk Kuralları", "Community Rules")}</Link>
                   {t("'nı kabul ediyorum.", " — I accept.")}

@@ -4,6 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { HomePage } from "@/features/home/HomePage";
 import { AboutPage } from "@/features/about/AboutPage";
 import { KurallarPage } from "@/features/about/KurallarPage";
+import { KosullarPage } from "@/features/about/KosullarPage";
+import { GizlilikPage } from "@/features/about/GizlilikPage";
 import { ExplorePage } from "@/features/explore/ExplorePage";
 import { ActivitiesPage } from "@/features/activities/ActivitiesPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
@@ -31,6 +33,8 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="hakkimizda" element={<AboutPage />} />
         <Route path="kurallar" element={<KurallarPage />} />
+        <Route path="kosullar" element={<KosullarPage />} />
+        <Route path="gizlilik" element={<GizlilikPage />} />
         <Route path="kesfet" element={<ExplorePage />} />
         <Route path="aktiviteler" element={<ActivitiesPage />} />
         <Route path="kayit" element={<SignUpPage />} />
