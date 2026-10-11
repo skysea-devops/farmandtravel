@@ -210,6 +210,7 @@ export interface MemberDetail extends MatchCard {
   contact: Contact | null;
   saved?: boolean;
   host?: import("@/data/host").HostDetails | null;
+  availability?: import("@/features/profile/Availability").Availability | null;
 }
 
 export interface SavedCard {

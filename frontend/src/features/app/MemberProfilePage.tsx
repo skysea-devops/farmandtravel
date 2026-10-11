@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsView } from "@/features/profile/HostDetails";
 import { hostIsEmpty } from "@/data/host";
+import { AvailabilityView, availabilityEmpty, availabilityLabel } from "@/features/profile/Availability";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -114,6 +115,16 @@ export function MemberProfilePage() {
       {m.bio && (
         <Block title={t("Hakkında", "About")}><p className="text-sm text-ink-700">{m.bio}</p></Block>
       )}
+
+      {!availabilityEmpty(m.availability) && (() => {
+        const isHost = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner") || (tg.axis === "seek" && tg.value === "volunteers"));
+        const isVolunteer = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "volunteer-labor") || (tg.axis === "situation" && tg.value === "seeking-experience") || (tg.axis === "seek" && tg.value === "hosting"));
+        return (
+          <Block title={t("📅 Müsaitlik", "📅 Availability")}>
+            <AvailabilityView value={m.availability!} label={availabilityLabel(isHost, isVolunteer, t)} />
+          </Block>
+        );
+      })()}
 
       {!hostIsEmpty(m.host) && (
         <Block title={t("🏡 Konaklama & ağırlama", "🏡 Accommodation & hosting")}>

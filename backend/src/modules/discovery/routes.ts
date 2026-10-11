@@ -281,9 +281,11 @@ discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
     safeUrl(cd.avatar_key),
     loadPhotos(cd.id),
     query("SELECT 1 FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, cd.id]),
-    query<{ host: Record<string, unknown> | null }>("SELECT profile->'host' AS host FROM members WHERE id=$1", [cd.id]),
+    query<{ host: Record<string, unknown> | null; availability: Record<string, unknown> | null }>(
+      "SELECT profile->'host' AS host, profile->'availability' AS availability FROM members WHERE id=$1", [cd.id]),
   ]);
   const host = hostRow.rows[0]?.host ?? null;
+  const availability = hostRow.rows[0]?.availability ?? null;
   const dto = {
     ...publicMatch(cd, score, matched),
     avatarUrl,
@@ -291,11 +293,13 @@ discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
     connection,
     contact,
     host,
+    availability,
     saved: (savedRow.rowCount ?? 0) > 0,
   };
   const lang = reqLang(c);
   await translateFields([dto], MEMBER_TEXT, lang);
   // Host serbest-metin alanlarını İngilizce sitede çevir (etiket/olanak key'leri frontend'de çevriliyor).
   if (host) await translateFields([host], ["work", "hoursNote", "accommodation", "meals", "learn", "nearby"], lang);
+  if (availability) await translateFields([availability], ["note"], lang);
   return c.json(dto);
 });
