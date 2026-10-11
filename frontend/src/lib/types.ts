@@ -209,6 +209,7 @@ export interface MemberDetail extends MatchCard {
   connection: ConnectionState | null;
   contact: Contact | null;
   saved?: boolean;
+  host?: import("@/data/host").HostDetails | null;
 }
 
 export interface SavedCard {

@@ -277,19 +277,25 @@ discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
   const { score, matched } = scoreCandidate(await myTags(memberId), cd.tags);
   const connection = await connectionWith(memberId, cd.id);
   const contact = connection?.status === "accepted" ? await contactOf(cd.id) : null;
-  const [avatarUrl, photos, savedRow] = await Promise.all([
+  const [avatarUrl, photos, savedRow, hostRow] = await Promise.all([
     safeUrl(cd.avatar_key),
     loadPhotos(cd.id),
     query("SELECT 1 FROM saved_members WHERE saver_id=$1 AND saved_id=$2", [memberId, cd.id]),
+    query<{ host: Record<string, unknown> | null }>("SELECT profile->'host' AS host FROM members WHERE id=$1", [cd.id]),
   ]);
+  const host = hostRow.rows[0]?.host ?? null;
   const dto = {
     ...publicMatch(cd, score, matched),
     avatarUrl,
     photos,
     connection,
     contact,
+    host,
     saved: (savedRow.rowCount ?? 0) > 0,
   };
-  await translateFields([dto], MEMBER_TEXT, reqLang(c));
+  const lang = reqLang(c);
+  await translateFields([dto], MEMBER_TEXT, lang);
+  // Host serbest-metin alanlarını İngilizce sitede çevir (etiket/olanak key'leri frontend'de çevriliyor).
+  if (host) await translateFields([host], ["work", "hoursNote", "accommodation", "meals", "learn", "nearby"], lang);
   return c.json(dto);
 });

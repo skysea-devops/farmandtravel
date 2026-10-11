@@ -7,6 +7,8 @@ import { Stars } from "@/components/ui/Stars";
 import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
+import { HostDetailsForm } from "@/features/profile/HostDetails";
+import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -30,6 +32,11 @@ export function ProfilePage() {
   const [cBusy, setCBusy] = useState(false);
   const [cMsg, setCMsg] = useState<string | null>(null);
 
+  // Host (çiftlik/yer sahibi) ağırlama detayları — yalnızca yer sunanlara gösterilir.
+  const [host, setHost] = useState<HostDetails>({});
+  const [hBusy, setHBusy] = useState(false);
+  const [hMsg, setHMsg] = useState<string | null>(null);
+
   // My reviews: received (drives the rating by my name) + written.
   const [rev, setRev] = useState<MyReviewsData | null>(null);
   useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
@@ -48,6 +55,7 @@ export function ProfilePage() {
           employer: data.employer ?? "", addressExact: data.addressExact ?? "",
           instagram: s.instagram ?? "", website: s.website ?? "",
         });
+        setHost(((data.profile ?? {}) as { host?: HostDetails }).host ?? {});
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
@@ -72,6 +80,19 @@ export function ProfilePage() {
       setCMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
     } finally {
       setCBusy(false);
+    }
+  }
+
+  async function saveHost() {
+    setHBusy(true); setHMsg(null);
+    try {
+      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), host } });
+      api.invalidate("/profile/me");
+      setHMsg(t("Kaydedildi.", "Saved."));
+    } catch (e) {
+      setHMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
+    } finally {
+      setHBusy(false);
     }
   }
 
@@ -115,6 +136,9 @@ export function ProfilePage() {
   if (!p) return null;
 
   const photos = p.photos ?? [];
+  const isHost = p.tags.some(
+    (tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner"),
+  );
 
   return (
     <div className="max-w-3xl">
@@ -179,6 +203,20 @@ export function ProfilePage() {
           </Block>
         );
       })}
+
+      {isHost && (
+        <Block title={t("Ev sahibi detayları (konaklama & ağırlama)", "Host details (accommodation & hosting)")}>
+          <p className="mb-3 text-xs text-ink-500">
+            {t("Yer sunuyorsun — bu bilgiler profilinde herkese görünür ve gönüllülerin karar vermesine yardımcı olur.",
+               "You offer a place — these show publicly on your profile and help volunteers decide.")}
+          </p>
+          <HostDetailsForm value={host} onChange={setHost} />
+          <div className="mt-4 flex items-center gap-3">
+            <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+            {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
+          </div>
+        </Block>
+      )}
 
       <MyReviews data={rev} />
 

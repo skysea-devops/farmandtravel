@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
+import type { HostDetails } from "@/data/host";
 import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -76,6 +78,12 @@ export function OnboardingPage() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
+  const [host, setHost] = useState<HostDetails>({});
+
+  // Yer sunan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
+  const isHost = selected.some(
+    (s) => (s.axis === "offer" && s.value === "place-experience") || (s.axis === "situation" && s.value === "farm-owner"),
+  );
 
   const toggle = (arr: string[], set: (v: string[]) => void, v: string) =>
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -110,7 +118,9 @@ export function OnboardingPage() {
   async function saveProfile() {
     setBusy(true); setErr(null);
     try {
-      await api.put("/profile", { firstName, country, city, bio, profile: { situation } });
+      const profile: Record<string, unknown> = { situation };
+      if (isHost) profile.host = host;
+      await api.put("/profile", { firstName, country, city, bio, profile });
       setStep(3);
     } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
   }
@@ -189,9 +199,22 @@ export function OnboardingPage() {
           </Group>
           <Group label={t("Şehir", "City")}><input value={city} onChange={(e) => setCity(e.target.value)} className={inp} placeholder={t("Şehir (haritada görünür)", "City (shown on the map)")} /></Group>
           <Group label={t("Kısa tanıtım", "Short intro")}><textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={ta} placeholder={t("Birkaç cümleyle kendini tanıt", "Introduce yourself in a few sentences")} /></Group>
+
+          {isHost && (
+            <div className="mt-6 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
+              <h2 className="font-display text-lg font-semibold text-forest-700">{t("Ev sahibi detayları", "Host details")}</h2>
+              <p className="mb-4 mt-0.5 text-sm text-ink-600">
+                {t("Yer sunuyorsun — gönüllülerin ne beklediğini net görmesi için ağırlama bilgilerini doldur. Detaylı profiller daha çok başvuru alır.",
+                   "You're offering a place — fill in your hosting details so volunteers know what to expect. Detailed profiles get more interest.")}
+              </p>
+              <HostDetailsForm value={host} onChange={setHost} />
+              <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar zorunludur.", "* fields are required.")}</p>
+            </div>
+          )}
+
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName || !country}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && !hostRequiredComplete(host))}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}
@@ -203,8 +226,8 @@ export function OnboardingPage() {
             <div className="font-display text-base font-semibold text-forest-700">{t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
             <p className="mt-1 text-sm text-ink-700">
               {t(
-                "Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($30/yıl) ileride başlayacak; o zamana kadar her şey açık.",
-                "You're among the community's first members — your access is free. Paid membership ($30/year) will start later; until then everything is open.",
+                "Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($35/yıl) ileride başlayacak; o zamana kadar her şey açık.",
+                "You're among the community's first members — your access is free. Paid membership ($35/year) will start later; until then everything is open.",
               )}
             </p>
           </div>
