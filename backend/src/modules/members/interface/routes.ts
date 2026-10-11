@@ -25,15 +25,16 @@ export const membersRoutes = new Hono();
 export interface MemberPhoto {
   id: string;
   caption: string | null;
+  category: string | null;
   url: string | null;
 }
 export async function loadPhotos(memberId: string): Promise<MemberPhoto[]> {
-  const r = await query<{ id: string; s3_key: string; caption: string | null }>(
-    "SELECT id, s3_key, caption FROM member_photos WHERE member_id=$1 ORDER BY sort, created_at",
+  const r = await query<{ id: string; s3_key: string; caption: string | null; category: string | null }>(
+    "SELECT id, s3_key, caption, category FROM member_photos WHERE member_id=$1 ORDER BY sort, created_at",
     [memberId],
   );
   return Promise.all(
-    r.rows.map(async (p) => ({ id: p.id, caption: p.caption, url: await safeUrl(p.s3_key) })),
+    r.rows.map(async (p) => ({ id: p.id, caption: p.caption, category: p.category, url: await safeUrl(p.s3_key) })),
   );
 }
 
@@ -55,24 +56,28 @@ membersRoutes.get("/profile/me", auth, async (c) => {
 });
 
 // Gallery: add a photo (key comes from a prior /uploads/presign upload).
-const addPhotoSchema = z.object({ key: z.string().min(1), caption: z.string().max(300).optional() });
+const addPhotoSchema = z.object({
+  key: z.string().min(1),
+  caption: z.string().max(300).optional(),
+  category: z.string().max(40).optional(),
+});
 membersRoutes.post("/profile/photos", auth, async (c) => {
   const { memberId } = currentUser(c);
-  const { key, caption } = addPhotoSchema.parse(await c.req.json());
+  const { key, caption, category } = addPhotoSchema.parse(await c.req.json());
   assertOwnsKey(memberId, "gallery", key);
   const count = await query<{ n: string }>(
     "SELECT count(*)::int AS n FROM member_photos WHERE member_id=$1",
     [memberId],
   );
-  if (Number(count.rows[0]?.n ?? 0) >= 12) {
-    return c.json({ error: "limit", message: "En fazla 12 fotoğraf ekleyebilirsin" }, 400);
+  if (Number(count.rows[0]?.n ?? 0) >= 20) {
+    return c.json({ error: "limit", message: "En fazla 20 fotoğraf ekleyebilirsin" }, 400);
   }
-  const r = await query<{ id: string; s3_key: string; caption: string | null }>(
-    "INSERT INTO member_photos (id, member_id, s3_key, caption) VALUES ($1,$2,$3,$4) RETURNING id, s3_key, caption",
-    [randomUUID(), memberId, key, caption ?? null],
+  const r = await query<{ id: string; s3_key: string; caption: string | null; category: string | null }>(
+    "INSERT INTO member_photos (id, member_id, s3_key, caption, category) VALUES ($1,$2,$3,$4,$5) RETURNING id, s3_key, caption, category",
+    [randomUUID(), memberId, key, caption ?? null, category ?? null],
   );
   const p = r.rows[0]!;
-  return c.json({ id: p.id, caption: p.caption, url: await safeUrl(p.s3_key) });
+  return c.json({ id: p.id, caption: p.caption, category: p.category, url: await safeUrl(p.s3_key) });
 });
 
 // Gallery: delete a photo (own only) + remove the S3 object.

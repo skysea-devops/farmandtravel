@@ -9,7 +9,7 @@ import { api, admin as adminApi, connections, reviews as reviewsApi, saved as sa
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsView } from "@/features/profile/HostDetails";
-import { hostIsEmpty } from "@/data/host";
+import { hostIsEmpty, HOST_PHOTO_CATEGORIES } from "@/data/host";
 import { AvailabilityView, availabilityEmpty, availabilityLabel } from "@/features/profile/Availability";
 import { VolunteerExperienceView } from "@/features/profile/VolunteerDetails";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
@@ -139,17 +139,41 @@ export function MemberProfilePage() {
         </Block>
       )}
 
-      {m.photos && m.photos.length > 0 && (
-        <Block title={t("Fotoğraflar", "Photos")}>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {m.photos.map((ph: Photo) => ph.url && (
-              <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
-                <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
-              </a>
-            ))}
-          </div>
-        </Block>
-      )}
+      {(() => {
+        const all = m.photos ?? [];
+        const hostPhotos = all.filter((p) => p.category);
+        const general = all.filter((p) => !p.category);
+        const tile = (ph: Photo) => ph.url && (
+          <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+            <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+          </a>
+        );
+        return (
+          <>
+            {hostPhotos.length > 0 && (
+              <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
+                <div className="space-y-4">
+                  {HOST_PHOTO_CATEGORIES.map((cat) => {
+                    const items = hostPhotos.filter((p) => p.category === cat.key);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={cat.key}>
+                        <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
+                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{items.map(tile)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Block>
+            )}
+            {general.length > 0 && (
+              <Block title={t("Fotoğraflar", "Photos")}>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{general.map(tile)}</div>
+              </Block>
+            )}
+          </>
+        );
+      })()}
 
       {AXES.map((axis) => {
         const tags = m.tags.filter((tg) => tg.axis === axis);

@@ -81,6 +81,7 @@ async function candidates(excludeId: string): Promise<CandidateRow[]> {
     `${CARD_SELECT}
       WHERE m.id <> $1
         AND m.status IN ('profile_complete','active')
+        AND m.approved_at IS NOT NULL
         AND m.first_name IS NOT NULL
         AND m.is_official = false
       GROUP BY m.id
@@ -302,7 +303,7 @@ discoveryRoutes.get("/members/:id", auth, requireMembership, async (c) => {
   await translateFields([dto], MEMBER_TEXT, lang);
   // Host serbest-metin alanlarını görüntüleyenin diline çevir (etiket/olanak key'leri frontend'de çevriliyor).
   if (host) {
-    await translateFields([host], ["work", "accommodation", "meals", "learn", "daysOff", "hoursNote", "nearby"], lang);
+    await translateFields([host], ["work", "accommodation", "meals", "learn", "daysOff", "minStay", "hoursNote", "nearby"], lang);
     const routine = Array.isArray(host.dailyRoutine) ? (host.dailyRoutine as Record<string, unknown>[]) : [];
     if (routine.length) await translateFields(routine, ["activity"], lang);
     for (const field of ["houseRules", "around"] as const) {

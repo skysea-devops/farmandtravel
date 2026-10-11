@@ -46,6 +46,7 @@ export interface Profile {
   status: "onboarding" | "profile_complete" | "active" | "suspended";
   plan?: "none" | "frontier" | "active";
   isAdmin?: boolean;
+  approved?: boolean;
   joinedAt?: string;
   firstName: string | null;
   country: string | null;
@@ -83,7 +84,7 @@ export interface PublicMember {
   dir: "offer" | "seek";
   category: "host" | "volunteer" | "other";
 }
-export interface Photo { id: string; url: string | null; caption: string | null }
+export interface Photo { id: string; url: string | null; caption: string | null; category?: string | null }
 export interface MatchCard {
   id: string;
   firstName: string | null;
@@ -161,11 +162,12 @@ export interface RosterMember {
   country: string | null;
   status: "onboarding" | "profile_complete" | "active" | "suspended" | "deleted";
   plan: "none" | "frontier" | "active";
+  approvedAt: string | null;
   connections: number;
   createdAt: string;
 }
 export interface RosterData {
-  summary: { total: number; onboarding: number; profileComplete: number; active: number; suspended: number; deleted: number };
+  summary: { total: number; onboarding: number; profileComplete: number; active: number; suspended: number; deleted: number; pendingReview: number };
   members: RosterMember[];
 }
 export interface AdminReviewItem {

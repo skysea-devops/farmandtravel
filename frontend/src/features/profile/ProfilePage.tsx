@@ -8,6 +8,7 @@ import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
+import { HostPhotos } from "@/features/profile/HostPhotos";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
@@ -176,6 +177,7 @@ export function ProfilePage() {
   if (!p) return null;
 
   const photos = p.photos ?? [];
+  const generalPhotos = photos.filter((ph) => !ph.category); // kategorisiz (genel) galeri
   const isHost = p.tags.some(
     (tg) =>
       (tg.axis === "offer" && tg.value === "place-experience") ||
@@ -224,7 +226,7 @@ export function ProfilePage() {
 
       <Block title={t("Fotoğraflarım", "My photos")}>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {photos.map((ph: Photo) => (
+          {generalPhotos.map((ph: Photo) => (
             <div key={ph.id} className="group relative aspect-square overflow-hidden rounded-lg bg-sand-100">
               {ph.url && <img src={ph.url} alt="" className="h-full w-full object-cover" />}
               <button onClick={() => removePhoto(ph.id)} disabled={busy}
@@ -232,7 +234,7 @@ export function ProfilePage() {
                 title={t("Sil", "Delete")}>✕</button>
             </div>
           ))}
-          {photos.length < 12 && (
+          {photos.length < 20 && (
             <button onClick={() => galleryInput.current?.click()} disabled={busy}
               className="grid aspect-square place-items-center rounded-lg border-2 border-dashed border-border-strong text-ink-500 hover:border-forest-500 hover:text-forest-600">
               <span className="text-center text-xs">{busy ? "…" : t("+ Fotoğraf", "+ Photo")}</span>
@@ -263,6 +265,11 @@ export function ProfilePage() {
           <div className="mt-4 flex items-center gap-3">
             <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
             {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="font-display mb-2 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
+            <HostPhotos photos={photos} onChange={load} />
           </div>
         </Block>
       )}
