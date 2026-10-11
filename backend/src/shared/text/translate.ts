@@ -21,8 +21,10 @@ export async function translateMany(
   texts: (string | null | undefined)[],
   lang: string,
 ): Promise<(string | null)[]> {
-  // Base language or translation disabled (stub/local): pass through unchanged.
-  if (lang !== "en" || !client) return texts.map((t) => t ?? null);
+  // Translate to the viewer's language (tr or en), auto-detecting source. Content can be
+  // authored in either language, so this is bidirectional; strings already in the target
+  // come back unchanged. Disabled (stub/local) or unknown lang: pass through.
+  if (!client || (lang !== "en" && lang !== "tr")) return texts.map((t) => t ?? null);
 
   // Distinct non-empty sources, keyed by hash.
   const uniq = new Map<string, string>();
@@ -48,7 +50,7 @@ export async function translateMany(
   const misses = [...uniq.entries()].filter(([h]) => !out.has(h));
   if (misses.length > 0) {
     try {
-      const translated = await bedrockTranslate(misses.map(([, s]) => s));
+      const translated = await bedrockTranslate(misses.map(([, s]) => s), lang);
       if (translated.length === misses.length) {
         const rows = misses.map(([h, s], i) => {
           const tr = (translated[i] ?? "").trim() || s;
@@ -81,7 +83,7 @@ export async function translateFields<T extends Record<string, unknown>>(
   fields: readonly (keyof T)[],
   lang: string,
 ): Promise<void> {
-  if (lang !== "en" || rows.length === 0) return;
+  if (rows.length === 0 || (lang !== "en" && lang !== "tr")) return;
   const flat: (string | null | undefined)[] = [];
   for (const r of rows) for (const f of fields) flat.push(r[f] as string | null | undefined);
   const tr = await translateMany(flat, lang);
@@ -94,12 +96,13 @@ export async function translateFields<T extends Record<string, unknown>>(
   }
 }
 
-async function bedrockTranslate(sources: string[]): Promise<string[]> {
-  const prompt = `Translate each string in the JSON array below into natural English for a farming / eco community platform.
+async function bedrockTranslate(sources: string[], lang: string): Promise<string[]> {
+  const target = lang === "tr" ? "Turkish" : "English";
+  const prompt = `Translate each string in the JSON array below into natural ${target} for a farming / eco community platform.
 Rules:
 - Return ONLY a JSON array of strings, same length and order as the input.
 - Keep emojis, URLs, @handles, hashtags, numbers, and proper nouns (people's names, city names, brand names) unchanged.
-- If a string is already English, return it unchanged.
+- If a string is already ${target}, return it unchanged.
 - Do not add quotes, notes, or any text outside the JSON array.
 Input: ${JSON.stringify(sources)}`;
 
