@@ -80,7 +80,6 @@ export const HOUSE_RULES: LabeledKey[] = [
   { key: "weekly_clean", icon: "🧽", tr: "Haftalık temizlik",     en: "Weekly cleaning" },
   { key: "food",         icon: "🍽️", tr: "Yemek / beslenme",      en: "Food" },
   { key: "animals",      icon: "🐾", tr: "Hayvanlar",             en: "Animals" },
-  { key: "communication",icon: "💬", tr: "İletişim",              en: "Communication" },
   { key: "alcohol",      icon: "🚫", tr: "Alkol",                 en: "Alcohol" },
   { key: "smoking",      icon: "🚭", tr: "Sigara",                en: "Smoking" },
   { key: "quiet",        icon: "🌙", tr: "Sessiz saatler",        en: "Quiet hours" },
