@@ -137,7 +137,10 @@ export function ProfilePage() {
 
   const photos = p.photos ?? [];
   const isHost = p.tags.some(
-    (tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner"),
+    (tg) =>
+      (tg.axis === "offer" && tg.value === "place-experience") ||
+      (tg.axis === "situation" && tg.value === "farm-owner") ||
+      (tg.axis === "seek" && tg.value === "volunteers"),
   );
 
   return (

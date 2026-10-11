@@ -80,9 +80,12 @@ export function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [host, setHost] = useState<HostDetails>({});
 
-  // Yer sunan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
+  // Yer sunan / gönüllü arayan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
   const isHost = selected.some(
-    (s) => (s.axis === "offer" && s.value === "place-experience") || (s.axis === "situation" && s.value === "farm-owner"),
+    (s) =>
+      (s.axis === "offer" && s.value === "place-experience") ||
+      (s.axis === "situation" && s.value === "farm-owner") ||
+      (s.axis === "seek" && s.value === "volunteers"),
   );
 
   const toggle = (arr: string[], set: (v: string[]) => void, v: string) =>
