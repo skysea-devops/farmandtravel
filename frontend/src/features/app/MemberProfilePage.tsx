@@ -11,6 +11,7 @@ import { monthYear } from "@/lib/time";
 import { HostDetailsView } from "@/features/profile/HostDetails";
 import { hostIsEmpty } from "@/data/host";
 import { AvailabilityView, availabilityEmpty, availabilityLabel } from "@/features/profile/Availability";
+import { VolunteerExperienceView } from "@/features/profile/VolunteerDetails";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -126,8 +127,14 @@ export function MemberProfilePage() {
         );
       })()}
 
+      {m.volunteer?.experience && (
+        <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+          <VolunteerExperienceView value={m.volunteer} />
+        </Block>
+      )}
+
       {!hostIsEmpty(m.host) && (
-        <Block title={t("🏡 Konaklama & ağırlama", "🏡 Accommodation & hosting")}>
+        <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
           <HostDetailsView host={m.host!} />
         </Block>
       )}
