@@ -366,10 +366,10 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
           {tab === "received"
             ? received.map((r, i) => (
                 <div key={i} className="flex gap-3">
-                  <Avatar url={r.reviewer.avatarUrl} className="size-9" />
+                  <Link to={`/app/uye/${r.reviewer.id}`} className="shrink-0"><Avatar url={r.reviewer.avatarUrl} className="size-9" /></Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">{r.reviewer.firstName ?? t("Bir üye", "A member")}</span>
+                      <Link to={`/app/uye/${r.reviewer.id}`} className="text-sm font-semibold hover:underline">{r.reviewer.firstName ?? t("Bir üye", "A member")}</Link>
                       <Stars value={r.rating} />
                     </div>
                     {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
