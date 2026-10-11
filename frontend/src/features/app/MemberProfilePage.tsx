@@ -8,6 +8,8 @@ import { StarInput } from "@/components/ui/StarInput";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
+import { HostDetailsView } from "@/features/profile/HostDetails";
+import { hostIsEmpty } from "@/data/host";
 import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -111,6 +113,12 @@ export function MemberProfilePage() {
 
       {m.bio && (
         <Block title={t("Hakkında", "About")}><p className="text-sm text-ink-700">{m.bio}</p></Block>
+      )}
+
+      {!hostIsEmpty(m.host) && (
+        <Block title={t("🏡 Konaklama & ağırlama", "🏡 Accommodation & hosting")}>
+          <HostDetailsView host={m.host!} />
+        </Block>
       )}
 
       {m.photos && m.photos.length > 0 && (
