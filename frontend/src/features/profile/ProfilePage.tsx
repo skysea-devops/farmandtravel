@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
+import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
@@ -43,6 +44,11 @@ export function ProfilePage() {
   const [aBusy, setABusy] = useState(false);
   const [aMsg, setAMsg] = useState<string | null>(null);
 
+  // Gönüllü deneyimi.
+  const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
+  const [vBusy, setVBusy] = useState(false);
+  const [vMsg, setVMsg] = useState<string | null>(null);
+
   // My reviews: received (drives the rating by my name) + written.
   const [rev, setRev] = useState<MyReviewsData | null>(null);
   useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
@@ -63,6 +69,7 @@ export function ProfilePage() {
         });
         setHost(((data.profile ?? {}) as { host?: HostDetails }).host ?? {});
         setAvailability(((data.profile ?? {}) as { availability?: Availability }).availability ?? {});
+        setVolunteer(((data.profile ?? {}) as { volunteer?: VolunteerDetails }).volunteer ?? {});
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
@@ -113,6 +120,19 @@ export function ProfilePage() {
       setAMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
     } finally {
       setABusy(false);
+    }
+  }
+
+  async function saveVolunteer() {
+    setVBusy(true); setVMsg(null);
+    try {
+      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), volunteer } });
+      api.invalidate("/profile/me");
+      setVMsg(t("Kaydedildi.", "Saved."));
+    } catch (e) {
+      setVMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
+    } finally {
+      setVBusy(false);
     }
   }
 
@@ -243,6 +263,17 @@ export function ProfilePage() {
           <div className="mt-4 flex items-center gap-3">
             <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
             {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
+          </div>
+        </Block>
+      )}
+
+      {isVolunteer && (
+        <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+          <p className="mb-3 text-xs text-ink-500">{t("Ev sahipleri için görünür; uygun eşleşmeyi bulmaya yardımcı olur.", "Shown to hosts; helps find the right match.")}</p>
+          <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
+          <div className="mt-4 flex items-center gap-3">
+            <Button size="sm" disabled={vBusy || !volunteer.experience} onClick={saveVolunteer}>{vBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+            {vMsg && <span className="text-sm text-ink-600">{vMsg}</span>}
           </div>
         </Block>
       )}

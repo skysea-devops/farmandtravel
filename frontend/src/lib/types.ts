@@ -211,6 +211,7 @@ export interface MemberDetail extends MatchCard {
   saved?: boolean;
   host?: import("@/data/host").HostDetails | null;
   availability?: import("@/features/profile/Availability").Availability | null;
+  volunteer?: import("@/features/profile/VolunteerDetails").VolunteerDetails | null;
 }
 
 export interface SavedCard {

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
 import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
+import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
 import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
 
@@ -81,6 +82,7 @@ export function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [host, setHost] = useState<HostDetails>({});
   const [availability, setAvailability] = useState<Availability>({});
+  const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
 
   // Yer sunan / gönüllü arayan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
   const isHost = selected.some(
@@ -132,6 +134,7 @@ export function OnboardingPage() {
     try {
       const profile: Record<string, unknown> = { situation };
       if (isHost) profile.host = host;
+      if (isVolunteer && volunteer.experience) profile.volunteer = volunteer;
       if (!availabilityEmpty(availability)) profile.availability = availability;
       await api.put("/profile", { firstName, country, city, bio, profile });
       setStep(3);
@@ -225,6 +228,15 @@ export function OnboardingPage() {
             </div>
           )}
 
+          {isVolunteer && (
+            <div className="mt-6 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
+              <h2 className="font-display text-lg font-semibold text-forest-700">{t("Gönüllü bilgisi", "Volunteer info")}</h2>
+              <p className="mb-3 mt-0.5 text-sm text-ink-600">{t("Ev sahiplerinin sana uygun eşleşmeyi bulabilmesi için gerekli.", "Needed so hosts can find the right match for you.")}</p>
+              <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
+              <p className="mt-2 text-xs text-ink-500">{t("* zorunlu", "* required")}</p>
+            </div>
+          )}
+
           {(isHost || isVolunteer) && (
             <div className="mt-6">
               <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(isHost, isVolunteer, t)} />
@@ -234,7 +246,7 @@ export function OnboardingPage() {
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && !hostRequiredComplete(host))}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && !hostRequiredComplete(host)) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}
