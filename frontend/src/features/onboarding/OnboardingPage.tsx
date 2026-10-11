@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
+import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import type { HostDetails } from "@/data/host";
 import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
 
@@ -79,6 +80,7 @@ export function OnboardingPage() {
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
   const [host, setHost] = useState<HostDetails>({});
+  const [availability, setAvailability] = useState<Availability>({});
 
   // Yer sunan / gönüllü arayan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
   const isHost = selected.some(
@@ -86,6 +88,13 @@ export function OnboardingPage() {
       (s.axis === "offer" && s.value === "place-experience") ||
       (s.axis === "situation" && s.value === "farm-owner") ||
       (s.axis === "seek" && s.value === "volunteers"),
+  );
+  // Gönüllü/deneyim arayan.
+  const isVolunteer = selected.some(
+    (s) =>
+      (s.axis === "offer" && s.value === "volunteer-labor") ||
+      (s.axis === "situation" && s.value === "seeking-experience") ||
+      (s.axis === "seek" && s.value === "hosting"),
   );
 
   const toggle = (arr: string[], set: (v: string[]) => void, v: string) =>
@@ -123,6 +132,7 @@ export function OnboardingPage() {
     try {
       const profile: Record<string, unknown> = { situation };
       if (isHost) profile.host = host;
+      if (!availabilityEmpty(availability)) profile.availability = availability;
       await api.put("/profile", { firstName, country, city, bio, profile });
       setStep(3);
     } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
@@ -212,6 +222,13 @@ export function OnboardingPage() {
               </p>
               <HostDetailsForm value={host} onChange={setHost} />
               <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar zorunludur.", "* fields are required.")}</p>
+            </div>
+          )}
+
+          {(isHost || isVolunteer) && (
+            <div className="mt-6">
+              <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(isHost, isVolunteer, t)} />
+              <p className="mt-1.5 text-xs text-ink-500">{t("Opsiyonel ama eşleşme için çok yardımcı olur.", "Optional but very helpful for matching.")}</p>
             </div>
           )}
 

@@ -8,6 +8,7 @@ import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
+import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
 
@@ -37,6 +38,11 @@ export function ProfilePage() {
   const [hBusy, setHBusy] = useState(false);
   const [hMsg, setHMsg] = useState<string | null>(null);
 
+  // Müsaitlik (tarih aralığı) — host/gönüllü için.
+  const [availability, setAvailability] = useState<Availability>({});
+  const [aBusy, setABusy] = useState(false);
+  const [aMsg, setAMsg] = useState<string | null>(null);
+
   // My reviews: received (drives the rating by my name) + written.
   const [rev, setRev] = useState<MyReviewsData | null>(null);
   useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
@@ -56,6 +62,7 @@ export function ProfilePage() {
           instagram: s.instagram ?? "", website: s.website ?? "",
         });
         setHost(((data.profile ?? {}) as { host?: HostDetails }).host ?? {});
+        setAvailability(((data.profile ?? {}) as { availability?: Availability }).availability ?? {});
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
@@ -93,6 +100,19 @@ export function ProfilePage() {
       setHMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
     } finally {
       setHBusy(false);
+    }
+  }
+
+  async function saveAvailability() {
+    setABusy(true); setAMsg(null);
+    try {
+      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), availability } });
+      api.invalidate("/profile/me");
+      setAMsg(t("Kaydedildi.", "Saved."));
+    } catch (e) {
+      setAMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
+    } finally {
+      setABusy(false);
     }
   }
 
@@ -141,6 +161,12 @@ export function ProfilePage() {
       (tg.axis === "offer" && tg.value === "place-experience") ||
       (tg.axis === "situation" && tg.value === "farm-owner") ||
       (tg.axis === "seek" && tg.value === "volunteers"),
+  );
+  const isVolunteer = p.tags.some(
+    (tg) =>
+      (tg.axis === "offer" && tg.value === "volunteer-labor") ||
+      (tg.axis === "situation" && tg.value === "seeking-experience") ||
+      (tg.axis === "seek" && tg.value === "hosting"),
   );
 
   return (
@@ -217,6 +243,20 @@ export function ProfilePage() {
           <div className="mt-4 flex items-center gap-3">
             <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
             {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
+          </div>
+        </Block>
+      )}
+
+      {(isHost || isVolunteer) && (
+        <Block title={t("📅 Müsaitlik / tarihler", "📅 Availability / dates")}>
+          <p className="mb-3 text-xs text-ink-500">
+            {t("Opsiyonel ama eşleşme için çok yardımcı olur. Profilinde görünür.",
+               "Optional but very helpful for matching. Shown on your profile.")}
+          </p>
+          <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(isHost, isVolunteer, t)} />
+          <div className="mt-4 flex items-center gap-3">
+            <Button size="sm" disabled={aBusy} onClick={saveAvailability}>{aBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+            {aMsg && <span className="text-sm text-ink-600">{aMsg}</span>}
           </div>
         </Block>
       )}
