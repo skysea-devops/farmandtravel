@@ -12,6 +12,10 @@ export function Footer() {
         <span className="text-moss-300/40">·</span>
         <Link to="/kurallar" className="transition hover:text-white">{t("Topluluk Kuralları", "Community Rules")}</Link>
         <span className="text-moss-300/40">·</span>
+        <Link to="/kosullar" className="transition hover:text-white">{t("Kullanım Koşulları", "Terms of Use")}</Link>
+        <span className="text-moss-300/40">·</span>
+        <Link to="/gizlilik" className="transition hover:text-white">{t("Gizlilik Politikası", "Privacy Policy")}</Link>
+        <span className="text-moss-300/40">·</span>
         <Link to="/hakkimizda" className="transition hover:text-white">{t("İletişim", "Contact")}</Link>
       </nav>
       {brand} · {domain} · © 2026
