@@ -11,6 +11,7 @@ export interface HostDetails {
   meals?: string;         // yemek (standart günde 3 öğün; özel beslenme notu)
   learn?: string;         // öğrenilebilecekler (ekmek, peynir, permakültür…)
   amenities?: string[];   // olanaklar (AMENITIES key'leri)
+  mealTypes?: string[];   // yemek türü (MEAL_TYPES key'leri: vejetaryen/vegan/karışık)
   languages?: string[];   // konuşulan diller (LANGUAGES key'leri)
   wantsExperience?: "experienced" | "willing" | "any"; // aranan gönüllü deneyimi
   // --- Çiftlik rehberi şablonu (4 ana başlık) ---
@@ -44,11 +45,18 @@ export const AMENITIES: LabeledKey[] = [
   { key: "camping",        tr: "Kamp alanı",        en: "Camping space" },
   { key: "shared_kitchen", tr: "Ortak mutfak",      en: "Shared kitchen" },
   { key: "bathroom",       tr: "Banyo erişimi",     en: "Bathroom access" },
+  { key: "toilet",         tr: "Tuvalet",           en: "Toilet" },
   { key: "laundry",        tr: "Çamaşır makinesi",  en: "Laundry" },
   { key: "wifi",           tr: "İnternet",          en: "Internet access" },
   { key: "pets",           tr: "Evcil hayvan var",  en: "Pets on site" },
   { key: "bike",           tr: "Bisiklet",          en: "Bicycles" },
   { key: "transport",      tr: "Ulaşım yardımı",    en: "Help with transport" },
+];
+
+export const MEAL_TYPES: LabeledKey[] = [
+  { key: "vegetarian", tr: "Vejetaryen", en: "Vegetarian" },
+  { key: "vegan",      tr: "Vegan",      en: "Vegan" },
+  { key: "omnivore",   tr: "Karışık (et dahil)", en: "Omnivore (incl. meat)" },
 ];
 
 export const LANGUAGES: LabeledKey[] = [
@@ -118,6 +126,7 @@ export function hostIsEmpty(h?: HostDetails | null): boolean {
   return !(
     h.work || h.hoursNote || h.accommodation || h.meals || h.learn || h.nearby || h.daysOff || h.wantsExperience ||
     (h.helpTypes && h.helpTypes.length) || (h.amenities && h.amenities.length) ||
+    (h.mealTypes && h.mealTypes.length) ||
     (h.languages && h.languages.length) || (h.dailyRoutine && h.dailyRoutine.length) ||
     (h.houseRules && h.houseRules.length) || (h.around && h.around.length)
   );

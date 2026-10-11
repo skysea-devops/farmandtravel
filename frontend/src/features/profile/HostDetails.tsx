@@ -1,12 +1,12 @@
 import { useI18n } from "@/lib/i18n";
 import {
-  HELP_TYPES, AMENITIES, LANGUAGES, HOUSE_RULES, AROUND_US, WANTS_EXPERIENCE,
+  HELP_TYPES, AMENITIES, MEAL_TYPES, LANGUAGES, HOUSE_RULES, AROUND_US, WANTS_EXPERIENCE,
   labelOf, iconOf, hostIsEmpty, type HostDetails, type RuleItem, type RoutineRow, type LabeledKey,
 } from "@/data/host";
 
 const ta = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600 resize-y";
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
-type ChipField = "helpTypes" | "amenities" | "languages";
+type ChipField = "helpTypes" | "amenities" | "mealTypes" | "languages";
 type RuleField = "houseRules" | "around";
 
 // Onboarding'de zorunlu host alanları dolu mu? (iş + konaklama + en az 1 yardım türü)
@@ -92,9 +92,10 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
           <div className="flex flex-wrap gap-2">{LANGUAGES.map((k) => chip("languages", k))}</div>
         </Field>
         <Field label={t("Yemek", "Meals")}
-          hint={t("Standart: günde 3 öğün. Özel beslenme (vejetaryen vb.) notunu ekle.", "Standard: 3 meals a day. Add any dietary note.")}>
+          hint={t("Standart: günde 3 öğün. Türü seç, gerekirse not ekle.", "Standard: 3 meals a day. Pick the type, add a note if needed.")}>
+          <div className="mb-2 flex flex-wrap gap-2">{MEAL_TYPES.map((k) => chip("mealTypes", k))}</div>
           <input className={inp} value={value.meals ?? ""} onChange={(e) => set({ meals: e.target.value })}
-            placeholder={t("Örn: günde 3 öğün; çoğunlukla sebze yemekleri", "E.g. 3 meals a day; mostly vegetable dishes")} />
+            placeholder={t("Örn: günde 3 öğün; alerji/özel beslenme notu", "E.g. 3 meals a day; allergy/dietary note")} />
         </Field>
         <Field label={t("Neler öğrenilebilir?", "What can volunteers learn?")}>
           <textarea rows={2} className={ta} value={value.learn ?? ""} onChange={(e) => set({ learn: e.target.value })}
@@ -181,6 +182,7 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
   if (hostIsEmpty(host)) return null;
   const helpLabels = (host.helpTypes ?? []).map((k) => labelOf(HELP_TYPES, k, lang));
   const amenLabels = (host.amenities ?? []).map((k) => labelOf(AMENITIES, k, lang));
+  const mealLabels = (host.mealTypes ?? []).map((k) => labelOf(MEAL_TYPES, k, lang));
   const langLabels = (host.languages ?? []).map((k) => labelOf(LANGUAGES, k, lang));
   const wants = host.wantsExperience ? labelOf(WANTS_EXPERIENCE, host.wantsExperience, lang) : null;
   const routine = (host.dailyRoutine ?? []).filter((r) => r.activity?.trim());
@@ -194,7 +196,16 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
       {host.accommodation && <Row label={t("Konaklama", "Accommodation")}><p className="whitespace-pre-wrap text-ink-700">{host.accommodation}</p></Row>}
       {amenLabels.length > 0 && <Chips label={t("Olanaklar", "Amenities")} items={amenLabels} />}
       {langLabels.length > 0 && <Chips label={t("Konuşulan diller", "Languages spoken")} items={langLabels} />}
-      {host.meals && <Row label={t("Yemek", "Meals")}><p className="text-ink-700">{host.meals}</p></Row>}
+      {(mealLabels.length > 0 || host.meals) && (
+        <Row label={t("Yemek", "Meals")}>
+          {mealLabels.length > 0 && (
+            <div className="mb-1 flex flex-wrap gap-1.5">
+              {mealLabels.map((l) => <span key={l} className="rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{l}</span>)}
+            </div>
+          )}
+          {host.meals && <p className="text-ink-700">{host.meals}</p>}
+        </Row>
+      )}
       {host.learn && <Row label={t("Neler öğrenilebilir?", "What you can learn")}><p className="whitespace-pre-wrap text-ink-700">{host.learn}</p></Row>}
       {wants && <Row label={t("Aranan gönüllü", "Volunteer wanted")}><p className="text-ink-700">{wants}</p></Row>}
 
