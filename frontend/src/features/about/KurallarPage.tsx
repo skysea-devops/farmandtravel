@@ -294,10 +294,19 @@ export function KurallarPage() {
         </p>
       </Section>
 
-      <p className="mt-10 border-t border-border pt-6 text-center text-[13px] text-ink-500">
-        {t("Bu kurallar topluluk büyüdükçe güncellenebilir. Önemli değişiklikleri üyelerle paylaşırız.",
-           "These rules may be updated as the community grows. We'll share important changes with members.")}
-      </p>
+      <div className="mt-10 border-t border-border pt-6 text-center text-[13px] text-ink-500">
+        <p>
+          {t("Bir ihlali bildirmek, soru sormak ya da bir sorun için bize ulaş: ",
+             "To report a violation, ask a question or raise an issue, reach us at: ")}
+          <a href={`mailto:${t("info@topraklayeniden.com", "info@reconnectwithsoil.com")}`} className="font-semibold text-forest-600 underline">
+            {t("info@topraklayeniden.com", "info@reconnectwithsoil.com")}
+          </a>
+        </p>
+        <p className="mt-2">
+          {t("Bu kurallar topluluk büyüdükçe güncellenebilir. Önemli değişiklikleri üyelerle paylaşırız.",
+             "These rules may be updated as the community grows. We'll share important changes with members.")}
+        </p>
+      </div>
     </div>
   );
 }

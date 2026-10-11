@@ -62,6 +62,18 @@ export function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* İletişim */}
+      <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
+        <h2 className="font-display mb-2 text-2xl font-semibold">{t("Bize ulaş", "Get in touch")}</h2>
+        <p className="text-[15px] text-ink-700">
+          {t("Soruların, önerilerin ya da bir sorun mu var? Bize yazmaktan çekinme:", "Questions, suggestions or an issue? Don't hesitate to write to us:")}
+        </p>
+        <a href={`mailto:${t("info@topraklayeniden.com", "info@reconnectwithsoil.com")}`}
+          className="mt-2 inline-block text-[15px] font-semibold text-forest-600 underline">
+          {t("info@topraklayeniden.com", "info@reconnectwithsoil.com")}
+        </a>
+      </section>
     </>
   );
 }
