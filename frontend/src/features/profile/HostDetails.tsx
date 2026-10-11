@@ -25,13 +25,13 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
 
   return (
     <div className="space-y-4">
-      <Field label={t("Yapılacak işler / yardım tanımı", "The help / tasks")}
+      <Field req label={t("Yapılacak işler / yardım tanımı", "The help / tasks")}
         hint={t("Gönüllünün ne yapacağını anlat (ör. sebze dikimi, çapalama, hasat).", "Describe what the volunteer will do (e.g. planting, hoeing, harvest).")}>
         <textarea rows={3} className={ta} value={value.work ?? ""} onChange={(e) => set({ work: e.target.value })}
           placeholder={t("Örn: Bahçede ekim, çapalama ve hasatta yardım; işler kolaydır.", "E.g. help with planting, hoeing and harvesting in the garden; the tasks are easy.")} />
       </Field>
 
-      <Field label={t("Yardım türleri", "Types of help")}>
+      <Field req label={t("Yardım türleri", "Types of help")}>
         <div className="flex flex-wrap gap-2">{HELP_TYPES.map((k) => chip("helpTypes", k))}</div>
       </Field>
 
@@ -41,7 +41,7 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
           placeholder={t("Örn: günde 6 saat, haftada 5 gün", "E.g. 6 hours a day, 5 days a week")} />
       </Field>
 
-      <Field label={t("Konaklama", "Accommodation")}
+      <Field req label={t("Konaklama", "Accommodation")}
         hint={t("Oda/kamp, banyo, mutfak, çamaşır, internet gibi imkanları anlat.", "Describe the room/camping, bathroom, kitchen, laundry, internet, etc.")}>
         <textarea rows={3} className={ta} value={value.accommodation ?? ""} onChange={(e) => set({ accommodation: e.target.value })}
           placeholder={t("Örn: Gönüllüler için ayrı bir odamız var; kamp için de uygun. Banyo, mutfak ve çamaşır makinesi ortak.", "E.g. we have a separate room for volunteers; camping is also fine. Bathroom, kitchen and washing machine are shared.")} />
@@ -72,14 +72,19 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, req, children }: { label: string; hint?: string; req?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}</div>
+      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}{req && <span className="text-clay-600"> *</span>}</div>
       {children}
       {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>
   );
+}
+
+// Onboarding'de zorunlu host alanları dolu mu? (iş + konaklama + en az 1 yardım türü)
+export function hostRequiredComplete(h: HostDetails): boolean {
+  return !!(h.work?.trim() && h.accommodation?.trim() && (h.helpTypes?.length ?? 0) > 0);
 }
 
 // Read-only host details — used on another member's public profile.

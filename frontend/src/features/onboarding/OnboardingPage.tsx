@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { HostDetailsForm } from "@/features/profile/HostDetails";
+import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
 import type { HostDetails } from "@/data/host";
 import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
 
@@ -208,12 +208,13 @@ export function OnboardingPage() {
                    "You're offering a place — fill in your hosting details so volunteers know what to expect. Detailed profiles get more interest.")}
               </p>
               <HostDetailsForm value={host} onChange={setHost} />
+              <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar zorunludur.", "* fields are required.")}</p>
             </div>
           )}
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName || !country}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && !hostRequiredComplete(host))}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}
