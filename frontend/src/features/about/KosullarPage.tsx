@@ -22,8 +22,8 @@ export function KosullarPage() {
       <Section n={1} title={t("Platformun niteliği", "What the platform is")}>
         <Para>
           {t(
-            `${brand} bir buluşma ve tanışma platformudur. Çiftlik/yer sahiplerini (ev sahipleri), gönüllüleri ve toprağa, doğaya ve birlikte üretmeye ilgi duyan kişileri bir araya getirir.`,
-            `${brand} is a platform for meeting and getting to know people. It brings together farm/place owners (hosts), volunteers and people interested in the soil, nature and growing together.`,
+            `${brand}; çiftlik/yer sahiplerini (ev sahipleri), gönüllüleri ve toprağa, doğaya ve birlikte üretmeye ilgi duyan kişileri bir araya getiren bir topluluk ve eşleştirme platformudur. Amaç; bilgi, emek ve deneyimin karşılıklı paylaşıldığı bir dayanışma ağı kurmaktır.`,
+            `${brand} is a community and matchmaking platform that brings together farm/place owners (hosts), volunteers and people interested in the soil, nature and growing together. Its purpose is to build a network of solidarity where knowledge, effort and experience are shared.`,
           )}
         </Para>
         <Para>
