@@ -211,15 +211,15 @@ export function OnboardingPage() {
       )}
 
       {step === 2 && (
-        <Panel title={t("Profilini tamamla", "Complete your profile")} lead={t("Birkaç temel bilgi. Fotoğraf ve ayrıntıları sonra da ekleyebilirsin.", "A few basics. You can add a photo and details later.")}>
-          <Group label={t("Ad", "First name")}><input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inp} placeholder={t("Adın", "Your name")} /></Group>
-          <Group label={t("Ülke", "Country")}>
+        <Panel title={t("Profilini tamamla", "Complete your profile")} lead={t("Profilin ne kadar ayrıntılıysa eşleşmen o kadar isabetli olur — seni doğru kişilerle buluşturmamıza yardımcı ol.", "The more detailed your profile, the better your matches — help us connect you with the right people.")}>
+          <Group label={t("Ad", "First name")} req><input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inp} placeholder={t("Adın", "Your name")} /></Group>
+          <Group label={t("Ülke", "Country")} req>
             <select value={country} onChange={(e) => setCountry(e.target.value)} className={inp}>
               <option value="">{t("Seç…", "Select…")}</option>{COUNTRIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </Group>
-          <Group label={t("Şehir", "City")}><input value={city} onChange={(e) => setCity(e.target.value)} className={inp} placeholder={t("Şehir (haritada görünür)", "City (shown on the map)")} /></Group>
-          <Group label={t("Kısa tanıtım", "Short intro")}><textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={ta} placeholder={t("Birkaç cümleyle kendini tanıt", "Introduce yourself in a few sentences")} /></Group>
+          <Group label={t("Şehir", "City")} req><input value={city} onChange={(e) => setCity(e.target.value)} className={inp} placeholder={t("Şehir (haritada görünür)", "City (shown on the map)")} /></Group>
+          <Group label={t("Kısa tanıtım", "Short intro")} req><textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={ta} placeholder={t("Birkaç cümleyle kendini tanıt", "Introduce yourself in a few sentences")} /></Group>
 
           {isHost && (
             <div className="mt-6 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
@@ -260,8 +260,10 @@ export function OnboardingPage() {
           {(() => {
             // Butonun neden pasif olduğunu açıkça göster: eksik zorunlu alanları listele.
             const missing: string[] = [];
-            if (!firstName) missing.push(t("Ad", "First name"));
+            if (!firstName.trim()) missing.push(t("Ad", "First name"));
             if (!country) missing.push(t("Ülke", "Country"));
+            if (!city.trim()) missing.push(t("Şehir", "City"));
+            if (!bio.trim()) missing.push(t("Kısa tanıtım", "Short intro"));
             if (isHost) {
               if (!host.work?.trim()) missing.push(t("Kısa özet / yapılacak işler", "Short summary / the help"));
               if (!(host.helpTypes?.length)) missing.push(t("Yardım türleri", "Types of help"));
@@ -288,7 +290,7 @@ export function OnboardingPage() {
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos))) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName.trim() || !country || !city.trim() || !bio.trim() || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos))) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}
@@ -344,10 +346,10 @@ function Panel({ title, lead, children }: { title: string; lead?: string; childr
     </div>
   );
 }
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, req, children }: { label: string; req?: boolean; children: React.ReactNode }) {
   return (
     <div className="mb-5">
-      <div className="mb-2 text-[13px] font-semibold text-ink-700">{label}</div>
+      <div className="mb-2 text-[13px] font-semibold text-ink-700">{label}{req && <span className="font-bold text-[#dc2626]"> *</span>}</div>
       {children}
     </div>
   );
