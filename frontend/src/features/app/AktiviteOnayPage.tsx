@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
-import { monthYear } from "@/lib/time";
+import { fullDate } from "@/lib/time";
 import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember } from "@/lib/types";
 
 const KIND: Record<string, string> = {
@@ -266,7 +266,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
           </div>
           <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
         </div>
-        <div className="shrink-0 text-right text-xs text-ink-500">{monthYear(m.createdAt, "tr")}</div>
+        <div className="shrink-0 text-right text-xs text-ink-500">{fullDate(m.createdAt, "tr")}</div>
       </div>
 
       {(isPending || isLive) && (
