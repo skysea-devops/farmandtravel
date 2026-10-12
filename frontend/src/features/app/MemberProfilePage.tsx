@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ReportButton } from "@/components/ReportButton";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
@@ -96,6 +97,10 @@ export function MemberProfilePage() {
           <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>{t("💬 Mesaj gönder", "💬 Send a message")}</Button>
         )}
         <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? t("🔖 Kaydedildi", "🔖 Saved") : t("🔖 Kaydet", "🔖 Save")}</Button>
+        <div className="ml-auto flex items-center">
+          <ReportButton reportedId={m.id} context="profile"
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-sm text-ink-500 transition hover:border-[#8a2f29] hover:text-[#8a2f29]" />
+        </div>
       </div>
 
       {isAdmin && <AdminMessage memberId={m.id} name={m.firstName ?? "bu üye"} />}

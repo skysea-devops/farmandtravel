@@ -10,13 +10,15 @@ const EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
+  "application/pdf": "pdf",
 };
 
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB cap per image
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB cap per file
 
+// kind "doc": adres doğrulama belgesi (admin-only), PDF de kabul edilir.
 const schema = z.object({
-  kind: z.enum(["avatar", "gallery"]),
-  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  kind: z.enum(["avatar", "gallery", "doc"]),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
 

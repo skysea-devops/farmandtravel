@@ -47,6 +47,7 @@ export interface Profile {
   plan?: "none" | "frontier" | "active";
   isAdmin?: boolean;
   approved?: boolean;
+  proofAddress?: boolean;
   joinedAt?: string;
   firstName: string | null;
   country: string | null;
@@ -187,6 +188,20 @@ export interface PendingRequest {
   createdAt: string;
   member: { id: string; firstName: string | null; country: string | null; city: string | null; headline: string | null; avatarKey: string | null; avatarUrl?: string | null };
 }
+export interface ReportItem {
+  id: string;
+  context: "profile" | "message" | null;
+  reason: string;
+  handled: boolean;
+  createdAt: string;
+  reporterId: string;
+  reporterName: string | null;
+  reportedId: string;
+  reportedName: string | null;
+}
+export interface ReportsData { open: number; reports: ReportItem[] }
+export interface VerificationData { addressExact: string | null; proofUrl: string | null }
+
 export interface Dashboard {
   stats: { matches: number; pendingConnections: number; connections?: number; unreadMessages: number; profileViews: number };
   matches: MatchCard[];

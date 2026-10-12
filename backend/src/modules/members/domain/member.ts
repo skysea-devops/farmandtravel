@@ -31,6 +31,7 @@ export interface MemberFull {
   draft: Record<string, unknown>;
   joinedAt: string;
   approved: boolean; // admin onayından geçti mi (Keşfet'te görünür mü)
+  proofAddress: boolean; // adres doğrulama belgesi yüklendi mi (admin-only)
   tags: MemberTag[];
 }
 
