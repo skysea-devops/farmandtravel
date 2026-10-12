@@ -212,6 +212,15 @@ export function OnboardingPage() {
 
       {step === 2 && (
         <Panel title={t("Profilini tamamla", "Complete your profile")} lead={t("Profilin ne kadar ayrıntılıysa eşleşmen o kadar isabetli olur — seni doğru kişilerle buluşturmamıza yardımcı ol.", "The more detailed your profile, the better your matches — help us connect you with the right people.")}>
+          <div className="mb-6 rounded-xl border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-sm text-ink-700">
+            <div className="mb-1 font-semibold text-forest-700">{t("ℹ️ Yayına girmeden önce", "ℹ️ Before you go live")}</div>
+            <ul className="ml-4 list-disc space-y-1">
+              <li>{t("Profilini tamamladıktan sonra ekibimiz kısa bir incelemeden geçirir; profilin yalnızca onaylandıktan sonra Keşfet'te görünür ve eşleşmeye başlar.",
+                     "Once you finish, our team gives your profile a quick review; it appears in Discover and starts matching only after it's approved.")}</li>
+              <li>{t("Eksik, yanıltıcı veya uygunsuz profiller onaylanmaz ya da askıya alınır. Bir eksik olursa sana mesaj veya e-posta ile bildiririz.",
+                     "Incomplete, misleading or inappropriate profiles won't be approved or may be suspended. If something's missing, we'll let you know by message or email.")}</li>
+            </ul>
+          </div>
           <Group label={t("Ad", "First name")} req><input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inp} placeholder={t("Adın", "Your name")} /></Group>
           <Group label={t("Ülke", "Country")} req>
             <select value={country} onChange={(e) => setCountry(e.target.value)} className={inp}>
