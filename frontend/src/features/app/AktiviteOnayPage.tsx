@@ -221,6 +221,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
   // Profilini bitirmiş ama onaylanmamış → onay bekliyor.
   const isPending = (m.status === "profile_complete" || m.status === "active") && !m.approvedAt;
   const isLive = (m.status === "profile_complete" || m.status === "active") && !!m.approvedAt;
+  const isSuspended = m.status === "suspended";
 
   const [busy, setBusy] = useState(false);
   const [warnOpen, setWarnOpen] = useState(false);
@@ -236,6 +237,17 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
     if (!confirm(`${name} Keşfet'ten kaldırılsın mı? (onay geri alınır)`)) return;
     setBusy(true);
     try { await adminApi.unapproveMember(m.id); onAction(); }
+    finally { setBusy(false); }
+  }
+  async function suspend() {
+    if (!confirm(`${name} askıya alınsın mı? Girişte engellenir ve Keşfet'ten düşer.`)) return;
+    setBusy(true);
+    try { await adminApi.suspendMember(m.id); onAction(); }
+    finally { setBusy(false); }
+  }
+  async function unsuspend() {
+    setBusy(true);
+    try { await adminApi.unsuspendMember(m.id); onAction(); }
     finally { setBusy(false); }
   }
   async function sendWarn(e: React.FormEvent) {
@@ -292,7 +304,28 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
               Keşfet'ten kaldır
             </button>
           )}
+          <button type="button" onClick={suspend} disabled={busy}
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-[#8a2f29] transition hover:border-[#8a2f29]">
+            ⛔ Askıya al
+          </button>
           {sent && <span className="text-xs text-forest-600">✓ Mesaj gönderildi</span>}
+        </div>
+      )}
+
+      {/* Askıdaki üye: girişte engelli. Geri açmak için "Askıdan çıkar". */}
+      {isSuspended && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Link to={`/app/uye/${m.id}`} target="_blank"
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            👁 Profili incele
+          </Link>
+          <Button size="sm" disabled={busy} onClick={unsuspend}>↩ Askıdan çıkar</Button>
+          {m.email && (
+            <a href={`mailto:${m.email}`}
+              className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+              📧 E-posta gönder
+            </a>
+          )}
         </div>
       )}
 

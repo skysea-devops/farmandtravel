@@ -141,6 +141,32 @@ messagesRoutes.post("/admin/members/:id/unapprove", auth, requireAdmin, async (c
   return c.json({ ok: true });
 });
 
+// Admin: üyeyi askıya al → girişte engellenir, Keşfet'ten düşer. approved_at korunur,
+// askıdan çıkınca eski görünürlüğüne döner.
+messagesRoutes.post("/admin/members/:id/suspend", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const r = await query(
+    "UPDATE members SET status='suspended', updated_at=now() WHERE id=$1 AND is_official=false AND status <> 'deleted' RETURNING id",
+    [id],
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  return c.json({ ok: true });
+});
+
+// Admin: askıdan çıkar → profili tamamsa 'profile_complete', değilse 'onboarding'e döner.
+messagesRoutes.post("/admin/members/:id/unsuspend", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const r = await query(
+    `UPDATE members
+        SET status = CASE WHEN first_name IS NOT NULL THEN 'profile_complete' ELSE 'onboarding' END,
+            updated_at = now()
+      WHERE id=$1 AND is_official=false AND status='suspended' RETURNING id`,
+    [id],
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  return c.json({ ok: true });
+});
+
 // Admin: message a single member from the official account (no connection needed).
 const dmSchema = z.object({ memberId: z.string().uuid(), body: z.string().min(1).max(4000) });
 messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
