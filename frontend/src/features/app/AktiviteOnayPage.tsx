@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
-import { monthYear } from "@/lib/time";
+import { fullDate } from "@/lib/time";
 import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember } from "@/lib/types";
 
 const KIND: Record<string, string> = {
@@ -259,11 +259,14 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
           </div>
           <div className="mt-0.5 truncate text-xs text-ink-500">
-            {[m.email, where, `${m.connections} bağlantı`].filter(Boolean).join(" · ")}
+            {m.email
+              ? <a href={`mailto:${m.email}`} className="text-forest-600 hover:underline">{m.email}</a>
+              : <span className="italic text-ink-400">e-posta yok</span>}
+            {[where, `${m.connections} bağlantı`].filter(Boolean).map((x) => <span key={x}> · {x}</span>)}
           </div>
           <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
         </div>
-        <div className="shrink-0 text-right text-xs text-ink-500">{monthYear(m.createdAt, "tr")}</div>
+        <div className="shrink-0 text-right text-xs text-ink-500">{fullDate(m.createdAt, "tr")}</div>
       </div>
 
       {(isPending || isLive) && (
@@ -275,8 +278,14 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
           {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
           <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
-            ✉️ Uyar
+            ✉️ Mesaj gönder (uygulama içi)
           </button>
+          {m.email && (
+            <a href={`mailto:${m.email}`}
+              className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+              📧 E-posta gönder
+            </a>
+          )}
           {isLive && (
             <button type="button" onClick={unapprove} disabled={busy}
               className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-500 transition hover:text-[#8a2f29]">
@@ -287,10 +296,21 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
         </div>
       )}
 
+      {/* Onboarding'de takılı üye: uygulama içi mesaj göremez (profil adımına yönlenir),
+          bu yüzden sadece e-posta ile ulaşılır. */}
+      {m.status === "onboarding" && m.email && (
+        <div className="mt-2">
+          <a href={`mailto:${m.email}`}
+            className="inline-block rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            📧 Profilini tamamlaması için e-posta gönder
+          </a>
+        </div>
+      )}
+
       {warnOpen && (
         <form onSubmit={sendWarn} className="mt-2 flex items-end gap-2">
           <textarea value={warnBody} onChange={(e) => setWarnBody(e.target.value)} rows={2} maxLength={4000}
-            placeholder="Profilinde düzeltilmesi gerekenleri yaz… (Toprakla Yeniden adıyla gider)"
+            placeholder="Mesajını yaz… (Toprakla Yeniden adıyla gider — uyarı, hatırlatma vb.)"
             className="flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
           <Button type="submit" size="sm" disabled={busy || warnBody.trim().length < 1}>Gönder</Button>
         </form>

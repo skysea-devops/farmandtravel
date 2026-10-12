@@ -8,6 +8,15 @@ export function monthYear(iso: string | null | undefined, lang: string = "tr"): 
   return d.toLocaleDateString(lang === "en" ? "en-US" : "tr-TR", { month: "long", year: "numeric" });
 }
 
+// Full calendar date, e.g. "12 Ekim 2026" / "12 October 2026". Admin listelerinde
+// kaydın tam tarihini göstermek için (monthYear yalnızca ay+yıl verir).
+export function fullDate(iso: string | null | undefined, lang: string = "tr"): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(lang === "en" ? "en-US" : "tr-TR", { day: "numeric", month: "long", year: "numeric" });
+}
+
 // Full message timestamp, e.g. "3 Eki 14:30" (adds the year if it's not this year).
 export function msgTime(iso: string | null | undefined): string {
   if (!iso) return "";
