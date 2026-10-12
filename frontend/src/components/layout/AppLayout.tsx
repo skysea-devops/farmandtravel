@@ -41,6 +41,7 @@ export function AppLayout() {
   }, [location.pathname]);
 
   // Load profile: admin link, plan badge, and bounce unfinished onboarding to /onboarding.
+  // Adminler profil oluşturmaya zorlanmaz — doğrudan panele erişebilirler.
   useEffect(() => {
     api.getCached<Profile>("/profile/me")
       .then((p) => {
@@ -48,7 +49,7 @@ export function AppLayout() {
         setPlan(p.plan ?? "");
         // Profilini bitirmiş ama admin onayından geçmemiş → Keşfet'te görünmez (inceleme).
         setInReview((p.status === "profile_complete" || p.status === "active") && p.approved === false);
-        if (p.status === "onboarding") navigate("/onboarding", { replace: true });
+        if (p.status === "onboarding" && !p.isAdmin) navigate("/onboarding", { replace: true });
       })
       .catch(() => {});
   }, [navigate]);
