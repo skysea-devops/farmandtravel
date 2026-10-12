@@ -13,7 +13,7 @@ import { HostDetailsView } from "@/features/profile/HostDetails";
 import { hostIsEmpty, HOST_PHOTO_CATEGORIES } from "@/data/host";
 import { AvailabilityView, availabilityEmpty, availabilityLabel } from "@/features/profile/Availability";
 import { VolunteerExperienceView } from "@/features/profile/VolunteerDetails";
-import type { Axis, MemberDetail, Photo, Profile, ReviewsData } from "@/lib/types";
+import type { Axis, MemberDetail, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
 
