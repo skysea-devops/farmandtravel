@@ -25,7 +25,7 @@ messagesRoutes.get("/admin/members", auth, requireAdmin, async (c) => {
   const r = await query<{ id: string; first_name: string | null; last_name: string | null; city: string | null; country: string | null }>(
     `SELECT id, first_name, last_name, city, country FROM members
       WHERE is_official = false AND status <> 'deleted'
-        AND (first_name ILIKE $1 OR last_name ILIKE $1 OR contact_email ILIKE $1)
+        AND (first_name ILIKE $1 OR last_name ILIKE $1 OR contact_email ILIKE $1 OR login_email ILIKE $1)
       ORDER BY first_name NULLS LAST LIMIT 20`,
     [`%${q}%`],
   );
@@ -63,15 +63,17 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
     params.push(`%${q}%`);
     where.push(
       `(m.first_name ILIKE $${params.length} OR m.last_name ILIKE $${params.length}
-        OR m.contact_email ILIKE $${params.length} OR m.cognito_sub ILIKE $${params.length})`,
+        OR m.contact_email ILIKE $${params.length} OR m.login_email ILIKE $${params.length}
+        OR m.cognito_sub ILIKE $${params.length})`,
     );
   }
   const rows = await query<{
     id: string; cognito_sub: string; first_name: string | null; last_name: string | null;
-    contact_email: string | null; city: string | null; country: string | null;
+    email: string | null; city: string | null; country: string | null;
     status: string; plan: string; created_at: string; approved_at: string | null; connections: number;
   }>(
-    `SELECT m.id, m.cognito_sub, m.first_name, m.last_name, m.contact_email, m.city, m.country,
+    `SELECT m.id, m.cognito_sub, m.first_name, m.last_name,
+            COALESCE(m.contact_email, m.login_email) AS email, m.city, m.country,
             m.status, m.plan, m.created_at, m.approved_at,
             (SELECT count(*)::int FROM connections c
                WHERE c.status = 'accepted' AND (c.requester_id = m.id OR c.addressee_id = m.id)) AS connections
@@ -105,7 +107,7 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
       sub: m.cognito_sub,
       firstName: m.first_name,
       lastName: m.last_name,
-      email: m.contact_email,
+      email: m.email,
       city: m.city,
       country: m.country,
       status: m.status,

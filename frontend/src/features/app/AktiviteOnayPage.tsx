@@ -259,7 +259,10 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
           </div>
           <div className="mt-0.5 truncate text-xs text-ink-500">
-            {[m.email, where, `${m.connections} bağlantı`].filter(Boolean).join(" · ")}
+            {m.email
+              ? <a href={`mailto:${m.email}`} className="text-forest-600 hover:underline">{m.email}</a>
+              : <span className="italic text-ink-400">e-posta yok</span>}
+            {[where, `${m.connections} bağlantı`].filter(Boolean).map((x) => <span key={x}> · {x}</span>)}
           </div>
           <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
         </div>
@@ -275,8 +278,14 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
           {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
           <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
-            ✉️ Uyar
+            ✉️ Uyar (uygulama içi)
           </button>
+          {m.email && (
+            <a href={`mailto:${m.email}`}
+              className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+              📧 E-posta gönder
+            </a>
+          )}
           {isLive && (
             <button type="button" onClick={unapprove} disabled={busy}
               className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-500 transition hover:text-[#8a2f29]">
@@ -284,6 +293,17 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             </button>
           )}
           {sent && <span className="text-xs text-forest-600">✓ Mesaj gönderildi</span>}
+        </div>
+      )}
+
+      {/* Onboarding'de takılı üye: uygulama içi mesaj göremez (profil adımına yönlenir),
+          bu yüzden sadece e-posta ile ulaşılır. */}
+      {m.status === "onboarding" && m.email && (
+        <div className="mt-2">
+          <a href={`mailto:${m.email}`}
+            className="inline-block rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            📧 Profilini tamamlaması için e-posta gönder
+          </a>
         </div>
       )}
 

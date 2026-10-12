@@ -25,14 +25,16 @@ const FRONTIER_CUTOFF = Date.parse(env.FRONTIER_CUTOFF);
 // Idempotent get-or-create for the member row keyed by cognito_sub. Uses an upsert
 // (not SELECT-then-INSERT) so two parallel first requests from a brand-new user
 // can't both try to INSERT and hit the unique(cognito_sub) violation.
-async function ensureMember(sub: string, lang: "tr" | "en"): Promise<{ id: string; status: string; plan: string }> {
+async function ensureMember(sub: string, lang: "tr" | "en", email: string | null): Promise<{ id: string; status: string; plan: string }> {
   const plan = Date.now() < FRONTIER_CUTOFF ? "frontier" : "none";
   // (xmax = 0) is true only for a fresh INSERT (not the ON CONFLICT update path).
+  // login_email: JWT'deki giriş e-postasını sakla/tazele (null gelirse eskisini koru) —
+  // admin panelinde onboarding'de takılı üyelerin kim olduğunu görmek için.
   const r = await query<{ id: string; status: string; plan: string; inserted: boolean }>(
-    `INSERT INTO members (cognito_sub, status, plan) VALUES ($1,'onboarding',$2)
-       ON CONFLICT (cognito_sub) DO UPDATE SET cognito_sub = EXCLUDED.cognito_sub
+    `INSERT INTO members (cognito_sub, status, plan, login_email) VALUES ($1,'onboarding',$2,$3)
+       ON CONFLICT (cognito_sub) DO UPDATE SET login_email = COALESCE(EXCLUDED.login_email, members.login_email)
      RETURNING id, status, plan, (xmax = 0) AS inserted`,
-    [sub, plan],
+    [sub, plan, email],
   );
   const row = r.rows[0]!;
   if (row.inserted) await provisionWelcome(row.id, lang); // first login → welcome message
@@ -42,24 +44,28 @@ async function ensureMember(sub: string, lang: "tr" | "en"): Promise<{ id: strin
 export async function auth(c: Context, next: Next) {
   let sub: string | undefined;
   let groups: string[] = [];
+  let email: string | null = null;
 
   if (env.AUTH_MODE === "dev") {
     // Lokal: header ile kullanıcı taklidi ("x-dev-sub"), yoksa sabit. x-dev-groups ile rol.
     sub = c.req.header("x-dev-sub") ?? env.DEV_FAKE_SUB;
     groups = parseGroups(c.req.header("x-dev-groups") ?? "admin"); // dev: admin by default
+    email = c.req.header("x-dev-email") ?? null;
   } else {
     // API Gateway JWT authorizer claim'i event'e koyar; Hono aws-lambda adapter'ı
     // bunu c.env.event üzerinden geçirir.
     const claims = (c.env as any)?.event?.requestContext?.authorizer?.jwt?.claims;
     sub = claims?.sub;
     groups = parseGroups(claims?.["cognito:groups"]);
+    const raw = claims?.email;
+    email = typeof raw === "string" && raw.includes("@") ? raw.toLowerCase() : null;
   }
 
   if (!sub) throw Unauthorized();
   // Welcome-message language from the calling site (reconnectwithsoil.com → English).
   const origin = c.req.header("origin") ?? c.req.header("referer") ?? "";
   const lang = /reconnectwithsoil\.com/.test(origin) ? "en" : "tr";
-  const member = await ensureMember(sub, lang);
+  const member = await ensureMember(sub, lang, email);
   // Suspended members are blocked at the door for every authenticated route.
   if (member.status === "suspended") throw Forbidden("Hesabın askıya alındı");
   // A deleted (anonymized) account can't be used again, even if its Cognito user
