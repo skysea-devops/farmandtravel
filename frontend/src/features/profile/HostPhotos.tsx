@@ -44,9 +44,11 @@ export function HostPhotos({ photos, onChange }: { photos: Photo[]; onChange: ()
     <div className="space-y-3">
       <p className="text-[13px] text-ink-500">
         {t(
-          "Gönüllüler kalacakları yeri görmek ister. Net fotoğraflar daha çok ve daha uygun başvuru getirir. ⭐ işaretliler zorunlu.",
-          "Volunteers want to see where they'll stay. Clear photos bring more and better-matched applications. ⭐ marked ones are required.",
+          "Gönüllüler kalacakları yeri görmek ister. Net fotoğraflar daha çok ve daha uygun başvuru getirir. ",
+          "Volunteers want to see where they'll stay. Clear photos bring more and better-matched applications. ",
         )}
+        <span className="font-bold text-[#dc2626]">*</span>{" "}
+        {t("işaretli kategoriler zorunludur.", "marked categories are required.")}
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {HOST_PHOTO_CATEGORIES.map((cat) => {
@@ -57,7 +59,7 @@ export function HostPhotos({ photos, onChange }: { photos: Photo[]; onChange: ()
               <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-ink-800">
                 <span>{cat.icon}</span>
                 <span>{label}</span>
-                {cat.required && <span className="text-clay-600" title={t("Zorunlu", "Required")}>⭐</span>}
+                {cat.required && <span className="font-bold text-[#dc2626]" title={t("Zorunlu", "Required")}>*</span>}
               </div>
               <div className="flex flex-wrap gap-2">
                 {mine.map((ph) => (

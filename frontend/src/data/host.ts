@@ -112,7 +112,7 @@ export interface PhotoCategory extends LabeledKey { required?: boolean }
 export const HOST_PHOTO_CATEGORIES: PhotoCategory[] = [
   { key: "farm_overview", icon: "🌄", tr: "Çiftlik/yer geneli", en: "Farm / place overview", required: true },
   { key: "sleeping",      icon: "🛏️", tr: "Yatma yeri",         en: "Sleeping area",         required: true },
-  { key: "building",      icon: "🏠", tr: "Kalınacak bina",      en: "The building you'll stay in" },
+  { key: "building",      icon: "🏠", tr: "Kalınacak bina",      en: "The building you'll stay in", required: true },
   { key: "kitchen",       icon: "🍳", tr: "Mutfak",              en: "Kitchen" },
   { key: "toilet",        icon: "🚻", tr: "Tuvalet",             en: "Toilet" },
   { key: "bathroom",      icon: "🚿", tr: "Banyo",               en: "Bathroom" },

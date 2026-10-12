@@ -8,6 +8,7 @@ import { HostPhotos, hostPhotosComplete } from "@/features/profile/HostPhotos";
 import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
+import { HOST_PHOTO_CATEGORIES } from "@/data/host";
 import type { Axis, InferResponse, TaxonomyItem, Photo, Profile } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
@@ -234,7 +235,9 @@ export function OnboardingPage() {
                 <HostPhotos photos={photos} onChange={loadPhotos} />
               </div>
 
-              <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar ve ⭐ fotoğraflar zorunludur.", "* fields and ⭐ photos are required.")}</p>
+              <p className="mt-3 text-xs text-ink-500">
+                <span className="font-bold text-[#dc2626]">*</span> {t("işaretli alanlar ve fotoğraflar zorunludur.", "marked fields and photos are required.")}
+              </p>
             </div>
           )}
 
@@ -253,6 +256,35 @@ export function OnboardingPage() {
               <p className="mt-1.5 text-xs text-ink-500">{t("Opsiyonel ama eşleşme için çok yardımcı olur.", "Optional but very helpful for matching.")}</p>
             </div>
           )}
+
+          {(() => {
+            // Butonun neden pasif olduğunu açıkça göster: eksik zorunlu alanları listele.
+            const missing: string[] = [];
+            if (!firstName) missing.push(t("Ad", "First name"));
+            if (!country) missing.push(t("Ülke", "Country"));
+            if (isHost) {
+              if (!host.work?.trim()) missing.push(t("Kısa özet / yapılacak işler", "Short summary / the help"));
+              if (!(host.helpTypes?.length)) missing.push(t("Yardım türleri", "Types of help"));
+              if (!host.accommodation?.trim()) missing.push(t("Konaklama", "Accommodation"));
+              for (const c of HOST_PHOTO_CATEGORIES) {
+                if (c.required && !photos.some((p) => p.category === c.key)) {
+                  missing.push(`${t("Fotoğraf", "Photo")}: ${lang === "en" ? c.en : c.tr}`);
+                }
+              }
+            }
+            if (isVolunteer && !volunteer.experience) missing.push(t("Çiftlik deneyimi (gönüllü)", "Farm experience (volunteer)"));
+            if (missing.length === 0) return null;
+            return (
+              <div className="mt-6 rounded-xl border border-[#f0c9c4] bg-[#fdf1ef] px-4 py-3 text-sm">
+                <div className="mb-1 font-semibold text-[#8a2f29]">
+                  {t("Devam etmek için şunlar eksik:", "To continue, the following are missing:")}
+                </div>
+                <ul className="ml-4 list-disc space-y-0.5 text-ink-700">
+                  {missing.map((m) => <li key={m}>{m}</li>)}
+                </ul>
+              </div>
+            );
+          })()}
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>

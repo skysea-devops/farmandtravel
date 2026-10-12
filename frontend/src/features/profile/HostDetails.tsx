@@ -170,7 +170,7 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
 function Field({ label, hint, req, children }: { label: string; hint?: string; req?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}{req && <span className="text-clay-600"> *</span>}</div>
+      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}{req && <span className="font-bold text-[#dc2626]"> *</span>}</div>
       {children}
       {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>
