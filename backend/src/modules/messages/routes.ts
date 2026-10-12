@@ -141,6 +141,21 @@ messagesRoutes.post("/admin/members/:id/unapprove", auth, requireAdmin, async (c
   return c.json({ ok: true });
 });
 
+// Admin: bir host'un doğrulama bilgileri — adres + adres kanıtı belgesi (yalnızca admin).
+messagesRoutes.get("/admin/members/:id/verification", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const r = await query<{ address_exact: string | null; proof_address_key: string | null }>(
+    "SELECT address_exact, proof_address_key FROM members WHERE id=$1 AND is_official=false",
+    [id],
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  const row = r.rows[0]!;
+  return c.json({
+    addressExact: row.address_exact,
+    proofUrl: row.proof_address_key ? await safeUrl(row.proof_address_key) : null,
+  });
+});
+
 // Admin: üyeyi askıya al → girişte engellenir, Keşfet'ten düşer. approved_at korunur,
 // askıdan çıkınca eski görünürlüğüne döner.
 messagesRoutes.post("/admin/members/:id/suspend", auth, requireAdmin, async (c) => {

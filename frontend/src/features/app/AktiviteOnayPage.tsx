@@ -8,7 +8,7 @@ import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } f
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
 import { fullDate } from "@/lib/time";
-import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember } from "@/lib/types";
+import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember, ReportsData, ReportItem, VerificationData } from "@/lib/types";
 
 const KIND: Record<string, string> = {
   video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
@@ -19,9 +19,10 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
-type TabId = "members" | "reviews" | "activities" | "messages" | "inbox";
+type TabId = "members" | "reports" | "reviews" | "activities" | "messages" | "inbox";
 const TABS: { id: TabId; label: string }[] = [
   { id: "members", label: "👥 Üyeler" },
+  { id: "reports", label: "🚩 Şikayetler" },
   { id: "reviews", label: "⚖️ Değerlendirmeler" },
   { id: "activities", label: "📅 Aktiviteler" },
   { id: "messages", label: "📣 Duyuru & Mesaj" },
@@ -33,6 +34,7 @@ export function AktiviteOnayPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("members");
   const [pending, setPending] = useState(0);
+  const [reportsOpen, setReportsOpen] = useState(0);
 
   useEffect(() => {
     api.get<Profile>("/profile/me")
@@ -41,10 +43,12 @@ export function AktiviteOnayPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Onay bekleyen üye sayısını sekme rozetinde göster.
+  // Onay bekleyen üye + açık şikayet sayısını sekme rozetinde göster.
   const loadPending = () =>
     adminApi.roster<RosterData>("pending_review", "").then((r) => setPending(r.summary.pendingReview)).catch(() => {});
-  useEffect(() => { if (isAdmin) loadPending(); }, [isAdmin]);
+  const loadReportsCount = () =>
+    adminApi.reports<ReportsData>().then((r) => setReportsOpen(r.open)).catch(() => {});
+  useEffect(() => { if (isAdmin) { loadPending(); loadReportsCount(); } }, [isAdmin]);
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
   if (!isAdmin) {
@@ -76,11 +80,15 @@ export function AktiviteOnayPage() {
             {t.id === "members" && pending > 0 && (
               <span className="grid min-w-5 place-items-center rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{pending}</span>
             )}
+            {t.id === "reports" && reportsOpen > 0 && (
+              <span className="grid min-w-5 place-items-center rounded-full bg-[#8a2f29] px-1.5 text-[11px] font-semibold text-white">{reportsOpen}</span>
+            )}
           </button>
         ))}
       </div>
 
       {tab === "members" && <MembersSection onPendingChange={loadPending} />}
+      {tab === "reports" && <ReportsSection onChange={loadReportsCount} />}
       {tab === "reviews" && <ReviewModerationCard />}
       {tab === "activities" && <ActivitiesSection />}
       {tab === "messages" && (
@@ -227,6 +235,14 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
   const [warnOpen, setWarnOpen] = useState(false);
   const [warnBody, setWarnBody] = useState("");
   const [sent, setSent] = useState(false);
+  const [verif, setVerif] = useState<VerificationData | null | undefined>(undefined); // undefined=kapalı, null=yükleniyor
+
+  async function toggleVerif() {
+    if (verif !== undefined) { setVerif(undefined); return; }
+    setVerif(null);
+    try { setVerif(await adminApi.verification<VerificationData>(m.id)); }
+    catch { setVerif({ addressExact: null, proofUrl: null }); }
+  }
 
   async function approve() {
     setBusy(true);
@@ -288,6 +304,10 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             👁 Profili incele
           </Link>
           {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
+          <button type="button" onClick={toggleVerif}
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            🔒 Doğrulama (adres/belge)
+          </button>
           <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
             ✉️ Mesaj gönder (uygulama içi)
@@ -309,6 +329,28 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             ⛔ Askıya al
           </button>
           {sent && <span className="text-xs text-forest-600">✓ Mesaj gönderildi</span>}
+        </div>
+      )}
+
+      {verif !== undefined && (
+        <div className="mt-2 rounded-lg border border-border bg-sand-100 px-3 py-2.5 text-sm">
+          {verif === null ? (
+            <span className="text-ink-500">Yükleniyor…</span>
+          ) : (
+            <>
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">🔒 Yalnızca ekip görür</div>
+              <div className="text-ink-700">
+                <span className="text-ink-500">Adres: </span>
+                {verif.addressExact ? verif.addressExact : <span className="italic text-ink-400">girilmemiş</span>}
+              </div>
+              <div className="mt-1">
+                <span className="text-ink-500">Adres kanıtı: </span>
+                {verif.proofUrl
+                  ? <a href={verif.proofUrl} target="_blank" rel="noreferrer" className="font-medium text-forest-600 underline">📎 Belgeyi aç</a>
+                  : <span className="italic text-ink-400">yüklenmemiş</span>}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -347,6 +389,65 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             className="flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
           <Button type="submit" size="sm" disabled={busy || warnBody.trim().length < 1}>Gönder</Button>
         </form>
+      )}
+    </div>
+  );
+}
+
+// ── Şikayetler ───────────────────────────────────────────────────────────────
+// Üyelerin birbirini bildirdiği şikayetler. Taraflar tıklanabilir; çöz (kapat) butonu.
+function ReportsSection({ onChange }: { onChange: () => void }) {
+  const [data, setData] = useState<ReportItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = () => adminApi.reports<ReportsData>()
+    .then((r) => setData(r.reports)).catch(() => {}).finally(() => setLoaded(true));
+  useEffect(() => { load(); }, []);
+
+  async function resolve(id: string) {
+    setBusy(id);
+    try { await adminApi.resolveReport(id); setData((xs) => xs.filter((r) => r.id !== id)); onChange(); }
+    finally { setBusy(null); }
+  }
+
+  const open = data.filter((r) => !r.handled);
+
+  if (!loaded) return <div className="py-8 text-center text-ink-500">Yükleniyor…</div>;
+
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="font-display text-lg font-semibold">Şikayetler{open.length ? ` (${open.length})` : ""}</h2>
+        <p className="text-sm text-ink-500">Üyelerin bildirdiği şikayetler. İncele, gerekirse ilgili üyeyi "Üyeler" sekmesinden askıya al, sonra şikayeti çöz (kapat).</p>
+      </div>
+
+      {open.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Açık şikayet yok. 🎉
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {open.map((r) => (
+            <div key={r.id} className="rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+              <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
+                <Link to={`/app/uye/${r.reporterId}`} target="_blank" className="font-semibold text-forest-600 hover:underline">{r.reporterName ?? "Bir üye"}</Link>
+                <span className="text-ink-500">şikayet etti →</span>
+                <Link to={`/app/uye/${r.reportedId}`} target="_blank" className="font-semibold text-[#8a2f29] hover:underline">{r.reportedName ?? "Bir üye"}</Link>
+                {r.context && <span className="rounded-full bg-sand-200 px-2 py-0.5 text-[11px] text-ink-600">{r.context === "message" ? "mesajlaşma" : "profil"}</span>}
+                <span className="ml-auto text-[11px] text-ink-400">{listTime(r.createdAt)}</span>
+              </div>
+              <p className="whitespace-pre-wrap text-sm text-ink-700">{r.reason}</p>
+              <div className="mt-3 flex gap-2">
+                <Link to={`/app/uye/${r.reportedId}`} target="_blank"
+                  className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+                  👁 Şikayet edileni incele
+                </Link>
+                <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => resolve(r.id)}>✓ Çöz (kapat)</Button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

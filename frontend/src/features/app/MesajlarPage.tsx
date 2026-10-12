@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import { ReportButton } from "@/components/ReportButton";
 import { cn } from "@/lib/cn";
 import { messages as msgApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -167,6 +168,11 @@ function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; on
         <button onClick={onBack} className="text-ink-500 md:hidden">←</button>
         <Avatar url={meta.other?.avatarUrl} className="size-9" />
         <div className="font-semibold">{meta.other?.firstName ?? t("Üye", "Member")}</div>
+        {meta.other?.id && (
+          <div className="ml-auto">
+            <ReportButton reportedId={meta.other.id} context="message" />
+          </div>
+        )}
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">

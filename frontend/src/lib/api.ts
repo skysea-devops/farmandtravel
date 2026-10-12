@@ -173,6 +173,17 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
   return key;
 }
 
+// Upload a document (adres kanıtı): image or PDF, raw (no shrink). kind="doc".
+export async function uploadDoc(file: File): Promise<string> {
+  const ct = ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type) ? file.type : "application/pdf";
+  const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
+    kind: "doc", contentType: ct, size: file.size,
+  });
+  const res = await fetch(uploadUrl, { method: "PUT", headers: { "content-type": ct }, body: file });
+  if (!res.ok) throw new Error("Yükleme başarısız");
+  return key;
+}
+
 export const activities = {
   list: <T>(limit = 20, offset = 0) => api.getCached<T>(`/activities?limit=${limit}&offset=${offset}`, 60_000),
   eligibility: <T>() => api.get<T>("/activities/eligibility"),
@@ -194,6 +205,11 @@ export const admin = {
   // Askıya al / askıdan çıkar (girişte engellenir / geri açılır).
   suspendMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/suspend`); api.invalidate(); return r; },
   unsuspendMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/unsuspend`); api.invalidate(); return r; },
+  // Host doğrulama bilgileri (adres + belge URL'si), yalnızca admin.
+  verification: <T>(id: string) => api.get<T>(`/admin/members/${id}/verification`),
+  // Şikayetler.
+  reports: <T>() => api.get<T>("/admin/reports"),
+  resolveReport: async (id: string) => { const r = await api.post(`/admin/reports/${id}/resolve`); api.invalidate(); return r; },
   // Search members by name/email to pick a recipient.
   searchMembers: <T>(q: string) => api.get<T>(`/admin/members?q=${encodeURIComponent(q)}`),
   // Full member roster with app-side status + join date (who signed up, who's stuck in onboarding).
@@ -213,6 +229,15 @@ export const admin = {
 export const billing = {
   // Returns the hosted checkout URL to redirect to (or throws on 503 when unconfigured).
   checkout: (market: "tr" | "intl") => api.post<{ url: string }>("/billing/checkout", { market }),
+};
+
+// Adres doğrulama belgesi (host) ve kullanıcı şikayeti.
+export const member = {
+  setProofAddress: async (key: string) => { const r = await api.post("/profile/proof-address", { key }); api.invalidate(); return r; },
+};
+export const reports = {
+  create: (reportedId: string, reason: string, context?: "profile" | "message") =>
+    api.post("/reports", { reportedId, reason, context }),
 };
 
 export const saved = {

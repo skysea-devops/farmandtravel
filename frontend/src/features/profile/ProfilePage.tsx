@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
 import { HostPhotos } from "@/features/profile/HostPhotos";
+import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
@@ -270,6 +271,15 @@ export function ProfilePage() {
           <div className="mt-6 border-t border-border pt-4">
             <h3 className="font-display mb-2 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
             <HostPhotos photos={photos} onChange={load} />
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📍 Adres doğrulama", "📍 Address verification")}</h3>
+            <p className="mb-3 text-[13px] text-ink-500">
+              {t("Açık adresini aşağıdaki \"İletişim bilgileri\" bölümüne gir (yalnızca bağlantılarınla paylaşılır). Ardından bir adres kanıtı belgesi (fatura, tapu, kira sözleşmesi) yükle — profilinde görünmez, yalnızca ekip doğrulama için görür.",
+                 "Enter your full address in the \"Contact details\" section below (shared only with your connections). Then upload a proof-of-address document (utility bill, deed, rental contract) — it doesn't appear on your profile, only the team sees it for verification.")}
+            </p>
+            <ProofUpload done={!!p.proofAddress} onChange={load} />
           </div>
         </Block>
       )}

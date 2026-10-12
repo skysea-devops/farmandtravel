@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
 import { HostPhotos, hostPhotosComplete } from "@/features/profile/HostPhotos";
+import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
@@ -84,8 +85,14 @@ export function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [host, setHost] = useState<HostDetails>({});
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const loadPhotos = () => api.get<Profile>("/profile/me").then((p) => setPhotos(p.photos ?? [])).catch(() => {});
-  useEffect(() => { loadPhotos(); }, []);
+  const [addressExact, setAddressExact] = useState("");
+  const [proofAddress, setProofAddress] = useState(false);
+  const loadMe = () => api.get<Profile>("/profile/me").then((p) => {
+    setPhotos(p.photos ?? []);
+    setProofAddress(!!p.proofAddress);
+    if (p.addressExact) setAddressExact((a) => a || p.addressExact!);
+  }).catch(() => {});
+  useEffect(() => { loadMe(); }, []);
   const [availability, setAvailability] = useState<Availability>({});
   const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
 
@@ -141,7 +148,7 @@ export function OnboardingPage() {
       if (isHost) profile.host = host;
       if (isVolunteer && volunteer.experience) profile.volunteer = volunteer;
       if (!availabilityEmpty(availability)) profile.availability = availability;
-      await api.put("/profile", { firstName, country, city, bio, profile });
+      await api.put("/profile", { firstName, country, city, bio, profile, ...(isHost ? { addressExact } : {}) });
       setStep(3);
     } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
   }
@@ -241,11 +248,30 @@ export function OnboardingPage() {
 
               <div className="mt-5 border-t border-border pt-4">
                 <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
-                <HostPhotos photos={photos} onChange={loadPhotos} />
+                <HostPhotos photos={photos} onChange={loadMe} />
+              </div>
+
+              <div className="mt-5 border-t border-border pt-4">
+                <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">
+                  {t("📍 Yer adresi & doğrulama", "📍 Place address & verification")}
+                  <span className="font-bold text-[#dc2626]"> *</span>
+                </h3>
+                <p className="mb-3 text-[13px] text-ink-500">
+                  {t("Gönüllüler fiziksel olarak yanına geleceği için yerin gerçek olduğunu doğruluyoruz. Açık adres yalnızca bağlantı kurduğun gönüllüyle paylaşılır; doğrulama belgesi profilinde ASLA görünmez, yalnızca ekip görür.",
+                     "Since volunteers physically come to you, we verify the place is real. The exact address is shared only with a volunteer you connect with; the verification document NEVER appears on your profile — only the team sees it.")}
+                </p>
+                <textarea value={addressExact} onChange={(e) => setAddressExact(e.target.value)} rows={2} className={ta}
+                  placeholder={t("Açık adres (mahalle, sokak, no, ilçe/il)", "Full address (street, no, district/city)")} />
+                <div className="mt-3">
+                  <div className="mb-1.5 text-[13px] font-medium text-ink-700">
+                    {t("Adres kanıtı belgesi (fatura, tapu, kira sözleşmesi vb. — resim ya da PDF)", "Proof of address (utility bill, deed, rental contract, etc. — image or PDF)")}
+                  </div>
+                  <ProofUpload done={proofAddress} onChange={loadMe} />
+                </div>
               </div>
 
               <p className="mt-3 text-xs text-ink-500">
-                <span className="font-bold text-[#dc2626]">*</span> {t("işaretli alanlar ve fotoğraflar zorunludur.", "marked fields and photos are required.")}
+                <span className="font-bold text-[#dc2626]">*</span> {t("işaretli alanlar, fotoğraflar ve adres doğrulaması zorunludur.", "marked fields, photos and address verification are required.")}
               </p>
             </div>
           )}
@@ -282,6 +308,8 @@ export function OnboardingPage() {
                   missing.push(`${t("Fotoğraf", "Photo")}: ${lang === "en" ? c.en : c.tr}`);
                 }
               }
+              if (!addressExact.trim()) missing.push(t("Yer adresi", "Place address"));
+              if (!proofAddress) missing.push(t("Adres kanıtı belgesi", "Proof of address document"));
             }
             if (isVolunteer && !volunteer.experience) missing.push(t("Çiftlik deneyimi (gönüllü)", "Farm experience (volunteer)"));
             if (missing.length === 0) return null;
@@ -299,7 +327,7 @@ export function OnboardingPage() {
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName.trim() || !country || !city.trim() || !bio.trim() || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos))) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName.trim() || !country || !city.trim() || !bio.trim() || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos) || !addressExact.trim() || !proofAddress)) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}

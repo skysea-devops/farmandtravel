@@ -11,7 +11,7 @@ import { GetMyProfile, SaveOnboardingDraft, UpdateProfile } from "../application
 // Uploaded keys are minted as `${kind}/${memberId}/${uuid}.ext` by /uploads/presign.
 // Before we store a key against a member we re-check the prefix so nobody can attach
 // (and later delete) another member's S3 object by passing a foreign key.
-function assertOwnsKey(memberId: string, kind: "avatar" | "gallery", key: string) {
+function assertOwnsKey(memberId: string, kind: "avatar" | "gallery" | "doc", key: string) {
   if (!key.startsWith(`${kind}/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
 }
 
@@ -90,6 +90,23 @@ membersRoutes.delete("/profile/photos/:id", auth, async (c) => {
   );
   if (!r.rowCount) return c.json({ error: "not_found" }, 404);
   try { await deleteObject(r.rows[0]!.s3_key); } catch { /* ignore */ }
+  return c.json({ ok: true });
+});
+
+// Adres doğrulama belgesi (host): yalnızca admin görür, profilde ASLA görünmez.
+// key, /uploads/presign kind="doc" ile alınır (resim veya PDF).
+const proofSchema = z.object({ key: z.string().min(1) });
+membersRoutes.post("/profile/proof-address", auth, async (c) => {
+  const { memberId } = currentUser(c);
+  const { key } = proofSchema.parse(await c.req.json());
+  assertOwnsKey(memberId, "doc", key);
+  // Eski belge varsa S3'ten sil.
+  const old = await query<{ proof_address_key: string | null }>(
+    "SELECT proof_address_key FROM members WHERE id=$1", [memberId],
+  );
+  const prev = old.rows[0]?.proof_address_key;
+  await query("UPDATE members SET proof_address_key=$2, updated_at=now() WHERE id=$1", [memberId, key]);
+  if (prev && prev !== key) { try { await deleteObject(prev); } catch { /* ignore */ } }
   return c.json({ ok: true });
 });
 
