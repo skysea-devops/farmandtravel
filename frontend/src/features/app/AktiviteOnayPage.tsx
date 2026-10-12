@@ -278,7 +278,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
           {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
           <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
-            ✉️ Uyar (uygulama içi)
+            ✉️ Mesaj gönder (uygulama içi)
           </button>
           {m.email && (
             <a href={`mailto:${m.email}`}
@@ -310,7 +310,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
       {warnOpen && (
         <form onSubmit={sendWarn} className="mt-2 flex items-end gap-2">
           <textarea value={warnBody} onChange={(e) => setWarnBody(e.target.value)} rows={2} maxLength={4000}
-            placeholder="Profilinde düzeltilmesi gerekenleri yaz… (Toprakla Yeniden adıyla gider)"
+            placeholder="Mesajını yaz… (Toprakla Yeniden adıyla gider — uyarı, hatırlatma vb.)"
             className="flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
           <Button type="submit" size="sm" disabled={busy || warnBody.trim().length < 1}>Gönder</Button>
         </form>
