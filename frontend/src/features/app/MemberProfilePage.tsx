@@ -138,45 +138,21 @@ export function MemberProfilePage() {
         </Block>
       )}
 
-      {!hostIsEmpty(m.host) && (
-        <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
-          <HostDetailsView host={m.host!} />
-        </Block>
-      )}
-
       {(() => {
-        const all = m.photos ?? [];
-        const hostPhotos = all.filter((p) => p.category);
-        const general = all.filter((p) => !p.category);
-        const tile = (ph: Photo) => ph.url && (
-          <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
-            <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
-          </a>
-        );
+        // Genel (kategorisiz) fotoğraflar burada; çiftlik rehberi + konaklama fotoğrafları
+        // en altta (değerlendirmelerden sonra) gösterilir.
+        const general = (m.photos ?? []).filter((p) => !p.category);
+        if (general.length === 0) return null;
         return (
-          <>
-            {hostPhotos.length > 0 && (
-              <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
-                <div className="space-y-4">
-                  {HOST_PHOTO_CATEGORIES.map((cat) => {
-                    const items = hostPhotos.filter((p) => p.category === cat.key);
-                    if (items.length === 0) return null;
-                    return (
-                      <div key={cat.key}>
-                        <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
-                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{items.map(tile)}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Block>
-            )}
-            {general.length > 0 && (
-              <Block title={t("Fotoğraflar", "Photos")}>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{general.map(tile)}</div>
-              </Block>
-            )}
-          </>
+          <Block title={t("Fotoğraflar", "Photos")}>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {general.map((ph) => ph.url && (
+                <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+                  <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+                </a>
+              ))}
+            </div>
+          </Block>
         );
       })()}
 
@@ -197,6 +173,40 @@ export function MemberProfilePage() {
       })}
 
       <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
+
+      {/* Çiftlik rehberi + konaklama fotoğrafları: en altta, değerlendirmelerden sonra. */}
+      {!hostIsEmpty(m.host) && (
+        <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
+          <HostDetailsView host={m.host!} />
+        </Block>
+      )}
+
+      {(() => {
+        const hostPhotos = (m.photos ?? []).filter((p) => p.category);
+        if (hostPhotos.length === 0) return null;
+        return (
+          <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
+            <div className="space-y-4">
+              {HOST_PHOTO_CATEGORIES.map((cat) => {
+                const items = hostPhotos.filter((p) => p.category === cat.key);
+                if (items.length === 0) return null;
+                return (
+                  <div key={cat.key}>
+                    <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {items.map((ph) => ph.url && (
+                        <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+                          <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Block>
+        );
+      })()}
 
       <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
         {t("👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı kabul edildikten sonra görünür.", "👁️ Contact details (email, phone, full address) are visible only after a mutual connection is accepted.")}
