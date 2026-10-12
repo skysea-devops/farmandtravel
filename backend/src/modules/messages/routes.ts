@@ -51,7 +51,11 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
   const q = (c.req.query("q") ?? "").trim();
   const where: string[] = ["m.is_official = false"];
   const params: unknown[] = [];
-  if (ROSTER_STATUSES.includes(status)) {
+  if (status === "pending_review") {
+    // Profilini bitirmiş ama henüz admin onayından geçmemiş üyeler (Keşfet'te görünmezler).
+    where.push("m.status IN ('profile_complete','active')");
+    where.push("m.approved_at IS NULL");
+  } else if (ROSTER_STATUSES.includes(status)) {
     params.push(status);
     where.push(`m.status = $${params.length}`);
   }
@@ -65,20 +69,24 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
   const rows = await query<{
     id: string; cognito_sub: string; first_name: string | null; last_name: string | null;
     contact_email: string | null; city: string | null; country: string | null;
-    status: string; plan: string; created_at: string; connections: number;
+    status: string; plan: string; created_at: string; approved_at: string | null; connections: number;
   }>(
     `SELECT m.id, m.cognito_sub, m.first_name, m.last_name, m.contact_email, m.city, m.country,
-            m.status, m.plan, m.created_at,
+            m.status, m.plan, m.created_at, m.approved_at,
             (SELECT count(*)::int FROM connections c
                WHERE c.status = 'accepted' AND (c.requester_id = m.id OR c.addressee_id = m.id)) AS connections
        FROM members m
       WHERE ${where.join(" AND ")}
-      ORDER BY m.created_at DESC
+      ORDER BY (m.approved_at IS NULL AND m.status IN ('profile_complete','active')) DESC, m.created_at DESC
       LIMIT 500`,
     params,
   );
   const sum = await query<{ status: string; n: number }>(
     `SELECT status, count(*)::int AS n FROM members WHERE is_official = false GROUP BY status`,
+  );
+  const pending = await query<{ n: number }>(
+    `SELECT count(*)::int AS n FROM members
+      WHERE is_official = false AND approved_at IS NULL AND status IN ('profile_complete','active')`,
   );
   const s: Record<string, number> = {};
   for (const r of sum.rows) s[r.status] = r.n;
@@ -90,6 +98,7 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
       active: s.active ?? 0,
       suspended: s.suspended ?? 0,
       deleted: s.deleted ?? 0,
+      pendingReview: pending.rows[0]?.n ?? 0,
     },
     members: rows.rows.map((m) => ({
       id: m.id,
@@ -101,10 +110,33 @@ messagesRoutes.get("/admin/roster", auth, requireAdmin, async (c) => {
       country: m.country,
       status: m.status,
       plan: m.plan,
+      approvedAt: m.approved_at,
       connections: m.connections,
       createdAt: m.created_at,
     })),
   });
+});
+
+// Admin: bir üyeyi onayla → Keşfet'te görünür olur.
+messagesRoutes.post("/admin/members/:id/approve", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const r = await query(
+    "UPDATE members SET approved_at = now(), updated_at = now() WHERE id=$1 AND is_official=false RETURNING id",
+    [id],
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  return c.json({ ok: true });
+});
+
+// Admin: onayı geri al → üye Keşfet'ten düşer (örn. profilde sorun görülürse).
+messagesRoutes.post("/admin/members/:id/unapprove", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const r = await query(
+    "UPDATE members SET approved_at = NULL, updated_at = now() WHERE id=$1 AND is_official=false RETURNING id",
+    [id],
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  return c.json({ ok: true });
 });
 
 // Admin: message a single member from the official account (no connection needed).

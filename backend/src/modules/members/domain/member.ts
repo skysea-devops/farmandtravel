@@ -30,6 +30,7 @@ export interface MemberFull {
   profile: Record<string, unknown>;
   draft: Record<string, unknown>;
   joinedAt: string;
+  approved: boolean; // admin onayından geçti mi (Keşfet'te görünür mü)
   tags: MemberTag[];
 }
 

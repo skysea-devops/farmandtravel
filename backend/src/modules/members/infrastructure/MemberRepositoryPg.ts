@@ -51,6 +51,7 @@ export class MemberRepositoryPg implements MemberRepository {
       profile: m.profile ?? {},
       draft: m.draft ?? {},
       joinedAt: m.created_at,
+      approved: Boolean(m.approved_at),
       tags: await loadTags(id),
     };
   }

@@ -188,6 +188,9 @@ export const admin = {
   broadcast: (body: string) => api.post<{ recipients: number }>("/admin/broadcast", { body }),
   // Message a single member from the official account (warnings / rule reminders).
   message: (memberId: string, body: string) => api.post<{ connectionId: string }>("/admin/message", { memberId, body }),
+  // Approve a member → appears in Keşfet. Unapprove → pulled back out.
+  approveMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/approve`); api.invalidate(); return r; },
+  unapproveMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/unapprove`); api.invalidate(); return r; },
   // Search members by name/email to pick a recipient.
   searchMembers: <T>(q: string) => api.get<T>(`/admin/members?q=${encodeURIComponent(q)}`),
   // Full member roster with app-side status + join date (who signed up, who's stuck in onboarding).

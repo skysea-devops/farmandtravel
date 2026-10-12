@@ -14,6 +14,7 @@ export function AppLayout() {
   const [unread, setUnread] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [plan, setPlan] = useState<string>("");
+  const [inReview, setInReview] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the mobile menu whenever the route changes (i.e. after tapping an item).
@@ -45,6 +46,8 @@ export function AppLayout() {
       .then((p) => {
         setIsAdmin(!!p.isAdmin);
         setPlan(p.plan ?? "");
+        // Profilini bitirmiş ama admin onayından geçmemiş → Keşfet'te görünmez (inceleme).
+        setInReview((p.status === "profile_complete" || p.status === "active") && p.approved === false);
         if (p.status === "onboarding") navigate("/onboarding", { replace: true });
       })
       .catch(() => {});
@@ -151,6 +154,18 @@ export function AppLayout() {
         )}
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-6">
+          {inReview && (
+            <div className="mb-5 flex items-start gap-3 rounded-[var(--radius-lg)] border-l-4 border-clay-500 bg-clay-500/10 px-4 py-3 text-sm text-ink-700">
+              <span className="text-lg leading-none">⏳</span>
+              <div>
+                <b className="text-ink-900">{t("Profilin incelemede", "Your profile is under review")}</b>
+                <p className="mt-0.5">
+                  {t("Ekibimiz profilini kontrol ediyor. Onaylanınca Keşfet'te görünür ve diğer üyelerle eşleşmeye başlarsın. Bu sırada profilini düzenlemeye devam edebilirsin.",
+                     "Our team is reviewing your profile. Once approved, you'll appear in Discover and start matching with other members. You can keep editing your profile in the meantime.")}
+                </p>
+              </div>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

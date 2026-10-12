@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { Avatar } from "@/components/ui/Avatar";
@@ -31,6 +32,7 @@ export function AktiviteOnayPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("members");
+  const [pending, setPending] = useState(0);
 
   useEffect(() => {
     api.get<Profile>("/profile/me")
@@ -38,6 +40,11 @@ export function AktiviteOnayPage() {
       .catch(() => setIsAdmin(false))
       .finally(() => setLoading(false));
   }, []);
+
+  // Onay bekleyen üye sayısını sekme rozetinde göster.
+  const loadPending = () =>
+    adminApi.roster<RosterData>("pending_review", "").then((r) => setPending(r.summary.pendingReview)).catch(() => {});
+  useEffect(() => { if (isAdmin) loadPending(); }, [isAdmin]);
 
   if (loading) return <div className="py-16 text-center text-ink-500">Yükleniyor…</div>;
   if (!isAdmin) {
@@ -61,16 +68,19 @@ export function AktiviteOnayPage() {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              "-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition",
+              "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition",
               tab === t.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700",
             )}
           >
             {t.label}
+            {t.id === "members" && pending > 0 && (
+              <span className="grid min-w-5 place-items-center rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{pending}</span>
+            )}
           </button>
         ))}
       </div>
 
-      {tab === "members" && <MembersSection />}
+      {tab === "members" && <MembersSection onPendingChange={loadPending} />}
       {tab === "reviews" && <ReviewModerationCard />}
       {tab === "activities" && <ActivitiesSection />}
       {tab === "messages" && (
@@ -96,8 +106,9 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   deleted:          { label: "Silindi",                      cls: "bg-ink-500/10 text-ink-500" },
 };
 
-type RosterFilter = "" | "onboarding" | "profile_complete" | "active" | "suspended";
+type RosterFilter = "" | "pending_review" | "onboarding" | "profile_complete" | "active" | "suspended";
 const FILTERS: { id: RosterFilter; label: string }[] = [
+  { id: "pending_review", label: "Onay bekliyor" },
   { id: "", label: "Tümü" },
   { id: "onboarding", label: "Onboarding'de" },
   { id: "profile_complete", label: "Profil tamam" },
@@ -105,25 +116,31 @@ const FILTERS: { id: RosterFilter; label: string }[] = [
   { id: "suspended", label: "Askıda" },
 ];
 
-function MembersSection() {
+function MembersSection({ onPendingChange }: { onPendingChange: () => void }) {
   const [data, setData] = useState<RosterData | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [status, setStatus] = useState<RosterFilter>("");
+  const [status, setStatus] = useState<RosterFilter>("pending_review");
   const [q, setQ] = useState("");
   const seq = useRef(0);
 
-  useEffect(() => {
+  const reload = () => {
     const id = ++seq.current;
     setLoaded(false);
     const term = q.trim();
-    const t = setTimeout(() => {
-      adminApi.roster<RosterData>(status, term.length >= 2 ? term : "")
-        .then((r) => { if (id === seq.current) setData(r); })
-        .catch(() => { if (id === seq.current) setData(null); })
-        .finally(() => { if (id === seq.current) setLoaded(true); });
-    }, 250);
+    adminApi.roster<RosterData>(status, term.length >= 2 ? term : "")
+      .then((r) => { if (id === seq.current) setData(r); })
+      .catch(() => { if (id === seq.current) setData(null); })
+      .finally(() => { if (id === seq.current) setLoaded(true); });
+  };
+
+  useEffect(() => {
+    const t = setTimeout(reload, 250);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, q]);
+
+  // Onayla/geri al sonrası listeyi ve sekme rozetini tazele.
+  const afterAction = () => { reload(); onPendingChange(); };
 
   const sum = data?.summary;
 
@@ -132,15 +149,17 @@ function MembersSection() {
       <div className="mb-3">
         <h2 className="font-display text-lg font-semibold">Üyeler</h2>
         <p className="text-sm text-ink-500">
-          Kaydolan herkes — uygulama durumuyla birlikte. <b>Onboarding'de</b> olanlar e-postasını doğrulamış ama
-          profilini bitirmemiştir; bu yüzden Keşfet'te görünmezler. (Cognito'daki sub, kullanıcı adıyla eşleşir.)
+          Kaydolan herkes — uygulama durumuyla birlikte. <b>Onay bekliyor</b> olanlar profilini bitirmiş ama henüz
+          onaylanmamıştır; onaylayana kadar Keşfet'te görünmezler. Profilini incele, uygun değilse "Uyar" ile mesaj
+          at, uygunsa "Onayla"ya bas.
         </p>
       </div>
 
       {sum && (
         <div className="mb-4 flex flex-wrap gap-2 text-sm">
+          <Stat label="Onay bekliyor" n={sum.pendingReview} tone="clay" />
           <Stat label="Toplam" n={sum.total} />
-          <Stat label="Onboarding'de" n={sum.onboarding} tone="clay" />
+          <Stat label="Onboarding'de" n={sum.onboarding} />
           <Stat label="Profil tamam" n={sum.profileComplete} />
           <Stat label="Aktif" n={sum.active} tone="forest" />
           {sum.suspended > 0 && <Stat label="Askıda" n={sum.suspended} tone="red" />}
@@ -178,7 +197,7 @@ function MembersSection() {
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
-          {data.members.map((m) => <RosterRow key={m.id} m={m} />)}
+          {data.members.map((m) => <RosterRow key={m.id} m={m} onAction={afterAction} />)}
         </div>
       )}
     </div>
@@ -195,26 +214,87 @@ function Stat({ label, n, tone }: { label: string; n: number; tone?: "clay" | "f
   );
 }
 
-function RosterRow({ m }: { m: RosterMember }) {
+function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
   const meta = STATUS_META[m.status] ?? STATUS_META.onboarding;
   const name = [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz (profil yok)";
   const where = [m.city, m.country].filter(Boolean).join(", ");
+  // Profilini bitirmiş ama onaylanmamış → onay bekliyor.
+  const isPending = (m.status === "profile_complete" || m.status === "active") && !m.approvedAt;
+  const isLive = (m.status === "profile_complete" || m.status === "active") && !!m.approvedAt;
+
+  const [busy, setBusy] = useState(false);
+  const [warnOpen, setWarnOpen] = useState(false);
+  const [warnBody, setWarnBody] = useState("");
+  const [sent, setSent] = useState(false);
+
+  async function approve() {
+    setBusy(true);
+    try { await adminApi.approveMember(m.id); onAction(); }
+    finally { setBusy(false); }
+  }
+  async function unapprove() {
+    if (!confirm(`${name} Keşfet'ten kaldırılsın mı? (onay geri alınır)`)) return;
+    setBusy(true);
+    try { await adminApi.unapproveMember(m.id); onAction(); }
+    finally { setBusy(false); }
+  }
+  async function sendWarn(e: React.FormEvent) {
+    e.preventDefault();
+    if (warnBody.trim().length < 1) return;
+    setBusy(true);
+    try { await adminApi.message(m.id, warnBody.trim()); setSent(true); setWarnOpen(false); setWarnBody(""); }
+    finally { setBusy(false); }
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className={cn("truncate font-semibold", !m.firstName && "italic text-ink-400")}>{name}</span>
-          <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.cls)}>{meta.label}</span>
-          {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
+    <div className="px-4 py-3 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn("truncate font-semibold", !m.firstName && "italic text-ink-400")}>{name}</span>
+            {isPending
+              ? <span className="shrink-0 rounded-full bg-clay-500/15 px-2 py-0.5 text-[11px] font-semibold text-clay-600">⏳ Onay bekliyor</span>
+              : <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.cls)}>{meta.label}</span>}
+            {isLive && <span className="shrink-0 text-[11px] text-forest-600">✓ Keşfet'te</span>}
+            {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
+          </div>
+          <div className="mt-0.5 truncate text-xs text-ink-500">
+            {[m.email, where, `${m.connections} bağlantı`].filter(Boolean).join(" · ")}
+          </div>
+          <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
         </div>
-        <div className="mt-0.5 truncate text-xs text-ink-500">
-          {[m.email, where, `${m.connections} bağlantı`].filter(Boolean).join(" · ")}
+        <div className="shrink-0 text-right text-xs text-ink-500">{monthYear(m.createdAt, "tr")}</div>
+      </div>
+
+      {(isPending || isLive) && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Link to={`/app/uye/${m.id}`} target="_blank"
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            👁 Profili incele
+          </Link>
+          {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
+          <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
+            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
+            ✉️ Uyar
+          </button>
+          {isLive && (
+            <button type="button" onClick={unapprove} disabled={busy}
+              className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-500 transition hover:text-[#8a2f29]">
+              Keşfet'ten kaldır
+            </button>
+          )}
+          {sent && <span className="text-xs text-forest-600">✓ Mesaj gönderildi</span>}
         </div>
-        <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
-      </div>
-      <div className="shrink-0 text-right text-xs text-ink-500">
-        {monthYear(m.createdAt, "tr")}
-      </div>
+      )}
+
+      {warnOpen && (
+        <form onSubmit={sendWarn} className="mt-2 flex items-end gap-2">
+          <textarea value={warnBody} onChange={(e) => setWarnBody(e.target.value)} rows={2} maxLength={4000}
+            placeholder="Profilinde düzeltilmesi gerekenleri yaz… (Toprakla Yeniden adıyla gider)"
+            className="flex-1 rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-forest-600" />
+          <Button type="submit" size="sm" disabled={busy || warnBody.trim().length < 1}>Gönder</Button>
+        </form>
+      )}
     </div>
   );
 }

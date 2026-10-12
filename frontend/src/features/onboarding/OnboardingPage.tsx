@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
+import { HostPhotos, hostPhotosComplete } from "@/features/profile/HostPhotos";
 import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
-import type { Axis, InferResponse, TaxonomyItem } from "@/lib/types";
+import type { Axis, InferResponse, TaxonomyItem, Photo, Profile } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
 
@@ -81,6 +82,9 @@ export function OnboardingPage() {
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
   const [host, setHost] = useState<HostDetails>({});
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const loadPhotos = () => api.get<Profile>("/profile/me").then((p) => setPhotos(p.photos ?? [])).catch(() => {});
+  useEffect(() => { loadPhotos(); }, []);
   const [availability, setAvailability] = useState<Availability>({});
   const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
 
@@ -224,7 +228,13 @@ export function OnboardingPage() {
                    "You're offering a place — fill in your hosting details so volunteers know what to expect. Detailed profiles get more interest.")}
               </p>
               <HostDetailsForm value={host} onChange={setHost} />
-              <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar zorunludur.", "* fields are required.")}</p>
+
+              <div className="mt-5 border-t border-border pt-4">
+                <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
+                <HostPhotos photos={photos} onChange={loadPhotos} />
+              </div>
+
+              <p className="mt-3 text-xs text-ink-500">{t("* işaretli alanlar ve ⭐ fotoğraflar zorunludur.", "* fields and ⭐ photos are required.")}</p>
             </div>
           )}
 
@@ -246,7 +256,7 @@ export function OnboardingPage() {
 
           <Actions>
             <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && !hostRequiredComplete(host)) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button onClick={saveProfile} disabled={busy || !firstName || !country || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos))) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </Actions>
         </Panel>
       )}

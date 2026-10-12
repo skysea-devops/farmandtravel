@@ -97,6 +97,18 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
           <input className={inp} value={value.meals ?? ""} onChange={(e) => set({ meals: e.target.value })}
             placeholder={t("Örn: günde 3 öğün; alerji/özel beslenme notu", "E.g. 3 meals a day; allergy/dietary note")} />
         </Field>
+        <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+          <Field label={t("Minimum kalış süresi", "Minimum stay")}
+            hint={t("Gönüllüden beklenen en az süre.", "The least time you expect a volunteer to stay.")}>
+            <input className={inp} value={value.minStay ?? ""} onChange={(e) => set({ minStay: e.target.value })}
+              placeholder={t("Örn: en az 1 hafta", "E.g. at least 1 week")} />
+          </Field>
+          <Field label={t("Aynı anda max gönüllü", "Max volunteers at once")}
+            hint={t("Aynı dönemde kaç gönüllü ağırlayabilirsin.", "How many volunteers you can host at the same time.")}>
+            <input className={inp} value={value.maxVolunteers ?? ""} onChange={(e) => set({ maxVolunteers: e.target.value })}
+              placeholder={t("Örn: 2", "E.g. 2")} />
+          </Field>
+        </div>
         <Field label={t("Neler öğrenilebilir?", "What can volunteers learn?")}>
           <textarea rows={2} className={ta} value={value.learn ?? ""} onChange={(e) => set({ learn: e.target.value })}
             placeholder={t("Örn: ekmek, peynir, yoğurt, turşu yapımı; permakültür.", "E.g. making bread, cheese, yogurt, pickles; permaculture.")} />
@@ -194,6 +206,8 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
       {host.work && <Row label={t("Yapılacak işler", "The help")}><p className="whitespace-pre-wrap text-ink-700">{host.work}</p></Row>}
       {helpLabels.length > 0 && <Chips label={t("Yardım türleri", "Types of help")} items={helpLabels} />}
       {host.accommodation && <Row label={t("Konaklama", "Accommodation")}><p className="whitespace-pre-wrap text-ink-700">{host.accommodation}</p></Row>}
+      {host.minStay && <Row label={t("Minimum kalış", "Minimum stay")}><p className="text-ink-700">{host.minStay}</p></Row>}
+      {host.maxVolunteers && <Row label={t("Aynı anda max gönüllü", "Max volunteers at once")}><p className="text-ink-700">{host.maxVolunteers}</p></Row>}
       {amenLabels.length > 0 && <Chips label={t("Olanaklar", "Amenities")} items={amenLabels} />}
       {langLabels.length > 0 && <Chips label={t("Konuşulan diller", "Languages spoken")} items={langLabels} />}
       {(mealLabels.length > 0 || host.meals) && (

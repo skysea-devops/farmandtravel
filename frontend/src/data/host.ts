@@ -14,6 +14,8 @@ export interface HostDetails {
   mealTypes?: string[];   // yemek türü (MEAL_TYPES key'leri: vejetaryen/vegan/karışık)
   languages?: string[];   // konuşulan diller (LANGUAGES key'leri)
   wantsExperience?: "experienced" | "willing" | "any"; // aranan gönüllü deneyimi
+  minStay?: string;       // minimum kalış süresi (örn. "en az 1 hafta")
+  maxVolunteers?: string; // aynı anda ağırlanabilecek max gönüllü sayısı
   // --- Çiftlik rehberi şablonu (4 ana başlık) ---
   dailyRoutine?: RoutineRow[]; // 📅 günlük akış (saat opsiyonel)
   daysOff?: string;            // 🌿 izin günleri (düzen + ne yapılabilir)
@@ -102,6 +104,18 @@ export const WANTS_EXPERIENCE: LabeledKey[] = [
   { key: "experienced", tr: "Deneyimli gönüllü arıyorum", en: "Looking for experienced volunteers" },
   { key: "willing",     tr: "Deneyim şart değil, öğrenmeye istekli olsun", en: "No experience needed — willing to learn" },
   { key: "any",         tr: "Fark etmez", en: "Either is fine" },
+];
+
+// 📸 Host fotoğraf kategorileri (Worldpackers benzeri). required=true olanlar
+// onboarding'de zorunlu, diğerleri teşvik. category key'i member_photos.category'ye yazılır.
+export interface PhotoCategory extends LabeledKey { required?: boolean }
+export const HOST_PHOTO_CATEGORIES: PhotoCategory[] = [
+  { key: "farm_overview", icon: "🌄", tr: "Çiftlik/yer geneli", en: "Farm / place overview", required: true },
+  { key: "sleeping",      icon: "🛏️", tr: "Yatma yeri",         en: "Sleeping area",         required: true },
+  { key: "building",      icon: "🏠", tr: "Kalınacak bina",      en: "The building you'll stay in" },
+  { key: "kitchen",       icon: "🍳", tr: "Mutfak",              en: "Kitchen" },
+  { key: "toilet",        icon: "🚻", tr: "Tuvalet",             en: "Toilet" },
+  { key: "bathroom",      icon: "🚿", tr: "Banyo",               en: "Bathroom" },
 ];
 
 // Gönüllünün çiftlik deneyimi (gönüllü profilinde zorunlu)
