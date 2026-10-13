@@ -108,9 +108,7 @@ export function MemberProfilePage() {
           rehber sekmesinde; burada tekrar etmez. Tam set Fotoğraflar sekmesinde. */}
       {(() => {
         const withUrl = general.filter((p) => p.url);
-        // Hero yalnızca 2+ şahsi foto varsa. Tek foto (çoğu zaman profil benzeri bir
-        // selfie) banner yapılmaz; profil fotosu sadece avatarda kalır.
-        if (withUrl.length < 2) return null;
+        if (withUrl.length === 0) return null;
         const shown = withUrl.slice(0, 4);
         const extra = withUrl.length - shown.length;
         const [first, ...rest] = shown;
