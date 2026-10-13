@@ -10,12 +10,13 @@ import { api } from "@/lib/api";
 import type { PublicMember } from "@/lib/types";
 import { coordsFor } from "@/data/geo";
 import type { MapPin } from "./MembersMap";
+import { MAP_COLORS } from "./categories";
 
 // Leaflet is heavy; load it only when this page renders (keeps it out of the app bundle).
 const MembersMap = lazy(() => import("./MembersMap"));
 
-type Cat = "all" | "host" | "volunteer" | "other";
-const CAT_COLOR: Record<"host" | "volunteer" | "other", string> = { host: "#3a7d44", volunteer: "#e08a3c", other: "#9a9a90" };
+// "place" filtresi iki yer-sahibi kategorisini (aktif + idle) birlikte gösterir.
+type Cat = "all" | "place" | "volunteer" | "other";
 
 // Static (non-scrolling) photo strip for the Keşfet banner.
 const BANNER_IMAGES = ["/community/s1.jpg", "/community/s7.jpg", "/community/s4.jpg", "/community/s6.jpg"];
@@ -80,7 +81,8 @@ export function ExplorePage() {
   const results = useMemo(() => {
     const needle = q.toLocaleLowerCase("tr").trim();
     return all.filter((m) => {
-      if (cat !== "all" && m.category !== cat) return false;
+      if (cat === "place" && !(m.category === "host_active" || m.category === "host_idle")) return false;
+      if ((cat === "volunteer" || cat === "other") && m.category !== cat) return false;
       if (country && m.country !== country) return false;
       if (city && m.city !== city) return false;
       if (topic && !m.tags.some((t) => t.axis === "topic" && t.value === topic)) return false;
@@ -132,12 +134,19 @@ export function ExplorePage() {
       {/* filtreler */}
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div className="inline-flex flex-wrap gap-0.5 rounded-full bg-sand-200 p-0.5">
-          {(["all", "host", "volunteer", "other"] as Cat[]).map((d) => (
+          {(["all", "place", "volunteer", "other"] as Cat[]).map((d) => (
             <button key={d} onClick={() => setCat(d)}
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold ${cat === d ? "bg-surface shadow-sm" : "text-ink-700"}`}>
-              {d !== "all" && <span className="size-2.5 rounded-full" style={{ background: CAT_COLOR[d] }} />}
+              {d === "place" ? (
+                // yeşil + altın iki-ton: yer sahipleri (gönüllü arayan + aramayan)
+                <span className="size-2.5 rounded-full" style={{ background: `linear-gradient(135deg, ${MAP_COLORS.host_active} 50%, ${MAP_COLORS.host_idle} 50%)` }} />
+              ) : d === "volunteer" ? (
+                <span className="size-2.5 rounded-full" style={{ background: MAP_COLORS.volunteer }} />
+              ) : d === "other" ? (
+                <span className="size-2.5 rounded-full" style={{ background: MAP_COLORS.other }} />
+              ) : null}
               {d === "all" ? t("Tümü", "All")
-                : d === "host" ? t("Çiftlik / yer sahipleri", "Farm / place owners")
+                : d === "place" ? t("Çiftlik / yer sahipleri", "Farm / place owners")
                 : d === "volunteer" ? t("Gönüllüler", "Volunteers")
                 : t("Öğrenen & destekçiler", "Learners & supporters")}
             </button>

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { HandHelping, Gift, Trees, ClipboardCheck, House, Users, Clock, BedDouble, Utensils, TreePalm, Sprout, Star, CalendarClock, CalendarDays } from "lucide-react";
+import { HandHelping, Gift, Trees, ClipboardCheck, House, Users, Clock, BedDouble, Utensils, TreePalm, Sprout, Star, CalendarClock, CalendarDays, Images } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { HELP_ICONS, AMENITY_ICONS, MEAL_ICONS, AROUND_ICONS, RULE_ICONS, DomainIcon } from "@/lib/icons";
 import {
@@ -194,7 +194,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 // Gruplu, çizgi-ikonlu görünüm. Ana bölümler tam-genişlik ayıraçla ayrılır:
 // Ne yapacaksın · Sana neler sunuluyor · Bizimle deneyim · Gereksinimler · Ev kuralları.
-export function HostDetailsView({ host }: { host: HostDetails }) {
+export function HostDetailsView({ host, onSeePhotos }: { host: HostDetails; onSeePhotos?: () => void }) {
   const { t, lang } = useI18n();
   if (hostIsEmpty(host)) return null;
 
@@ -241,7 +241,16 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
         <GSection icon={Gift} title={t("Sana neler sunuluyor", "What you get")}>
           {(host.accommodation || host.meals || mealTypes.length > 0 || host.daysOff || host.learn) && (
             <div className="mb-5 divide-y divide-border">
-              {host.accommodation && <Fact icon={BedDouble} title={t("Konaklama", "Accommodation")} note={host.accommodation} />}
+              {host.accommodation && (
+                <Fact icon={BedDouble} title={t("Konaklama", "Accommodation")} note={host.accommodation}>
+                  {onSeePhotos && (
+                    <button type="button" onClick={onSeePhotos}
+                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[12.5px] font-medium text-forest-700 transition hover:border-forest-500">
+                      <Images size={14} strokeWidth={1.75} /> {t("Kalınacak yerin fotoğraflarını gör", "See photos of where you'll stay")}
+                    </button>
+                  )}
+                </Fact>
+              )}
               {(host.meals || mealTypes.length > 0) && (
                 <div className="flex gap-3.5 py-3.5">
                   <span className="mt-0.5 shrink-0 text-ink-400"><Utensils size={18} strokeWidth={1.75} /></span>
@@ -360,7 +369,7 @@ function GSection({ icon: Ic, title, hint, children }: { icon: LucideIcon; title
   );
 }
 
-function Fact({ icon: Ic, map, mapKey, title, note }: { icon?: LucideIcon; map?: Record<string, LucideIcon>; mapKey?: string; title: string; note?: string }) {
+function Fact({ icon: Ic, map, mapKey, title, note, children }: { icon?: LucideIcon; map?: Record<string, LucideIcon>; mapKey?: string; title: string; note?: string; children?: React.ReactNode }) {
   return (
     <div className="flex gap-3.5 py-3.5">
       <span className="mt-0.5 shrink-0 text-ink-400">
@@ -369,6 +378,7 @@ function Fact({ icon: Ic, map, mapKey, title, note }: { icon?: LucideIcon; map?:
       <div className="min-w-0">
         <div className="text-[14px] font-semibold text-ink-900">{title}</div>
         {note && <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink-600">{note}</p>}
+        {children}
       </div>
     </div>
   );
