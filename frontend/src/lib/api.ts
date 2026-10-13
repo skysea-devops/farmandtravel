@@ -205,6 +205,8 @@ export const admin = {
   // Askıya al / askıdan çıkar (girişte engellenir / geri açılır).
   suspendMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/suspend`); api.invalidate(); return r; },
   unsuspendMember: async (id: string) => { const r = await api.post(`/admin/members/${id}/unsuspend`); api.invalidate(); return r; },
+  // Üye ülke/şehir düzelt (ör. "Diğer" seçmiş üyeyi doğru ülkeye çek).
+  setLocation: async (id: string, country: string, city: string) => { const r = await api.post(`/admin/members/${id}/location`, { country, city }); api.invalidate(); return r; },
   // Host doğrulama bilgileri (adres + belge URL'si), yalnızca admin.
   verification: <T>(id: string) => api.get<T>(`/admin/members/${id}/verification`),
   // Şikayetler.

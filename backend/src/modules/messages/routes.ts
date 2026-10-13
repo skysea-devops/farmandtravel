@@ -182,6 +182,29 @@ messagesRoutes.post("/admin/members/:id/unsuspend", auth, requireAdmin, async (c
   return c.json({ ok: true });
 });
 
+// Admin: üye ülke/şehir düzelt — örn. onboarding'de "Diğer" seçmiş bir üyeyi
+// doğru ülkeye çekmek için. Boş string gönderilirse alan null yapılır.
+const locSchema = z.object({
+  country: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(80).optional(),
+});
+messagesRoutes.post("/admin/members/:id/location", auth, requireAdmin, async (c) => {
+  const id = c.req.param("id");
+  const { country, city } = locSchema.parse(await c.req.json());
+  if (country === undefined && city === undefined) return c.json({ error: "nothing_to_update" }, 400);
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (country !== undefined) { vals.push(country || null); sets.push(`country=$${vals.length}`); }
+  if (city !== undefined) { vals.push(city || null); sets.push(`city=$${vals.length}`); }
+  vals.push(id);
+  const r = await query(
+    `UPDATE members SET ${sets.join(", ")}, updated_at=now() WHERE id=$${vals.length} AND is_official=false RETURNING id`,
+    vals,
+  );
+  if (!r.rowCount) return c.json({ error: "not_found" }, 404);
+  return c.json({ ok: true });
+});
+
 // Admin: message a single member from the official account (no connection needed).
 const dmSchema = z.object({ memberId: z.string().uuid(), body: z.string().min(1).max(4000) });
 messagesRoutes.post("/admin/message", auth, requireAdmin, async (c) => {
