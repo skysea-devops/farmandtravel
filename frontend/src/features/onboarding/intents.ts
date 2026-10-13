@@ -76,6 +76,21 @@ export function derivedTags(intents: Set<string>, hasPlace: boolean): Sel[] {
   return out;
 }
 
+// Etiketlerden niyetleri geri kur (onboarding sonrası niyet düzenleme için).
+// derivedTags'in tersidir; onboarding yalnızca niyetten türeyen etiket yazdığı için
+// kayıpsızdır.
+export function intentsFromTags(tags: { axis: string; value: string }[]): { intents: Set<string>; hasPlace: boolean } {
+  const has = (axis: string, value: string) => tags.some((t) => t.axis === axis && t.value === value);
+  const intents = new Set<string>();
+  if (has("seek", "volunteers") || has("offer", "place-experience")) intents.add("host");
+  if (has("offer", "volunteer-labor") || has("seek", "hosting") || has("situation", "seeking-experience")) intents.add("volunteer");
+  if (has("seek", "knowledge")) intents.add("learn");
+  if (has("seek", "networking")) intents.add("activity");
+  if (has("offer", "equipment") || has("seek", "equipment")) intents.add("material");
+  if (has("seek", "partner") || has("offer", "partnership")) intents.add("support");
+  return { intents, hasPlace: has("situation", "farm-owner") };
+}
+
 // Türetilen bayraklar (wizard adımlarını ve zorunlulukları yönetir).
 export const flags = (intents: Set<string>, hasPlace: boolean | null) => ({
   wantsHost: intents.has("host"),

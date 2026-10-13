@@ -13,7 +13,7 @@ import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
-import { SKILLS, labelOf as skillLabel } from "@/features/onboarding/intents";
+import { SKILLS, INTENTS, derivedTags, intentsFromTags, labelOf as skillLabel } from "@/features/onboarding/intents";
 import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Profile } from "@/lib/types";
 
@@ -192,6 +192,7 @@ export function ProfilePage() {
       {/* --- İlgi & beceri --- */}
       {activeTab === "ilgi" && (
         <>
+          <IntentEditor tags={p.tags} onSaved={load} />
           {AXES.map((axis) => {
             const tags = p.tags.filter((tg) => tg.axis === axis);
             if (tags.length === 0) return null;
@@ -410,6 +411,72 @@ function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null })
           </ul>
         </>
       )}
+    </Block>
+  );
+}
+
+// Onboarding sonrası niyet düzenleme — "gönüllü ağırlamak"ı sonradan açabilir.
+// Yer sahibi olmak profili adres/mekân doğrulaması için tekrar incelemeye düşürür.
+function IntentEditor({ tags, onSaved }: { tags: { axis: Axis; value: string }[]; onSaved: () => void }) {
+  const { t, lang } = useI18n();
+  const init = intentsFromTags(tags);
+  const [sel, setSel] = useState<Set<string>>(init.intents);
+  const [hasPlace, setHasPlace] = useState(init.hasPlace);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const toggle = (k: string) => { const n = new Set(sel); n.has(k) ? n.delete(k) : n.add(k); setSel(n); setMsg(null); };
+  // "Gönüllü ağırlamak" seçmek yer sahibi olmayı gerektirir → otomatik işaretlenir.
+  const effectiveHasPlace = hasPlace || sel.has("host");
+
+  async function save() {
+    const derived = derivedTags(sel, effectiveHasPlace);
+    if (derived.length === 0) { setMsg(t("En az bir niyet seç.", "Pick at least one intent.")); return; }
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api.post<{ written: number; review: boolean }>("/profile/intents", { tags: derived });
+      api.invalidate();
+      onSaved();
+      setMsg(r.review
+        ? t("Kaydedildi. Yer sahibi olarak eklendiğin için profilin adres/mekân doğrulaması amacıyla tekrar incelemeye alındı — onaylanınca Keşfet'te host olarak görünürsün.",
+            "Saved. Since you've added hosting, your profile is back in review for address/place verification — once approved you'll appear as a host in Discover.")
+        : t("Kaydedildi.", "Saved."));
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <Block title={t("Ne için buradasın?", "Why are you here?")}>
+      <p className="mb-3 text-xs text-ink-500">{t("Birden fazla seçebilirsin. Değiştirince profilin ve eşleşmelerin buna göre güncellenir.", "Pick as many as apply. Changing this updates your profile and matches.")}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {INTENTS.map((it) => {
+          const on = sel.has(it.key);
+          return (
+            <button key={it.key} type="button" onClick={() => toggle(it.key)}
+              className={cn("flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm transition",
+                on ? "border-forest-600 bg-forest-600/5" : "border-border-strong bg-surface hover:border-forest-500")}>
+              <span className="text-lg">{it.icon}</span>
+              <span className={cn("font-medium", on ? "text-forest-700" : "text-ink-700")}>{lang === "en" ? it.en : it.tr}</span>
+              {on && <span className="ml-auto text-forest-600">✓</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <label className={cn("mt-3 flex items-center gap-2 text-sm", sel.has("host") && "opacity-70")}>
+        <input type="checkbox" checked={effectiveHasPlace} disabled={sel.has("host")}
+          onChange={(e) => setHasPlace(e.target.checked)} />
+        <span>{t("Bir yerim/çiftliğim var", "I have a place/farm")}</span>
+      </label>
+      {sel.has("host") && (
+        <p className="mt-1 text-xs text-ink-500">{t("\"Gönüllü ağırlamak\" seçtiğin için yer sahipliği otomatik işaretlendi.", "\"Host volunteers\" requires a place, so this was set automatically.")}</p>
+      )}
+
+      <div className="mt-4 flex items-center gap-3">
+        <Button size="sm" disabled={busy} onClick={save}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+        {msg && <span className="text-sm text-ink-600">{msg}</span>}
+      </div>
     </Block>
   );
 }

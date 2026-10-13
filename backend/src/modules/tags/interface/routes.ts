@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { query } from "../../../shared/db/pool.js";
 import { auth, currentUser } from "../../../shared/http/auth.js";
 import { TaxonomyRepositoryPg } from "../infrastructure/TaxonomyRepositoryPg.js";
 import { makeTagInferrer } from "../infrastructure/TagInferrer.js";
@@ -43,4 +44,27 @@ tagsRoutes.post("/onboarding/tags/confirm", auth, async (c) => {
   const { tags } = confirmSchema.parse(await c.req.json());
   const res = await confirmTags.execute(memberId, tags);
   return c.json(res);
+});
+
+// Onboarding sonrası niyet güncelleme (ör. "gönüllü ağırlamak"ı sonradan açma).
+// member_tags'i yeniden yazar. Üye YENİ yer sahibi oluyorsa (situation:farm-owner
+// eklenmişse) adres/mekân doğrulaması için profili tekrar admin onayına düşürür.
+tagsRoutes.post("/profile/intents", auth, async (c) => {
+  const { memberId } = currentUser(c);
+  const { tags } = confirmSchema.parse(await c.req.json());
+  const before = await query<{ axis: string; value: string }>(
+    "SELECT axis, value FROM member_tags WHERE member_id=$1", [memberId],
+  );
+  const wasPlaceOwner = before.rows.some((r) => r.axis === "situation" && r.value === "farm-owner");
+  const res = await confirmTags.execute(memberId, tags);
+  const nowPlaceOwner = tags.some((t) => t.axis === "situation" && t.value === "farm-owner");
+  let review = false;
+  if (nowPlaceOwner && !wasPlaceOwner) {
+    const r = await query(
+      "UPDATE members SET approved_at = NULL, updated_at = now() WHERE id=$1 AND is_official=false AND approved_at IS NOT NULL RETURNING id",
+      [memberId],
+    );
+    review = (r.rowCount ?? 0) > 0;
+  }
+  return c.json({ ...res, review });
 });
