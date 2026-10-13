@@ -246,9 +246,12 @@ export function MemberProfilePage() {
       {/* --- Çiftlik rehberi (gruplu) + konaklama fotoğrafları --- */}
       {activeTab === "rehber" && (
         <>
-          {!hostIsEmpty(m.host) && <HostDetailsView host={m.host!} />}
+          {!hostIsEmpty(m.host) && (
+            <HostDetailsView host={m.host!}
+              onSeePhotos={hostPhotos.length > 0 ? () => document.getElementById("konaklama-fotograflari")?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined} />
+          )}
           {hostPhotos.length > 0 && (
-            <section className={hostIsEmpty(m.host) ? "" : "mt-10 border-t border-border pt-8"}>
+            <section id="konaklama-fotograflari" className={hostIsEmpty(m.host) ? "" : "mt-10 scroll-mt-4 border-t border-border pt-8"}>
               <div className="mb-4 flex items-center gap-3">
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-sand-100 text-forest-700"><Images size={18} strokeWidth={1.75} /></span>
                 <h3 className="font-display text-[19px] font-semibold text-ink-900">{t("Konaklama fotoğrafları", "Accommodation photos")}</h3>
