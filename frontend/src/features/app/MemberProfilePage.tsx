@@ -82,7 +82,11 @@ export function MemberProfilePage() {
   const isHost = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner") || (tg.axis === "seek" && tg.value === "volunteers"));
   const isVolunteer = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "volunteer-labor") || (tg.axis === "situation" && tg.value === "seeking-experience") || (tg.axis === "seek" && tg.value === "hosting"));
 
-  const general = (m.photos ?? []).filter((p) => !p.category);
+  // Profil fotoğrafı (avatar) yalnızca avatarda görünür. Aynı görsel galeriye de
+  // yüklenmişse hero'da/Fotoğraflar'da tekrar etmesin diye dışla (presigned URL'in
+  // sorgu öncesi yol kısmı aynıysa aynı dosyadır).
+  const avatarPath = m.avatarUrl ? m.avatarUrl.split("?")[0] : null;
+  const general = (m.photos ?? []).filter((p) => !p.category && !(avatarPath && p.url && p.url.split("?")[0] === avatarPath));
   const hostPhotos = (m.photos ?? []).filter((p) => p.category);
   const hasGuide = !hostIsEmpty(m.host) || hostPhotos.length > 0;
   const hasCalendar = !availabilityEmpty(m.availability);

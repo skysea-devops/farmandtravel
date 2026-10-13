@@ -3,6 +3,8 @@
 // centroid; unknown country -> null (not pinned). A small deterministic jitter keeps
 // multiple pins in the same place from stacking exactly on top of each other.
 
+import { COUNTRIES } from "./countries";
+
 type LatLng = [number, number];
 
 const norm = (s: string | null | undefined) => (s ?? "").toLocaleLowerCase("tr").trim();
@@ -40,18 +42,18 @@ const CITY: Record<string, LatLng> = {
   viyana: [48.21, 16.37], londra: [51.51, -0.13], london: [51.51, -0.13],
 };
 
-const COUNTRY: Record<string, LatLng> = {
-  türkiye: [39.0, 35.0], turkiye: [39.0, 35.0], turkey: [39.0, 35.0],
-  portekiz: [39.5, -8.0], portugal: [39.5, -8.0],
-  almanya: [51.0, 10.0], germany: [51.0, 10.0],
-  ispanya: [40.0, -3.7], "i̇spanya": [40.0, -3.7], spain: [40.0, -3.7],
-  italya: [42.8, 12.8], "i̇talya": [42.8, 12.8], italy: [42.8, 12.8],
-  hollanda: [52.2, 5.3], netherlands: [52.2, 5.3],
-  yunanistan: [39.0, 22.0], greece: [39.0, 22.0],
-  fransa: [46.6, 2.2], france: [46.6, 2.2],
-  avusturya: [47.6, 14.1], austria: [47.6, 14.1],
-  "i̇ngiltere": [52.5, -1.5], ingiltere: [52.5, -1.5], "birleşik krallık": [52.5, -1.5], uk: [52.5, -1.5],
-};
+// Tüm ülkeler countries.ts'ten (TR + EN adıyla). Yaygın takma adlar da elle eklenir.
+const COUNTRY: Record<string, LatLng> = {};
+for (const c of COUNTRIES) {
+  COUNTRY[norm(c.tr)] = [c.lat, c.lng];
+  COUNTRY[norm(c.en)] = [c.lat, c.lng];
+}
+// Takma adlar / eski yazımlar.
+Object.assign(COUNTRY, {
+  turkey: [39.0, 35.0], turkiye: [39.0, 35.0],
+  "i̇spanya": [40.0, -3.7], "i̇talya": [42.8, 12.8],
+  "i̇ngiltere": [52.5, -1.5], ingiltere: [52.5, -1.5], uk: [52.5, -1.5], "united states of america": [37.1, -95.7], usa: [37.1, -95.7],
+} satisfies Record<string, LatLng>);
 
 // Small deterministic offset from an id so co-located pins don't overlap exactly.
 function jitter(seed: string, amp: number): LatLng {

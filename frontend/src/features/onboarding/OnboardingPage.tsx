@@ -9,6 +9,7 @@ import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
+import { countryNames } from "@/data/countries";
 import type { HostDetails } from "@/data/host";
 import { HOST_PHOTO_CATEGORIES } from "@/data/host";
 import type { Photo, Profile } from "@/lib/types";
@@ -61,7 +62,7 @@ export function OnboardingPage() {
   useEffect(() => { loadMe(); }, []);
 
   const f = flags(intents, hasPlace);
-  const COUNTRIES = [t("Türkiye", "Türkiye"), t("Portekiz", "Portugal"), t("Almanya", "Germany"), t("İspanya", "Spain"), t("İtalya", "Italy"), t("Hollanda", "Netherlands"), t("Diğer", "Other")];
+  const COUNTRIES = [...countryNames(lang), t("Diğer", "Other")];
 
   // ---- adımlar ----
   type StepDef = { id: string; label: string; enabled: boolean };
