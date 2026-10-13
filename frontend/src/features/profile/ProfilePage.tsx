@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
+import { cn } from "@/lib/cn";
 import { api, reviews as reviewsApi, activities as actApi, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
@@ -12,10 +13,12 @@ import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
+import { SKILLS, labelOf as skillLabel } from "@/features/onboarding/intents";
 import type { HostDetails } from "@/data/host";
-import type { Axis, ActivityEligibility, MyReviewsData, Photo, Profile } from "@/lib/types";
+import type { Axis, ActivityEligibility, MyReviewsData, Profile } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
+type TabId = "genel" | "ilgi" | "iletisim" | "takvim" | "rehber" | "foto" | "dogrulama" | "degerlendirme";
 
 export function ProfilePage() {
   const { t, lang } = useI18n();
@@ -27,35 +30,30 @@ export function ProfilePage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<TabId>("genel");
   const avatarInput = useRef<HTMLInputElement>(null);
-  const galleryInput = useRef<HTMLInputElement>(null);
 
-  // Editable private contact details (revealed only on an accepted connection).
   const emptyContact = { lastName: "", contactEmail: "", phone: "", employer: "", addressExact: "", instagram: "", website: "" };
   const [contact, setContact] = useState(emptyContact);
   const [cBusy, setCBusy] = useState(false);
   const [cMsg, setCMsg] = useState<string | null>(null);
 
-  // Host (çiftlik/yer sahibi) ağırlama detayları — yalnızca yer sunanlara gösterilir.
   const [host, setHost] = useState<HostDetails>({});
   const [hBusy, setHBusy] = useState(false);
   const [hMsg, setHMsg] = useState<string | null>(null);
 
-  // Müsaitlik (tarih aralığı) — host/gönüllü için.
   const [availability, setAvailability] = useState<Availability>({});
   const [aBusy, setABusy] = useState(false);
   const [aMsg, setAMsg] = useState<string | null>(null);
 
-  // Gönüllü deneyimi.
   const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
-  const [vBusy, setVBusy] = useState(false);
-  const [vMsg, setVMsg] = useState<string | null>(null);
+  const [skills, setSkills] = useState<Set<string>>(new Set());
+  const [skillsNote, setSkillsNote] = useState("");
+  const [ivBusy, setIvBusy] = useState(false);
+  const [ivMsg, setIvMsg] = useState<string | null>(null);
 
-  // My reviews: received (drives the rating by my name) + written.
   const [rev, setRev] = useState<MyReviewsData | null>(null);
   useEffect(() => { reviewsApi.me<MyReviewsData>().then(setRev).catch(() => {}); }, []);
-
-  // Activity-sharing eligibility (personal progress lives here, not on the public page).
   const [elig, setElig] = useState<ActivityEligibility | null>(null);
   useEffect(() => { actApi.eligibility<ActivityEligibility>().then(setElig).catch(() => {}); }, []);
 
@@ -69,128 +67,75 @@ export function ProfilePage() {
           employer: data.employer ?? "", addressExact: data.addressExact ?? "",
           instagram: s.instagram ?? "", website: s.website ?? "",
         });
-        setHost(((data.profile ?? {}) as { host?: HostDetails }).host ?? {});
-        setAvailability(((data.profile ?? {}) as { availability?: Availability }).availability ?? {});
-        setVolunteer(((data.profile ?? {}) as { volunteer?: VolunteerDetails }).volunteer ?? {});
+        const prof = (data.profile ?? {}) as Record<string, unknown>;
+        setHost((prof.host as HostDetails) ?? {});
+        setAvailability((prof.availability as Availability) ?? {});
+        setVolunteer((prof.volunteer as VolunteerDetails) ?? {});
+        setSkills(new Set((prof.skills as string[]) ?? []));
+        setSkillsNote((prof.skillsNote as string) ?? "");
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }
   useEffect(load, []);
 
+  const mergeProfile = (patch: Record<string, unknown>) => ({ ...((p?.profile ?? {}) as Record<string, unknown>), ...patch });
+
   async function saveContact(e: React.FormEvent) {
-    e.preventDefault();
-    setCBusy(true); setCMsg(null);
+    e.preventDefault(); setCBusy(true); setCMsg(null);
     try {
       await api.put("/profile", {
-        lastName: contact.lastName || undefined,
-        contactEmail: contact.contactEmail || undefined,
-        phone: contact.phone || undefined,
-        employer: contact.employer || undefined,
+        lastName: contact.lastName || undefined, contactEmail: contact.contactEmail || undefined,
+        phone: contact.phone || undefined, employer: contact.employer || undefined,
         addressExact: contact.addressExact || undefined,
         socials: { instagram: contact.instagram, website: contact.website },
       });
-      api.invalidate("/profile/me");
-      setCMsg(t("Kaydedildi.", "Saved."));
-    } catch (e) {
-      setCMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
-    } finally {
-      setCBusy(false);
-    }
+      api.invalidate("/profile/me"); setCMsg(t("Kaydedildi.", "Saved."));
+    } catch (e) { setCMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save.")); } finally { setCBusy(false); }
   }
-
   async function saveHost() {
     setHBusy(true); setHMsg(null);
-    try {
-      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), host } });
-      api.invalidate("/profile/me");
-      setHMsg(t("Kaydedildi.", "Saved."));
-    } catch (e) {
-      setHMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
-    } finally {
-      setHBusy(false);
-    }
+    try { await api.put("/profile", { profile: mergeProfile({ host }) }); api.invalidate("/profile/me"); setHMsg(t("Kaydedildi.", "Saved.")); }
+    catch (e) { setHMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save.")); } finally { setHBusy(false); }
   }
-
   async function saveAvailability() {
     setABusy(true); setAMsg(null);
-    try {
-      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), availability } });
-      api.invalidate("/profile/me");
-      setAMsg(t("Kaydedildi.", "Saved."));
-    } catch (e) {
-      setAMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
-    } finally {
-      setABusy(false);
-    }
+    try { await api.put("/profile", { profile: mergeProfile({ availability }) }); api.invalidate("/profile/me"); setAMsg(t("Kaydedildi.", "Saved.")); }
+    catch (e) { setAMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save.")); } finally { setABusy(false); }
   }
-
-  async function saveVolunteer() {
-    setVBusy(true); setVMsg(null);
+  async function saveInterests() {
+    setIvBusy(true); setIvMsg(null);
     try {
-      await api.put("/profile", { profile: { ...((p?.profile ?? {}) as Record<string, unknown>), volunteer } });
-      api.invalidate("/profile/me");
-      setVMsg(t("Kaydedildi.", "Saved."));
-    } catch (e) {
-      setVMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
-    } finally {
-      setVBusy(false);
-    }
+      await api.put("/profile", { profile: mergeProfile({ skills: [...skills], skillsNote: skillsNote.trim(), ...(volunteer.experience ? { volunteer } : {}) }) });
+      api.invalidate("/profile/me"); setIvMsg(t("Kaydedildi.", "Saved."));
+    } catch (e) { setIvMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save.")); } finally { setIvBusy(false); }
   }
-
   async function onAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBusy(true);
-    try {
-      const key = await uploadImage(file, "avatar");
-      await api.put("/profile", { avatarKey: key });
-      api.invalidate();
-      load();
-    } catch (e) { alert(e instanceof Error ? e.message : t("Yükleme hatası", "Upload error")); }
+    const file = e.target.files?.[0]; if (!file) return; setBusy(true);
+    try { const key = await uploadImage(file, "avatar"); await api.put("/profile", { avatarKey: key }); api.invalidate(); load(); }
+    catch (e) { alert(e instanceof Error ? e.message : t("Yükleme hatası", "Upload error")); }
     finally { setBusy(false); if (avatarInput.current) avatarInput.current.value = ""; }
-  }
-
-  async function onGallery(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setBusy(true);
-    try {
-      for (const file of files) {
-        const key = await uploadImage(file, "gallery");
-        await api.post("/profile/photos", { key });
-      }
-      api.invalidate();
-      load();
-    } catch (e) { alert(e instanceof Error ? e.message : t("Yükleme hatası", "Upload error")); }
-    finally { setBusy(false); if (galleryInput.current) galleryInput.current.value = ""; }
-  }
-
-  async function removePhoto(id: string) {
-    setBusy(true);
-    try { await api.del(`/profile/photos/${id}`); api.invalidate(); load(); }
-    catch (e) { alert(e instanceof Error ? e.message : t("Silme hatası", "Delete error")); }
-    finally { setBusy(false); }
   }
 
   if (loading) return <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>;
   if (err) return <div className="py-16 text-center text-ink-700">{t("Profil yüklenemedi:", "Couldn't load profile:")} {err}</div>;
   if (!p) return null;
 
-  const photos = p.photos ?? [];
-  const generalPhotos = photos.filter((ph) => !ph.category); // kategorisiz (genel) galeri
-  const isHost = p.tags.some(
-    (tg) =>
-      (tg.axis === "offer" && tg.value === "place-experience") ||
-      (tg.axis === "situation" && tg.value === "farm-owner") ||
-      (tg.axis === "seek" && tg.value === "volunteers"),
-  );
-  const isVolunteer = p.tags.some(
-    (tg) =>
-      (tg.axis === "offer" && tg.value === "volunteer-labor") ||
-      (tg.axis === "situation" && tg.value === "seeking-experience") ||
-      (tg.axis === "seek" && tg.value === "hosting"),
-  );
+  const isPlaceOwner = p.tags.some((tg) => tg.axis === "situation" && tg.value === "farm-owner");
+  const wantsVolunteers = p.tags.some((tg) => (tg.axis === "seek" && tg.value === "volunteers") || (tg.axis === "offer" && tg.value === "place-experience"));
+  const isVolunteer = p.tags.some((tg) => (tg.axis === "offer" && tg.value === "volunteer-labor") || (tg.axis === "situation" && tg.value === "seeking-experience") || (tg.axis === "seek" && tg.value === "hosting"));
+
+  const TABS: { id: TabId; label: string }[] = [
+    { id: "genel", label: t("Genel", "Overview") },
+    { id: "ilgi", label: t("İlgi & beceri", "Interests & skills") },
+    { id: "iletisim", label: t("İletişim", "Contact") },
+    ...(wantsVolunteers || isVolunteer ? [{ id: "takvim" as TabId, label: t("Takvim", "Calendar") }] : []),
+    ...(wantsVolunteers ? [{ id: "rehber" as TabId, label: t("Çiftlik rehberi", "Farm guide") }] : []),
+    { id: "foto", label: t("Fotoğraflar", "Photos") },
+    ...(isPlaceOwner ? [{ id: "dogrulama" as TabId, label: t("Doğrulama", "Verification") }] : []),
+    { id: "degerlendirme", label: t("Değerlendirmeler", "Reviews") },
+  ];
+  const activeTab = TABS.some((x) => x.id === tab) ? tab : "genel";
 
   return (
     <div className="max-w-3xl">
@@ -201,7 +146,8 @@ export function ProfilePage() {
         </div>
       )}
 
-      <div className="mb-6 flex items-center gap-4">
+      {/* Başlık */}
+      <div className="mb-5 flex items-center gap-4">
         <div className="relative">
           <Avatar url={p.avatarUrl} className="size-20" />
           <button onClick={() => avatarInput.current?.click()} disabled={busy}
@@ -215,93 +161,106 @@ export function ProfilePage() {
           {p.joinedAt && <div className="mt-0.5 text-xs text-ink-400">🗓️ {t("Üye:", "Member since")} {monthYear(p.joinedAt, lang)}</div>}
           {rev && rev.received.summary.count > 0 && (
             <div className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-600">
-              <Stars value={rev.received.summary.avg} />
-              <span className="font-semibold">{rev.received.summary.avg}</span>
+              <Stars value={rev.received.summary.avg} /><span className="font-semibold">{rev.received.summary.avg}</span>
               <span className="text-ink-500">({rev.received.summary.count} {t("değerlendirme", "reviews")})</span>
             </div>
           )}
         </div>
       </div>
 
-      {p.bio && <Block title={t("Hakkımda", "About me")}><p className="text-sm text-ink-700">{p.bio}</p></Block>}
+      {/* Sekmeler */}
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
+        {TABS.map((x) => (
+          <button key={x.id} onClick={() => setTab(x.id)}
+            className={cn("-mb-px whitespace-nowrap border-b-2 px-3.5 py-2 text-sm font-medium transition",
+              activeTab === x.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700")}>
+            {x.label}
+          </button>
+        ))}
+      </div>
 
-      <Block title={t("Fotoğraflarım", "My photos")}>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {generalPhotos.map((ph: Photo) => (
-            <div key={ph.id} className="group relative aspect-square overflow-hidden rounded-lg bg-sand-100">
-              {ph.url && <img src={ph.url} alt="" className="h-full w-full object-cover" />}
-              <button onClick={() => removePhoto(ph.id)} disabled={busy}
-                className="absolute right-1 top-1 hidden size-6 place-items-center rounded-full bg-black/50 text-xs text-white group-hover:grid"
-                title={t("Sil", "Delete")}>✕</button>
-            </div>
-          ))}
-          {photos.length < 20 && (
-            <button onClick={() => galleryInput.current?.click()} disabled={busy}
-              className="grid aspect-square place-items-center rounded-lg border-2 border-dashed border-border-strong text-ink-500 hover:border-forest-500 hover:text-forest-600">
-              <span className="text-center text-xs">{busy ? "…" : t("+ Fotoğraf", "+ Photo")}</span>
-            </button>
-          )}
-        </div>
-        <input ref={galleryInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={onGallery} />
-        <p className="mt-2 text-xs text-ink-500">{t("Çiftliğinden, projenden ya da kendinden fotoğraflar ekle (en fazla 12).", "Add photos of your farm, project or yourself (up to 12).")}</p>
-      </Block>
-
-      {AXES.map((axis) => {
-        const tags = p.tags.filter((tg) => tg.axis === axis);
-        if (tags.length === 0) return null;
-        return (
-          <Block key={axis} title={AXIS_LABEL[axis]}>
-            <div className="flex flex-wrap gap-2">{tags.map((tg) => <Tag key={tg.value} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}</div>
+      {/* --- Genel --- */}
+      {activeTab === "genel" && (
+        <>
+          <Block title={t("Hakkımda", "About me")}>
+            {p.bio ? <p className="text-sm text-ink-700">{p.bio}</p> : <p className="text-sm text-ink-400">{t("Henüz tanıtım eklenmedi. Onboarding'den düzenleyebilirsin.", "No intro yet.")}</p>}
           </Block>
-        );
-      })}
-
-      {isHost && (
-        <Block title={t("Ev sahibi detayları (konaklama & ağırlama)", "Host details (accommodation & hosting)")}>
-          <p className="mb-3 text-xs text-ink-500">
-            {t("Yer sunuyorsun — bu bilgiler profilinde herkese görünür ve gönüllülerin karar vermesine yardımcı olur.",
-               "You offer a place — these show publicly on your profile and help volunteers decide.")}
-          </p>
-          <HostDetailsForm value={host} onChange={setHost} />
-          <div className="mt-4 flex items-center gap-3">
-            <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
-            {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
-          </div>
-
-          <div className="mt-6 border-t border-border pt-4">
-            <h3 className="font-display mb-2 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
-            <HostPhotos photos={photos} onChange={load} />
-          </div>
-
-          <div className="mt-6 border-t border-border pt-4">
-            <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📍 Adres doğrulama", "📍 Address verification")}</h3>
-            <p className="mb-3 text-[13px] text-ink-500">
-              {t("Açık adresini aşağıdaki \"İletişim bilgileri\" bölümüne gir (yalnızca bağlantılarınla paylaşılır). Ardından bir adres kanıtı belgesi (fatura, tapu, kira sözleşmesi) yükle — profilinde görünmez, yalnızca ekip doğrulama için görür.",
-                 "Enter your full address in the \"Contact details\" section below (shared only with your connections). Then upload a proof-of-address document (utility bill, deed, rental contract) — it doesn't appear on your profile, only the team sees it for verification.")}
-            </p>
-            <ProofUpload done={!!p.proofAddress} onChange={load} />
-          </div>
-        </Block>
+          <ActivityEligibilityCard elig={elig} />
+        </>
       )}
 
-      {isVolunteer && (
-        <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
-          <p className="mb-3 text-xs text-ink-500">{t("Ev sahipleri için görünür; uygun eşleşmeyi bulmaya yardımcı olur.", "Shown to hosts; helps find the right match.")}</p>
-          <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
-          <div className="mt-4 flex items-center gap-3">
-            <Button size="sm" disabled={vBusy || !volunteer.experience} onClick={saveVolunteer}>{vBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
-            {vMsg && <span className="text-sm text-ink-600">{vMsg}</span>}
-          </div>
-        </Block>
+      {/* --- İlgi & beceri --- */}
+      {activeTab === "ilgi" && (
+        <>
+          {AXES.map((axis) => {
+            const tags = p.tags.filter((tg) => tg.axis === axis);
+            if (tags.length === 0) return null;
+            return (
+              <Block key={axis} title={AXIS_LABEL[axis]}>
+                <div className="flex flex-wrap gap-2">{tags.map((tg) => <Tag key={tg.value} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}</div>
+              </Block>
+            );
+          })}
+          {isVolunteer && (
+            <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+              <p className="mb-3 text-xs text-ink-500">{t("Ev sahipleri için görünür; uygun eşleşmeyi bulmaya yardımcı olur.", "Shown to hosts; helps find the right match.")}</p>
+              <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
+            </Block>
+          )}
+          <Block title={t("Beceriler", "Skills")}>
+            <div className="flex flex-wrap gap-2">
+              {SKILLS.map((s) => {
+                const on = skills.has(s.key);
+                return (
+                  <button key={s.key} type="button" onClick={() => { const n = new Set(skills); n.has(s.key) ? n.delete(s.key) : n.add(s.key); setSkills(n); }}
+                    className={cn("rounded-full border px-3 py-1.5 text-[13.5px] transition", on ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500")}>
+                    {skillLabel(SKILLS, s.key, lang)}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="mt-4 block text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("Listede olmayan bir şey mi var?", "Something not in the list?")}</span>
+              <textarea className={cinp + " resize-y"} rows={2} value={skillsNote} onChange={(e) => setSkillsNote(e.target.value)} placeholder={t("Kısaca ekle…", "Add briefly…")} />
+            </label>
+            <div className="mt-4 flex items-center gap-3">
+              <Button size="sm" disabled={ivBusy} onClick={saveInterests}>{ivBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+              {ivMsg && <span className="text-sm text-ink-600">{ivMsg}</span>}
+            </div>
+          </Block>
+        </>
       )}
 
-      {(isHost || isVolunteer) && (
-        <Block title={t("📅 Müsaitlik / tarihler", "📅 Availability / dates")}>
-          <p className="mb-3 text-xs text-ink-500">
-            {t("Opsiyonel ama eşleşme için çok yardımcı olur. Profilinde görünür.",
-               "Optional but very helpful for matching. Shown on your profile.")}
-          </p>
-          <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(isHost, isVolunteer, t)} />
+      {/* --- İletişim --- */}
+      {activeTab === "iletisim" && (
+        <>
+          <Block title={t("İletişim bilgileri", "Contact details")}>
+            <p className="mb-3 text-xs text-ink-500">{t("Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.", "These details are visible only to people whose connection you've mutually accepted.")}</p>
+            <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
+              <CField label={t("Soyad", "Last name")} value={contact.lastName} onChange={(v) => setContact({ ...contact, lastName: v })} />
+              <CField label={t("İletişim e-postası", "Contact email")} type="email" value={contact.contactEmail} onChange={(v) => setContact({ ...contact, contactEmail: v })} />
+              <CField label={t("Telefon", "Phone")} value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
+              <CField label={t("İş yeri / çiftlik", "Workplace / farm")} value={contact.employer} onChange={(v) => setContact({ ...contact, employer: v })} />
+              <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder={t("@kullanici", "@handle")} />
+              <CField label={t("Web sitesi", "Website")} value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
+              <div className="sm:col-span-2"><CField label={t("Adres", "Address")} value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} /></div>
+              <div className="flex items-center gap-3 sm:col-span-2">
+                <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+                {cMsg && <span className="text-sm text-ink-600">{cMsg}</span>}
+              </div>
+            </form>
+          </Block>
+          <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
+            {t("👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.", "👁️ Before connecting, others see only your name, city/country, photos and tags. Your contact details stay private.")}
+          </div>
+        </>
+      )}
+
+      {/* --- Takvim --- */}
+      {activeTab === "takvim" && (
+        <Block title={t("📅 Takvim / müsaitlik", "📅 Calendar / availability")}>
+          <p className="mb-3 text-xs text-ink-500">{t("Opsiyonel ama eşleşme için çok yardımcı olur. Profilinde görünür.", "Optional but very helpful for matching. Shown on your profile.")}</p>
+          <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(wantsVolunteers, isVolunteer, t)} />
           <div className="mt-4 flex items-center gap-3">
             <Button size="sm" disabled={aBusy} onClick={saveAvailability}>{aBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
             {aMsg && <span className="text-sm text-ink-600">{aMsg}</span>}
@@ -309,32 +268,43 @@ export function ProfilePage() {
         </Block>
       )}
 
-      <MyReviews data={rev} />
-
-      <ActivityEligibilityCard elig={elig} />
-
-      <Block title={t("İletişim bilgileri", "Contact details")}>
-        <p className="mb-3 text-xs text-ink-500">{t("Bu bilgiler yalnızca bir bağlantı isteğini karşılıklı kabul ettiğin kişilere görünür.", "These details are visible only to people whose connection you've mutually accepted.")}</p>
-        <form onSubmit={saveContact} className="grid gap-3 sm:grid-cols-2">
-          <CField label={t("Soyad", "Last name")} value={contact.lastName} onChange={(v) => setContact({ ...contact, lastName: v })} />
-          <CField label={t("İletişim e-postası", "Contact email")} type="email" value={contact.contactEmail} onChange={(v) => setContact({ ...contact, contactEmail: v })} />
-          <CField label={t("Telefon", "Phone")} value={contact.phone} onChange={(v) => setContact({ ...contact, phone: v })} />
-          <CField label={t("İş yeri / çiftlik", "Workplace / farm")} value={contact.employer} onChange={(v) => setContact({ ...contact, employer: v })} />
-          <CField label="Instagram" value={contact.instagram} onChange={(v) => setContact({ ...contact, instagram: v })} placeholder={t("@kullanici", "@handle")} />
-          <CField label={t("Web sitesi", "Website")} value={contact.website} onChange={(v) => setContact({ ...contact, website: v })} placeholder="https://" />
-          <div className="sm:col-span-2">
-            <CField label={t("Adres", "Address")} value={contact.addressExact} onChange={(v) => setContact({ ...contact, addressExact: v })} />
+      {/* --- Çiftlik rehberi --- */}
+      {activeTab === "rehber" && (
+        <Block title={t("Çiftlik rehberi (konaklama & ağırlama)", "Farm guide (accommodation & hosting)")}>
+          <p className="mb-3 text-xs text-ink-500">{t("Yer sunuyorsun — bu bilgiler profilinde herkese görünür ve gönüllülerin karar vermesine yardımcı olur.", "You offer a place — these show publicly and help volunteers decide.")}</p>
+          <HostDetailsForm value={host} onChange={setHost} />
+          <div className="mt-4 flex items-center gap-3">
+            <Button size="sm" disabled={hBusy} onClick={saveHost}>{hBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
+            {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
           </div>
-          <div className="flex items-center gap-3 sm:col-span-2">
-            <Button type="submit" size="sm" disabled={cBusy}>{cBusy ? t("Kaydediliyor…", "Saving…") : t("Kaydet", "Save")}</Button>
-            {cMsg && <span className="text-sm text-ink-600">{cMsg}</span>}
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="font-display mb-2 text-[15px] font-semibold text-forest-700">{t("📸 Ağırlama fotoğrafları", "📸 Accommodation photos")}</h3>
+            <HostPhotos photos={p.photos ?? []} onChange={load} />
           </div>
-        </form>
-      </Block>
+        </Block>
+      )}
 
-      <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
-        {t("👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.", "👁️ Before connecting, others see only your name, city/country, photos and tags. Your contact details stay private.")}
-      </div>
+      {/* --- Fotoğraflar (genel) --- */}
+      {activeTab === "foto" && (
+        <Block title={t("Fotoğraflarım", "My photos")}>
+          <p className="mb-3 text-xs text-ink-500">{t("Profilini güzel gösteren fotoğraflar — kendinden, deneyimlerinden. Herkese açık profilinde görünür.", "Photos that make your profile shine. Shown on your public profile.")}</p>
+          <HostPhotos photos={p.photos ?? []} onChange={load} generalOnly />
+        </Block>
+      )}
+
+      {/* --- Doğrulama --- */}
+      {activeTab === "dogrulama" && (
+        <Block title={t("📍 Adres doğrulama", "📍 Address verification")}>
+          <p className="mb-3 text-[13px] text-ink-500">
+            {t("Açık adresini \"İletişim\" sekmesine gir (yalnızca bağlantılarınla paylaşılır). Ardından bir adres kanıtı belgesi (fatura, tapu, kira sözleşmesi) yükle — profilinde görünmez, yalnızca ekip doğrulama için görür. Belge zorunlu değil; onayda gerekirse istenir.",
+               "Enter your full address in the \"Contact\" tab (shared only with your connections). Then upload a proof-of-address document (utility bill, deed, rental contract) — it never shows on your profile, only the team sees it. The document isn't required; it may be requested during review.")}
+          </p>
+          <ProofUpload done={!!p.proofAddress} onChange={load} />
+        </Block>
+      )}
+
+      {/* --- Değerlendirmeler --- */}
+      {activeTab === "degerlendirme" && <MyReviews data={rev} />}
     </div>
   );
 }
@@ -357,8 +327,6 @@ const reviewState = (t: (tr: string, en: string) => string): Record<string, { la
   removed: { label: t("Kaldırıldı", "Removed"), cls: "bg-sand-100 text-ink-400" },
 });
 
-// My reviews on my own profile: "Hakkımdaki" (received) + "Yazdıklarım" (written),
-// as two tabs — the pattern Airbnb / Couchsurfing / Workaway use on your own page.
 function MyReviews({ data }: { data: MyReviewsData | null }) {
   const { t } = useI18n();
   const REVIEW_STATE = reviewState(t);
@@ -370,45 +338,30 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
   const list = tab === "received" ? received : written;
 
   const TabBtn = ({ id, label }: { id: "received" | "written"; label: string }) => (
-    <button
-      type="button"
-      onClick={() => setTab(id)}
-      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition ${
-        tab === id ? "bg-forest-600 text-white" : "text-ink-700 hover:bg-sand-100"
-      }`}
-    >
-      {label}
-    </button>
+    <button type="button" onClick={() => setTab(id)}
+      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition ${tab === id ? "bg-forest-600 text-white" : "text-ink-700 hover:bg-sand-100"}`}>{label}</button>
   );
 
   return (
     <Block title={t("Değerlendirmelerim", "My reviews")}>
       {data.received.summary.count > 0 && (
         <div className="mb-3 flex items-center gap-2 text-sm text-ink-600">
-          <Stars value={data.received.summary.avg} className="text-base" />
-          <span className="font-semibold">{data.received.summary.avg}</span>
+          <Stars value={data.received.summary.avg} className="text-base" /><span className="font-semibold">{data.received.summary.avg}</span>
           <span className="text-ink-500">/ 5 · {data.received.summary.count} {t("değerlendirme", "reviews")}</span>
         </div>
       )}
-
       <div className="mb-4 flex gap-1.5">
         <TabBtn id="received" label={`${t("Hakkımdaki", "About me")} (${received.length})`} />
         <TabBtn id="written" label={`${t("Yazdıklarım", "Written by me")} (${written.length})`} />
       </div>
-
       {tab === "received" && data.pendingReceived > 0 && (
         <div className="mb-3 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-3 py-2 text-[13px] text-[#2c5462]">
-          {t(
-            `🔒 ${data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.`,
-            `🔒 ${data.pendingReceived} review(s) are waiting for you. Reviews are mutual; they'll appear once you review the other person too (or after 15 days).`,
-          )}
+          {t(`🔒 ${data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.`,
+             `🔒 ${data.pendingReceived} review(s) are waiting for you. Reviews are mutual; they'll appear once you review the other person too (or after 15 days).`)}
         </div>
       )}
-
       {list.length === 0 ? (
-        <p className="text-sm text-ink-500">
-          {tab === "received" ? t("Henüz görünür bir değerlendirmen yok.", "You have no visible reviews yet.") : t("Henüz kimseyi değerlendirmedin.", "You haven't reviewed anyone yet.")}
-        </p>
+        <p className="text-sm text-ink-500">{tab === "received" ? t("Henüz görünür bir değerlendirmen yok.", "You have no visible reviews yet.") : t("Henüz kimseyi değerlendirmedin.", "You haven't reviewed anyone yet.")}</p>
       ) : (
         <div className="space-y-3">
           {tab === "received"
@@ -429,13 +382,9 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
                   <Avatar url={r.reviewee.avatarUrl} className="size-9" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Link to={`/app/uye/${r.reviewee.id}`} className="text-sm font-semibold hover:underline">
-                        {r.reviewee.firstName ?? t("Bir üye", "A member")}
-                      </Link>
+                      <Link to={`/app/uye/${r.reviewee.id}`} className="text-sm font-semibold hover:underline">{r.reviewee.firstName ?? t("Bir üye", "A member")}</Link>
                       <Stars value={r.rating} />
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${REVIEW_STATE[r.state]?.cls ?? ""}`}>
-                        {REVIEW_STATE[r.state]?.label ?? r.state}
-                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${REVIEW_STATE[r.state]?.cls ?? ""}`}>{REVIEW_STATE[r.state]?.label ?? r.state}</span>
                     </div>
                     {r.comment && <p className="text-sm text-ink-700">{r.comment}</p>}
                   </div>
@@ -447,11 +396,9 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
   );
 }
 
-// Personal activity-sharing progress (moved here from the public Aktiviteler page).
 function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null }) {
   const { t } = useI18n();
-  if (!elig) return null;
-  if (elig.isAdmin) return null; // admins zaten doğrudan paylaşır
+  if (!elig || elig.isAdmin) return null;
   return (
     <Block title={t("Aktivite paylaşımı", "Sharing activities")}>
       {elig.canSubmit ? (
@@ -460,15 +407,9 @@ function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null })
         <>
           <p className="mb-2 text-sm text-ink-600">{t("Aktivite paylaşabilmek için:", "To share activities:")}</p>
           <ul className="ml-4 list-disc space-y-0.5 text-sm">
-            <li className={elig.connections >= elig.need.connections ? "text-forest-600" : "text-ink-700"}>
-              {t(`En az ${elig.need.connections} bağlantı — sende ${elig.connections}`, `At least ${elig.need.connections} connections — you have ${elig.connections}`)}
-            </li>
-            <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : "text-ink-700"}>
-              {t(`En az ${elig.need.rating.toFixed(1)} ortalama puan — sende ${elig.ratingAvg}`, `At least ${elig.need.rating.toFixed(1)} average rating — you have ${elig.ratingAvg}`)}
-            </li>
-            <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : "text-ink-700"}>
-              {t(`En az ${elig.need.reviews} değerlendirme — sende ${elig.ratingCount}`, `At least ${elig.need.reviews} reviews — you have ${elig.ratingCount}`)}
-            </li>
+            <li className={elig.connections >= elig.need.connections ? "text-forest-600" : "text-ink-700"}>{t(`En az ${elig.need.connections} bağlantı — sende ${elig.connections}`, `At least ${elig.need.connections} connections — you have ${elig.connections}`)}</li>
+            <li className={elig.ratingAvg >= elig.need.rating ? "text-forest-600" : "text-ink-700"}>{t(`En az ${elig.need.rating.toFixed(1)} ortalama puan — sende ${elig.ratingAvg}`, `At least ${elig.need.rating.toFixed(1)} average rating — you have ${elig.ratingAvg}`)}</li>
+            <li className={elig.ratingCount >= elig.need.reviews ? "text-forest-600" : "text-ink-700"}>{t(`En az ${elig.need.reviews} değerlendirme — sende ${elig.ratingCount}`, `At least ${elig.need.reviews} reviews — you have ${elig.ratingCount}`)}</li>
           </ul>
         </>
       )}
