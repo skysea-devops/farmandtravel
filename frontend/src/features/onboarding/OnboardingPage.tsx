@@ -1,355 +1,371 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { api } from "@/lib/api";
+import { api, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { HostDetailsForm, hostRequiredComplete } from "@/features/profile/HostDetails";
-import { HostPhotos, hostPhotosComplete } from "@/features/profile/HostPhotos";
+import { cn } from "@/lib/cn";
+import { HostDetailsForm } from "@/features/profile/HostDetails";
+import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
-import { AvailabilityField, availabilityLabel, availabilityEmpty, type Availability } from "@/features/profile/Availability";
+import { AvailabilityField, availabilityEmpty, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import type { HostDetails } from "@/data/host";
 import { HOST_PHOTO_CATEGORIES } from "@/data/host";
-import type { Axis, InferResponse, TaxonomyItem, Photo, Profile } from "@/lib/types";
+import type { Photo, Profile } from "@/lib/types";
+import { INTENTS, PLACE_TYPES, SKILLS, derivedTags, flags } from "./intents";
 
-const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
-
-type Sel = { axis: Axis; value: string };
+interface Place { name?: string; type?: string; location?: string }
 
 export function OnboardingPage() {
   const nav = useNavigate();
   const { t, lang } = useI18n();
-  const [step, setStep] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
-  const SITUATIONS = [
-    t("Bir yerim/çiftliğim var", "I have land/a farm"),
-    t("Bir projem/fikrim var", "I have a project/idea"),
-    t("İleride kendi çiftliğimi kuracağım", "I'll start my own farm one day"),
-    t("Deneyim/gönüllülük arıyorum", "Looking for experience/volunteering"),
-    t("Uzmanlık sunuyorum", "I offer expertise"),
-    t("Öğrenmek istiyorum", "I want to learn"),
-  ];
-  const SEEK_PICKS = [
-    t("Gönüllü arıyorum", "Looking for volunteers"),
-    t("Mentor arıyorum", "Looking for a mentor"),
-    t("Bilgi öğrenmek istiyorum", "Want to learn skills"),
-    t("Ortak arıyorum", "Looking for a partner"),
-    t("Ekipman arıyorum", "Looking for equipment"),
-    t("Networking", "Networking"),
-    t("Finansal destekçi arıyorum", "Looking for a backer"),
-    t("Konaklama fırsatı arıyorum", "Looking for a place to stay"),
-    t("Çiftlik hayatını deneyimlemek istiyorum", "Want to experience farm life"),
-    t("Eğitim/atölye arıyorum", "Looking for workshops/training"),
-    t("Araç/lojistik arıyorum", "Looking for vehicle/logistics support"),
-    t("Yurt dışına açığım", "Open to abroad / international"),
-  ];
-  const OFFER_PICKS = [
-    t("Yer & deneyim sunuyorum", "Offering a place & experience"),
-    t("Gönüllü olmak istiyorum", "Want to volunteer"),
-    t("Uzmanlık sunuyorum", "Offering expertise"),
-    t("Mentorluk yapabilirim", "Can mentor"),
-    t("Ortaklık kurabilirim", "Open to partnership"),
-    t("Ekipman sağlayabilirim", "Can provide equipment"),
-    t("Finansal destek olabilirim", "Can offer financial support"),
-    t("Eğitim/atölye veriyorum", "Offering workshops/training"),
-    t("Araç/lojistik sağlayabilirim", "Offering vehicle/logistics support"),
-  ];
-  const COUNTRIES = [
-    t("Türkiye", "Türkiye"), t("Portekiz", "Portugal"), t("Almanya", "Germany"),
-    t("İspanya", "Spain"), t("İtalya", "Italy"), t("Hollanda", "Netherlands"), t("Diğer", "Other"),
-  ];
-  const AXIS_LABEL: Record<Axis, string> = {
-    situation: t("Durumum", "My situation"),
-    seek: t("Aradıklarım", "What I'm looking for"),
-    offer: t("Sunduklarım", "What I offer"),
-    topic: t("İlgi alanlarım", "My interests"),
-  };
-
-  // survey
-  const [situation, setSituation] = useState<string[]>([]);
-  const [seekText, setSeekText] = useState("");
-  const [offerText, setOfferText] = useState("");
-  const [seekPicks, setSeekPicks] = useState<string[]>([]);
-  const [offerPicks, setOfferPicks] = useState<string[]>([]);
-
-  // ai result + confirmed tags
-  const [taxonomy, setTaxonomy] = useState<TaxonomyItem[]>([]);
-  const [selected, setSelected] = useState<Sel[]>([]);
-
-  // profile
+  // Temel
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarKey, setAvatarKey] = useState<string | null>(null);
+  const [avatarUp, setAvatarUp] = useState(false);
+  // Niyet & yer
+  const [intents, setIntents] = useState<Set<string>>(new Set());
+  const [hasPlace, setHasPlace] = useState<boolean | null>(null);
+  const [place, setPlace] = useState<Place>({});
+  // İletişim
+  const [phone, setPhone] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [website, setWebsite] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  // Host
   const [host, setHost] = useState<HostDetails>({});
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [addressExact, setAddressExact] = useState("");
   const [proofAddress, setProofAddress] = useState(false);
+  // Beceri / gönüllü / takvim
+  const [skills, setSkills] = useState<Set<string>>(new Set());
+  const [skillsNote, setSkillsNote] = useState("");
+  const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
+  const [availability, setAvailability] = useState<Availability>({});
+
+  const [step, setStep] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
   const loadMe = () => api.get<Profile>("/profile/me").then((p) => {
     setPhotos(p.photos ?? []);
     setProofAddress(!!p.proofAddress);
     if (p.addressExact) setAddressExact((a) => a || p.addressExact!);
   }).catch(() => {});
   useEffect(() => { loadMe(); }, []);
-  const [availability, setAvailability] = useState<Availability>({});
-  const [volunteer, setVolunteer] = useState<VolunteerDetails>({});
 
-  // Yer sunan / gönüllü arayan (çiftlik/yer sahibi) ise ayrıntılı ağırlama bölümünü göster.
-  const isHost = selected.some(
-    (s) =>
-      (s.axis === "offer" && s.value === "place-experience") ||
-      (s.axis === "situation" && s.value === "farm-owner") ||
-      (s.axis === "seek" && s.value === "volunteers"),
-  );
-  // Gönüllü/deneyim arayan.
-  const isVolunteer = selected.some(
-    (s) =>
-      (s.axis === "offer" && s.value === "volunteer-labor") ||
-      (s.axis === "situation" && s.value === "seeking-experience") ||
-      (s.axis === "seek" && s.value === "hosting"),
-  );
+  const f = flags(intents, hasPlace);
+  const COUNTRIES = [t("Türkiye", "Türkiye"), t("Portekiz", "Portugal"), t("Almanya", "Germany"), t("İspanya", "Spain"), t("İtalya", "Italy"), t("Hollanda", "Netherlands"), t("Diğer", "Other")];
 
-  const toggle = (arr: string[], set: (v: string[]) => void, v: string) =>
-    set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  // ---- adımlar ----
+  type StepDef = { id: string; label: string; enabled: boolean };
+  const STEPS: StepDef[] = [
+    { id: "intro", label: t("Seni yakından tanıyalım", "Let's get to know you"), enabled: true },
+    { id: "intent", label: t("Ne yapmak istersin?", "What do you want to do?"), enabled: true },
+    { id: "contact", label: t("İletişim", "Contact"), enabled: true },
+    { id: "place", label: t("Yer profili", "Place profile"), enabled: f.hasPlace },
+    { id: "guide", label: t("Çiftlik rehberi & fotoğraflar", "Farm guide & photos"), enabled: f.wantsHost },
+    { id: "verify", label: t("Adres & doğrulama", "Address & verification"), enabled: f.hasPlace },
+    { id: "skills", label: t("İlgi & beceri", "Interests & skills"), enabled: true },
+    { id: "calendar", label: t("Takvim", "Calendar"), enabled: f.needsCalendar },
+    { id: "photos", label: t("Fotoğraflar", "Photos"), enabled: true },
+  ];
+  const enabledSteps = STEPS.filter((s) => s.enabled);
+  const current = enabledSteps[Math.min(step, enabledSteps.length - 1)];
+  const curId = current.id;
 
-  const taxLabel = (x: TaxonomyItem) => (lang === "en" ? x.labelEn : x.labelTr);
-  const labelFor = (s: Sel) => {
-    const found = taxonomy.find((x) => x.axis === s.axis && x.value === s.value);
-    return found ? taxLabel(found) : s.value;
-  };
-
-  async function runInfer() {
-    setBusy(true); setErr(null);
-    try {
-      const quickPicks = [...situation, ...seekPicks, ...offerPicks];
-      const freeText = [seekText, offerText, situation.join(" ")].join(" ").trim();
-      await api.post("/onboarding/draft", { draft: { situation, seekPicks, offerPicks, seekText, offerText } });
-      const res = await api.post<InferResponse>("/tags/infer", { freeText, quickPicks });
-      setTaxonomy(res.taxonomy);
-      setSelected(res.suggestions.map((s) => ({ axis: s.axis, value: s.value })));
-      setStep(1);
-    } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
+  function stepMissing(id: string): string[] {
+    const m: string[] = [];
+    if (id === "intro") {
+      if (!firstName.trim()) m.push(t("Ad", "First name"));
+      if (!country) m.push(t("Ülke", "Country"));
+      if (!city.trim()) m.push(t("Şehir", "City"));
+      if (!bio.trim()) m.push(t("Kısa tanıtım", "Short intro"));
+    } else if (id === "intent") {
+      if (intents.size === 0) m.push(t("En az bir niyet seçimi", "At least one intent"));
+      if (hasPlace === null) m.push(t('"Bir yerin var mı?" sorusu', '"Do you have a place?"'));
+    } else if (id === "contact" && f.contactRequired) {
+      if (!lastName.trim()) m.push(t("Soyad", "Last name"));
+      if (!phone.trim()) m.push(t("Telefon", "Phone"));
+      if (!instagram.trim()) m.push(t("Sosyal medya", "Social media"));
+    } else if (id === "place") {
+      if (!place.name?.trim()) m.push(t("Yerin adı", "Place name"));
+      if (!place.type) m.push(t("Yer türü", "Place type"));
+      if (!place.location?.trim()) m.push(t("Genel konum", "General location"));
+    } else if (id === "guide") {
+      if (!host.work?.trim()) m.push(t("Kısa özet / yapılacak işler", "Short summary / the help"));
+      if (!(host.helpTypes?.length)) m.push(t("Yardım türleri", "Types of help"));
+      if (!host.accommodation?.trim()) m.push(t("Konaklama", "Accommodation"));
+      for (const c of HOST_PHOTO_CATEGORIES) {
+        if (c.required && !photos.some((p) => p.category === c.key)) m.push(`${t("Fotoğraf", "Photo")}: ${lang === "en" ? c.en : c.tr}`);
+      }
+    } else if (id === "verify") {
+      if (f.needsAddress && !addressExact.trim()) m.push(t("Açık adres", "Full address"));
+    } else if (id === "skills") {
+      if (f.isVolunteer && !volunteer.experience) m.push(t("Çiftlik deneyimi (gönüllü)", "Farm experience (volunteer)"));
+    }
+    return m;
   }
 
-  async function confirmTags() {
-    setBusy(true); setErr(null);
-    try {
-      await api.post("/onboarding/tags/confirm", { tags: selected });
-      setStep(2);
-    } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
+  async function onAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return;
+    setAvatarUp(true);
+    try { setAvatarKey(await uploadImage(file, "avatar")); } catch { /* ignore */ }
+    finally { setAvatarUp(false); if (e.target) e.target.value = ""; }
   }
 
-  async function saveProfile() {
+  async function finish() {
     setBusy(true); setErr(null);
     try {
-      const profile: Record<string, unknown> = { situation };
-      if (isHost) profile.host = host;
-      if (isVolunteer && volunteer.experience) profile.volunteer = volunteer;
+      const socials: Record<string, string> = {};
+      if (instagram.trim()) socials.instagram = instagram.trim();
+      if (website.trim()) socials.website = website.trim();
+      const profile: Record<string, unknown> = {
+        intents: [...intents],
+        hasPlace: hasPlace === true,
+        skills: [...skills],
+      };
+      if (skillsNote.trim()) profile.skillsNote = skillsNote.trim();
+      if (f.hasPlace) profile.place = place;
+      if (f.wantsHost) profile.host = host;
+      if (f.isVolunteer && volunteer.experience) profile.volunteer = volunteer;
       if (!availabilityEmpty(availability)) profile.availability = availability;
-      await api.put("/profile", { firstName, country, city, bio, profile, ...(isHost ? { addressExact } : {}) });
-      setStep(3);
+
+      await api.put("/profile", {
+        firstName, lastName: lastName || null, country, city, bio,
+        ...(avatarKey ? { avatarKey } : {}),
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+        ...(contactEmail.trim() ? { contactEmail: contactEmail.trim() } : {}),
+        ...(Object.keys(socials).length ? { socials } : {}),
+        ...(f.hasPlace ? { addressExact } : {}),
+        profile,
+      });
+      await api.post("/onboarding/tags/confirm", { tags: derivedTags(intents, hasPlace === true) });
+      api.invalidate();
+      setDone(true);
     } catch (e) { setErr(errMsg(e, t)); } finally { setBusy(false); }
   }
 
-  const addOptions = (axis: Axis) =>
-    taxonomy.filter((x) => x.axis === axis && !selected.some((s) => s.axis === axis && s.value === x.value));
+  function goNext() {
+    if (step < enabledSteps.length - 1) setStep(step + 1);
+    else finish();
+  }
+  function goBack() { if (step > 0) setStep(step - 1); }
+
+  // step index güvenliği (adımlar açılıp kapandıkça)
+  useEffect(() => { if (step > enabledSteps.length - 1) setStep(enabledSteps.length - 1); }, [enabledSteps.length, step]);
+
+  if (done) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16">
+        <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center">
+          <div className="mb-2 text-4xl">🎉</div>
+          <h1 className="font-display text-2xl font-semibold">{t("Profilin hazır!", "Your profile is ready!")}</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-ink-600">
+            {t("Ekibimiz profilini kısa sürede inceleyecek; onaylanınca Keşfet'te görünür ve eşleşmeye başlarsın. O zamana dek gezinmeye başlayabilirsin.",
+               "Our team will review your profile shortly; once approved you'll appear in Discover and start matching. Meanwhile you can start exploring.")}
+          </p>
+          <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
+            <div className="font-display text-base font-semibold text-forest-700">{t("🌱 Öncü üye · Ücretsiz", "🌱 Founding member · Free")}</div>
+            <p className="mt-1 text-sm text-ink-700">
+              {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($35/yıl) ileride başlayacak.",
+                 "You're among the first members — your access is free. Paid membership ($35/year) will start later.")}
+            </p>
+          </div>
+          <Button className="mt-6" onClick={() => nav("/app")}>{t("Keşfetmeye başla →", "Start exploring →")}</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const miss = stepMissing(curId);
+  const isLast = step === enabledSteps.length - 1;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <div className="mb-6 rounded-[var(--radius-lg)] border border-moss-500/40 bg-sand-100 p-4 text-sm text-ink-700">
-        <p className="font-semibold text-forest-700">
-          {t(
-            "🌱 Profilini tamamla, aradığın kişilerle seni anında eşleştirelim — dünyanın dört bir yanındaki çiftlikler, gönüllüler ve birlikte üretmek isteyenlerle bağ kur.",
-            "🌱 Complete your profile and we'll match you instantly with the people you're looking for — connect with farms, volunteers and growers all around the world.",
-          )}
-        </p>
-        <p className="mt-1.5 text-ink-600">
-          {t(
-            "Profilini bitirene kadar Keşfet'te ve aramalarda görünmezsin, seni doğru kişilerle eşleştirebilmemiz için birkaç adım kaldı. 👇",
-            "Until you finish your profile you won't appear in Discover or searches — just a few steps left so we can match you with the right people. 👇",
-          )}
-        </p>
-      </div>
-      <Progress step={step} t={t} />
+    <div className="mx-auto max-w-5xl px-5 py-8">
       {err && <div className="mb-4 rounded-lg border border-[#eec4c0] bg-[#f7e2e0] px-4 py-3 text-sm text-[#8a2f29]">{err}</div>}
-
-      {step === 0 && (
-        <Panel title={t("Kendini anlat", "Tell us about you")} lead={t("Ne aradığını ve ne sunabildiğini yaz; etiketleri senin için çıkaracağız.", "Say what you're looking for and what you can offer; we'll derive your tags.")}>
-          <Group label={t("Şu an hangi durumdasın?", "What's your situation right now?")}>
-            <Chips options={SITUATIONS} selected={situation} onToggle={(v) => toggle(situation, setSituation, v)} />
-          </Group>
-          <Group label={t("Topluluktan beklentin ne?", "What do you want from the community?")}>
-            <Chips options={SEEK_PICKS} selected={seekPicks} onToggle={(v) => toggle(seekPicks, setSeekPicks, v)} />
-            <textarea value={seekText} onChange={(e) => setSeekText(e.target.value)} rows={3} className={ta} placeholder={t("Örn: Çiftlik hayalim var, yol gösterecek deneyimli kişiler ve permakültür bilgisi arıyorum.", "E.g. I dream of a farm and I'm looking for experienced people to guide me and permaculture know-how.")} />
-          </Group>
-          <Group label={t("Neler sunabilirsin?", "What can you offer?")}>
-            <Chips options={OFFER_PICKS} selected={offerPicks} onToggle={(v) => toggle(offerPicks, setOfferPicks, v)} />
-            <textarea value={offerText} onChange={(e) => setOfferText(e.target.value)} rows={2} className={ta} placeholder={t("Örn: Küçük bir çiftliğim var, hasat döneminde gönüllü ağırlayabilirim.", "E.g. I have a small farm and can host volunteers during harvest.")} />
-          </Group>
-          <Actions>
-            <span />
-            <Button onClick={runInfer} disabled={busy}>{busy ? t("Çıkarılıyor…", "Analyzing…") : t("Devam et →", "Continue →")}</Button>
-          </Actions>
-        </Panel>
-      )}
-
-      {step === 1 && (
-        <Panel title={t("Etiketlerini onayla ya da düzenle", "Confirm or edit your tags")}>
-          {AXES.map((axis) => (
-            <Group key={axis} label={AXIS_LABEL[axis]}>
-              <div className="flex flex-wrap items-center gap-2">
-                {selected.filter((s) => s.axis === axis).map((s) => (
-                  <span key={s.value} className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-sand-100 px-3 py-1 text-[13px]">
-                    {labelFor(s)}
-                    <button onClick={() => setSelected(selected.filter((x) => !(x.axis === axis && x.value === s.value)))} className="text-ink-500 hover:text-ink-900">✕</button>
+      <div className="grid gap-5 md:grid-cols-[240px_1fr]">
+        {/* Sol menü */}
+        <nav className="self-start rounded-[var(--radius-lg)] border border-border bg-surface p-3.5">
+          <ul className="space-y-0.5">
+            {enabledSteps.map((s, i) => (
+              <li key={s.id}>
+                <button onClick={() => setStep(i)}
+                  className={cn("flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition",
+                    i === step ? "bg-sand-100 font-semibold text-forest-700" : "text-ink-500 hover:text-ink-700")}>
+                  <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[11px]",
+                    i < step ? "border-moss-500 bg-moss-500 text-white" : i === step ? "border-forest-600 text-forest-600" : "border-border-strong")}>
+                    {i < step ? "✓" : i + 1}
                   </span>
-                ))}
-                <AddTag options={addOptions(axis)} onAdd={(value) => setSelected([...selected, { axis, value }])} taxLabel={taxLabel} addLabel={t("+ ekle", "+ add")} />
+                  {s.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Panel */}
+        <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-6 md:p-7">
+          {curId === "intro" && (
+            <Step title={t("Seni yakından tanıyalım", "Let's get to know you")} lead={t("Profilin ne kadar ayrıntılıysa eşleşmen o kadar isabetli olur.", "The more detailed your profile, the better your matches.")}>
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field label={t("Ad", "First name")} req><input className={inp} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={t("Adın", "Your name")} /></Field>
+                <Field label={t("Soyad", "Last name")}><input className={inp} value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
               </div>
-            </Group>
-          ))}
-          <Actions>
-            <Button variant="ghost" onClick={() => setStep(0)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={confirmTags} disabled={busy || selected.length === 0}>{busy ? t("Kaydediliyor…", "Saving…") : t("Onayla ve devam et →", "Confirm and continue →")}</Button>
-          </Actions>
-        </Panel>
-      )}
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field label={t("Ülke", "Country")} req>
+                  <select className={inp} value={country} onChange={(e) => setCountry(e.target.value)}>
+                    <option value="">{t("Seç…", "Select…")}</option>{COUNTRIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label={t("Şehir", "City")} req><input className={inp} value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("Şehir (haritada görünür)", "City (shown on the map)")} /></Field>
+              </div>
+              <Field label={t("Kısa tanıtım", "Short intro")} req><textarea className={ta} rows={3} value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t("Birkaç cümleyle kendini tanıt", "Introduce yourself in a few sentences")} /></Field>
+              <Field label={<>{t("Profil fotoğrafı", "Profile photo")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel — önerilir", "optional — recommended")})</span></>}>
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-lg border border-border-strong px-3 py-2 text-sm text-ink-700 transition hover:border-forest-600">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
+                  {avatarUp ? t("Yükleniyor…", "Uploading…") : avatarKey ? t("✓ Fotoğraf yüklendi — değiştir", "✓ Photo uploaded — change") : t("+ Profil fotoğrafı ekle", "+ Add profile photo")}
+                </label>
+              </Field>
+            </Step>
+          )}
 
-      {step === 2 && (
-        <Panel title={t("Profilini tamamla", "Complete your profile")} lead={t("Profilin ne kadar ayrıntılıysa eşleşmen o kadar isabetli olur — seni doğru kişilerle buluşturmamıza yardımcı ol.", "The more detailed your profile, the better your matches — help us connect you with the right people.")}>
-          <div className="mb-6 rounded-xl border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-sm text-ink-700">
-            <div className="mb-1 font-semibold text-forest-700">{t("ℹ️ Yayına girmeden önce", "ℹ️ Before you go live")}</div>
-            <ul className="ml-4 list-disc space-y-1">
-              <li>{t("Profilini tamamladıktan sonra ekibimiz kısa bir incelemeden geçirir; profilin yalnızca onaylandıktan sonra Keşfet'te görünür ve eşleşmeye başlar.",
-                     "Once you finish, our team gives your profile a quick review; it appears in Discover and starts matching only after it's approved.")}</li>
-              <li>{t("Eksik, yanıltıcı veya uygunsuz profiller onaylanmaz ya da askıya alınır. Bir eksik olursa sana mesaj veya e-posta ile bildiririz.",
-                     "Incomplete, misleading or inappropriate profiles won't be approved or may be suspended. If something's missing, we'll let you know by message or email.")}</li>
-            </ul>
-          </div>
-          <Group label={t("Ad", "First name")} req><input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inp} placeholder={t("Adın", "Your name")} /></Group>
-          <Group label={t("Ülke", "Country")} req>
-            <select value={country} onChange={(e) => setCountry(e.target.value)} className={inp}>
-              <option value="">{t("Seç…", "Select…")}</option>{COUNTRIES.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </Group>
-          <Group label={t("Şehir", "City")} req><input value={city} onChange={(e) => setCity(e.target.value)} className={inp} placeholder={t("Şehir (haritada görünür)", "City (shown on the map)")} /></Group>
-          <Group label={t("Kısa tanıtım", "Short intro")} req><textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className={ta} placeholder={t("Birkaç cümleyle kendini tanıt", "Introduce yourself in a few sentences")} /></Group>
+          {curId === "intent" && (
+            <Step title={t("Burada ne yapmak istersin?", "What do you want to do here?")} lead={t("Birden fazla seçebilirsin. Seçimine göre sonraki adımlar açılır. İstediğin zaman değiştirebilirsin.", "Pick more than one. Your choices unlock the next steps. You can change them anytime.")}>
+              <div className="flex flex-wrap gap-2.5">
+                {INTENTS.map((o) => {
+                  const on = intents.has(o.key);
+                  return (
+                    <button key={o.key} type="button"
+                      onClick={() => {
+                        const n = new Set(intents); n.has(o.key) ? n.delete(o.key) : n.add(o.key);
+                        setIntents(n);
+                        if (n.has("host")) setHasPlace(true); // ağırlamak → yer zorunlu
+                      }}
+                      className={cn("flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
+                        on ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500")}>
+                      <span>{o.icon}</span>{lang === "en" ? o.en : o.tr}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-6 mb-1.5 text-[13px] font-semibold uppercase tracking-wide text-clay-600">{t("Ağırlayabileceğin / üretim yaptığın bir yerin var mı?", "Do you have a place to host / produce?")}</div>
+              <p className="mb-2 text-xs text-ink-500">{t("Çiftlik, arazi, bahçe, ekolojik proje, bağ, hayvan barınağı, inziva/atölye merkezi, eko-köy…", "Farm, land, garden, eco project, vineyard, animal sanctuary, retreat/workshop centre, eco-village…")}</p>
+              <div className="inline-flex overflow-hidden rounded-full border border-border-strong">
+                <button type="button" onClick={() => setHasPlace(true)} className={cn("px-4 py-2 text-sm", hasPlace === true ? "bg-forest-600 text-white" : "bg-surface text-ink-700")}>{t("Evet, bir yerim var", "Yes, I have a place")}</button>
+                <button type="button" disabled={f.wantsHost} onClick={() => !f.wantsHost && setHasPlace(false)} className={cn("px-4 py-2 text-sm", hasPlace === false ? "bg-forest-600 text-white" : "bg-surface text-ink-700", f.wantsHost && "opacity-40")}>{t("Hayır", "No")}</button>
+              </div>
+              {f.wantsHost && <div className="mt-3 rounded-lg border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-[13.5px] text-ink-700">{t('"Gönüllü ağırlamak" seçtiğin için yerin olması gerekir — "Evet" otomatik işaretlendi. Çiftlik rehberi, ağırlama fotoğrafları ve adres adımları açıldı.', '"Host volunteers" requires a place — "Yes" was set automatically. The farm guide, accommodation photos and address steps are now enabled.')}</div>}
+              {f.hasPlace && !f.wantsHost && intents.has("material") && <div className="mt-3 rounded-lg border-l-4 border-clay-500 bg-sand-100 px-4 py-3 text-[13.5px] text-ink-700">{t("Yalnızca malzeme/tohum paylaşımı için yer adresi istenir (kargo/izlenebilirlik); belge zorunlu değil.", "For material/seed sharing only, the place address is asked (shipping/traceability); a document isn't required.")}</div>}
+            </Step>
+          )}
 
-          {isHost && (
-            <div className="mt-6 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
-              <h2 className="font-display text-lg font-semibold text-forest-700">{t("Ev sahibi detayları", "Host details")}</h2>
-              <p className="mb-4 mt-0.5 text-sm text-ink-600">
-                {t("Yer sunuyorsun — gönüllülerin ne beklediğini net görmesi için ağırlama bilgilerini doldur. Detaylı profiller daha çok başvuru alır.",
-                   "You're offering a place — fill in your hosting details so volunteers know what to expect. Detailed profiles get more interest.")}
-              </p>
+          {curId === "contact" && (
+            <Step title={t("İletişim", "Contact")} lead={f.contactRequired ? t("Gönüllü ağırladığın için bu alanlar zorunlu — karşılıklı güven ve ulaşım için.", "Since you host volunteers these fields are required — for trust and reachability.") : t("Opsiyonel — bağlantı kurduğunda paylaşılır.", "Optional — shared when you connect.")}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500">🔒 {t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</div>
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field label={t("Telefon", "Phone")} req={f.contactRequired}><input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90" /></Field>
+                <Field label={<>{t("Sosyal medya", "Social media")} {!f.contactRequired && <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span>}</>} req={f.contactRequired}><input className={inp} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@kullanici" /></Field>
+              </div>
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field label={<>{t("İletişim e-postası", "Contact email")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span></>}><input className={inp} value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} /></Field>
+                <Field label={<>{t("Web sitesi", "Website")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span></>}><input className={inp} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" /></Field>
+              </div>
+            </Step>
+          )}
+
+          {curId === "place" && (
+            <Step title={t("Yer profili", "Place profile")} lead={t("Yerini tanıt — gönüllüler ve topluluk neyle karşılaşacağını bilsin.", "Introduce your place so volunteers and the community know what to expect.")}>
+              <Field label={t("Yerin adı", "Place name")} req><input className={inp} value={place.name ?? ""} onChange={(e) => setPlace({ ...place, name: e.target.value })} placeholder={t("Örn. Zeytin Bahçesi", "E.g. Olive Grove")} /></Field>
+              <Field label={t("Yer türü", "Place type")} req>
+                <select className={inp} value={place.type ?? ""} onChange={(e) => setPlace({ ...place, type: e.target.value })}>
+                  <option value="">{t("Seç…", "Select…")}</option>{PLACE_TYPES.map((p) => <option key={p.key} value={p.key}>{lang === "en" ? p.en : p.tr}</option>)}
+                </select>
+              </Field>
+              <Field label={t("Genel konum (herkese görünür)", "General location (shown publicly)")} req><input className={inp} value={place.location ?? ""} onChange={(e) => setPlace({ ...place, location: e.target.value })} placeholder={t("İlçe / İl", "District / City")} /></Field>
+            </Step>
+          )}
+
+          {curId === "guide" && (
+            <Step title={t("Çiftlik rehberi & ağırlama fotoğrafları", "Farm guide & accommodation photos")} lead={t("Gönüllülerin ne beklediğini net görmesi için ağırlama bilgilerini doldur.", "Fill in your hosting details so volunteers know what to expect.")}>
               <HostDetailsForm value={host} onChange={setHost} />
-
               <div className="mt-5 border-t border-border pt-4">
                 <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
                 <HostPhotos photos={photos} onChange={loadMe} />
               </div>
+            </Step>
+          )}
 
-              <div className="mt-5 border-t border-border pt-4">
-                <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">
-                  {t("📍 Yer adresi & doğrulama", "📍 Place address & verification")}
-                  <span className="font-bold text-[#dc2626]"> *</span>
-                </h3>
-                <p className="mb-3 text-[13px] text-ink-500">
-                  {t("Gönüllüler fiziksel olarak yanına geleceği için yerin gerçek olduğunu doğruluyoruz. Açık adres yalnızca bağlantı kurduğun gönüllüyle paylaşılır; doğrulama belgesi profilinde ASLA görünmez, yalnızca ekip görür.",
-                     "Since volunteers physically come to you, we verify the place is real. The exact address is shared only with a volunteer you connect with; the verification document NEVER appears on your profile — only the team sees it.")}
-                </p>
-                <textarea value={addressExact} onChange={(e) => setAddressExact(e.target.value)} rows={2} className={ta}
-                  placeholder={t("Açık adres (mahalle, sokak, no, ilçe/il)", "Full address (street, no, district/city)")} />
-                <div className="mt-3">
-                  <div className="mb-1.5 text-[13px] font-medium text-ink-700">
-                    {t("Adres kanıtı belgesi (fatura, tapu, kira sözleşmesi vb. — resim ya da PDF)", "Proof of address (utility bill, deed, rental contract, etc. — image or PDF)")}
-                  </div>
-                  <ProofUpload done={proofAddress} onChange={loadMe} />
+          {curId === "verify" && (
+            <Step title={t("Adres & doğrulama", "Address & verification")} lead={t("Gönüllüler/komşu üreticiler sana ulaşabilsin diye yer bilgini alıyoruz.", "We collect your place info so volunteers/neighbouring producers can reach you.")}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500">🔒 {t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</div>
+              <Field label={<>{t("Açık adres", "Full address")} {f.needsAddress ? <span className="font-bold text-[#dc2626]"> *</span> : <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span>}</>}>
+                <textarea className={ta} rows={2} value={addressExact} onChange={(e) => setAddressExact(e.target.value)} placeholder={t("Mahalle, sokak, no, ilçe/il", "Street, no, district/city")} />
+              </Field>
+              <Field label={<>{t("Adres kanıtı belgesi", "Proof of address")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span></>}>
+                <ProofUpload done={proofAddress} onChange={loadMe} />
+              </Field>
+              <div className="rounded-lg border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-[13.5px] text-ink-700">ℹ️ {t("Belge zorunlu değil; onay sürecinde gerekli görülürse ekibimiz isteyebilir.", "The document isn't required; our team may request it during review if needed.")}</div>
+            </Step>
+          )}
+
+          {curId === "skills" && (
+            <Step title={t("İlgi & beceri", "Interests & skills")} lead={t("Seni doğru kişilerle eşleştirmek için.", "To match you with the right people.")}>
+              {f.isVolunteer && (
+                <div className="mb-5 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
+                  <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
+                  <p className="mt-2 text-xs text-ink-500"><span className="font-bold text-[#dc2626]">*</span> {t("zorunlu", "required")}</p>
                 </div>
-              </div>
-
-              <p className="mt-3 text-xs text-ink-500">
-                <span className="font-bold text-[#dc2626]">*</span> {t("işaretli alanlar, fotoğraflar ve adres doğrulaması zorunludur.", "marked fields, photos and address verification are required.")}
-              </p>
-            </div>
-          )}
-
-          {isVolunteer && (
-            <div className="mt-6 rounded-xl border border-moss-500/40 bg-sand-100/60 p-4">
-              <h2 className="font-display text-lg font-semibold text-forest-700">{t("Gönüllü bilgisi", "Volunteer info")}</h2>
-              <p className="mb-3 mt-0.5 text-sm text-ink-600">{t("Ev sahiplerinin sana uygun eşleşmeyi bulabilmesi için gerekli.", "Needed so hosts can find the right match for you.")}</p>
-              <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
-              <p className="mt-2 text-xs text-ink-500">{t("* zorunlu", "* required")}</p>
-            </div>
-          )}
-
-          {(isHost || isVolunteer) && (
-            <div className="mt-6">
-              <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(isHost, isVolunteer, t)} />
-              <p className="mt-1.5 text-xs text-ink-500">{t("Opsiyonel ama eşleşme için çok yardımcı olur.", "Optional but very helpful for matching.")}</p>
-            </div>
-          )}
-
-          {(() => {
-            // Butonun neden pasif olduğunu açıkça göster: eksik zorunlu alanları listele.
-            const missing: string[] = [];
-            if (!firstName.trim()) missing.push(t("Ad", "First name"));
-            if (!country) missing.push(t("Ülke", "Country"));
-            if (!city.trim()) missing.push(t("Şehir", "City"));
-            if (!bio.trim()) missing.push(t("Kısa tanıtım", "Short intro"));
-            if (isHost) {
-              if (!host.work?.trim()) missing.push(t("Kısa özet / yapılacak işler", "Short summary / the help"));
-              if (!(host.helpTypes?.length)) missing.push(t("Yardım türleri", "Types of help"));
-              if (!host.accommodation?.trim()) missing.push(t("Konaklama", "Accommodation"));
-              for (const c of HOST_PHOTO_CATEGORIES) {
-                if (c.required && !photos.some((p) => p.category === c.key)) {
-                  missing.push(`${t("Fotoğraf", "Photo")}: ${lang === "en" ? c.en : c.tr}`);
-                }
-              }
-              if (!addressExact.trim()) missing.push(t("Yer adresi", "Place address"));
-              if (!proofAddress) missing.push(t("Adres kanıtı belgesi", "Proof of address document"));
-            }
-            if (isVolunteer && !volunteer.experience) missing.push(t("Çiftlik deneyimi (gönüllü)", "Farm experience (volunteer)"));
-            if (missing.length === 0) return null;
-            return (
-              <div className="mt-6 rounded-xl border border-[#f0c9c4] bg-[#fdf1ef] px-4 py-3 text-sm">
-                <div className="mb-1 font-semibold text-[#8a2f29]">
-                  {t("Devam etmek için şunlar eksik:", "To continue, the following are missing:")}
-                </div>
-                <ul className="ml-4 list-disc space-y-0.5 text-ink-700">
-                  {missing.map((m) => <li key={m}>{m}</li>)}
-                </ul>
-              </div>
-            );
-          })()}
-
-          <Actions>
-            <Button variant="ghost" onClick={() => setStep(1)}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={saveProfile} disabled={busy || !firstName.trim() || !country || !city.trim() || !bio.trim() || (isHost && (!hostRequiredComplete(host) || !hostPhotosComplete(photos) || !addressExact.trim() || !proofAddress)) || (isVolunteer && !volunteer.experience)}>{busy ? t("Kaydediliyor…", "Saving…") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
-          </Actions>
-        </Panel>
-      )}
-
-      {step === 3 && (
-        <Panel title={t("Hazırsın 🎉", "You're all set 🎉")} lead={t("Profilin tamam. Topluluğa hoş geldin!", "Your profile is ready. Welcome to the community!")}>
-          <div className="rounded-xl border border-[#c6e0c2] bg-offer-bg p-4">
-            <div className="mb-1 text-2xl">🌱</div>
-            <div className="font-display text-base font-semibold text-forest-700">{t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
-            <p className="mt-1 text-sm text-ink-700">
-              {t(
-                "Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($35/yıl) ileride başlayacak; o zamana kadar her şey açık.",
-                "You're among the community's first members — your access is free. Paid membership ($35/year) will start later; until then everything is open.",
               )}
-            </p>
+              <div className="flex flex-wrap gap-2">
+                {SKILLS.map((s) => {
+                  const on = skills.has(s.key);
+                  return (
+                    <button key={s.key} type="button" onClick={() => { const n = new Set(skills); n.has(s.key) ? n.delete(s.key) : n.add(s.key); setSkills(n); }}
+                      className={cn("rounded-full border px-3 py-1.5 text-[13.5px] transition", on ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500")}>
+                      {lang === "en" ? s.en : s.tr}
+                    </button>
+                  );
+                })}
+              </div>
+              <Field label={<>{t("Listede olmayan bir şey mi var?", "Something not in the list?")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span></>} className="mt-4">
+                <textarea className={ta} rows={2} value={skillsNote} onChange={(e) => setSkillsNote(e.target.value)} placeholder={t("Kısaca ekle: örn. zeytinyağı üretimi, güneş enerjisi, keçe yapımı…", "Add briefly: e.g. olive-oil making, solar energy, felting…")} />
+              </Field>
+            </Step>
+          )}
+
+          {curId === "calendar" && (
+            <Step title={t("Takvim", "Calendar")} lead={f.wantsHost ? t("Gönüllüler hangi tarihlerde başvurabilir? Opsiyonel ama eşleşme için çok etkili.", "When can volunteers apply? Optional but very effective for matching.") : t("Hangi tarihlerde müsaitsin? Opsiyonel ama eşleşme için çok etkili.", "When are you available? Optional but very effective for matching.")}>
+              <AvailabilityField value={availability} onChange={setAvailability} label={t("Tarih aralığı", "Date range")} />
+            </Step>
+          )}
+
+          {curId === "photos" && (
+            <Step title={t("Fotoğraflar", "Photos")} lead={t("Profilini güzel gösteren fotoğraflar — kendinden, deneyimlerinden. Herkese açık profilinde görünür.", "Photos that make your profile shine — of you and your experiences. Shown on your public profile.")}>
+              <HostPhotos photos={photos} onChange={loadMe} generalOnly />
+              <p className="mt-2 text-xs text-ink-500">{t("Opsiyonel ama dolu bir galeri çok daha fazla ilgi çeker.", "Optional, but a full gallery gets much more interest.")}</p>
+            </Step>
+          )}
+
+          {miss.length > 0 && (
+            <div className="mt-6 rounded-xl border border-[#f0c9c4] bg-[#fdf1ef] px-4 py-3 text-sm">
+              <div className="mb-1 font-semibold text-[#8a2f29]">{t("Devam etmek için eksik:", "To continue, missing:")}</div>
+              <ul className="ml-4 list-disc space-y-0.5 text-ink-700">{miss.map((m) => <li key={m}>{m}</li>)}</ul>
+            </div>
+          )}
+
+          <div className="mt-7 flex items-center justify-between border-t border-border pt-5">
+            <Button variant="ghost" onClick={goBack} className={step === 0 ? "invisible" : ""}>{t("← Geri", "← Back")}</Button>
+            <Button onClick={goNext} disabled={busy || miss.length > 0}>{busy ? t("Kaydediliyor…", "Saving…") : isLast ? t("Kaydet ve bitir", "Save and finish") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
           </div>
-          <Actions>
-            <span />
-            <Button onClick={() => nav("/app")}>{t("Panele git →", "Go to your home →")}</Button>
-          </Actions>
-        </Panel>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -357,62 +373,27 @@ export function OnboardingPage() {
 function errMsg(e: unknown, t: (tr: string, en: string) => string) {
   const m = e instanceof Error ? e.message : String(e);
   return m.includes("fetch") || m.includes("Failed")
-    ? t("Backend'e ulaşılamadı. Lokal API çalışıyor mu? (backend: npm run dev)", "Couldn't reach the backend. Is the local API running? (backend: npm run dev)")
+    ? t("Backend'e ulaşılamadı.", "Couldn't reach the backend.")
     : m;
 }
 
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
-const ta = inp + " mt-2 resize-y";
+const ta = inp + " resize-y";
 
-function Progress({ step, t }: { step: number; t: (tr: string, en: string) => string }) {
+function Step({ title, lead, children }: { title: string; lead?: string; children: React.ReactNode }) {
   return (
-    <div className="mb-6">
-      <div className="mb-1.5 text-xs font-semibold tracking-wide text-ink-500">{t("ADIM", "STEP")} {step + 1} / 4</div>
-      <div className="flex gap-1.5">
-        {[0, 1, 2, 3].map((i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-forest-500" : i === step ? "bg-moss-500" : "bg-border"}`} />)}
-      </div>
-    </div>
-  );
-}
-function Panel({ title, lead, children }: { title: string; lead?: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-7">
+    <div>
       <h1 className="font-display text-2xl font-semibold">{title}</h1>
-      {lead ? <p className="mb-6 mt-1 text-sm text-ink-500">{lead}</p> : <div className="mb-6" />}
+      {lead ? <p className="mb-5 mt-1 text-sm text-ink-500">{lead}</p> : <div className="mb-5" />}
       {children}
     </div>
   );
 }
-function Group({ label, req, children }: { label: string; req?: boolean; children: React.ReactNode }) {
+function Field({ label, req, children, className }: { label: React.ReactNode; req?: boolean; children: React.ReactNode; className?: string }) {
   return (
-    <div className="mb-5">
-      <div className="mb-2 text-[13px] font-semibold text-ink-700">{label}{req && <span className="font-bold text-[#dc2626]"> *</span>}</div>
+    <div className={cn("mb-4", className)}>
+      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}{req && <span className="font-bold text-[#dc2626]"> *</span>}</div>
       {children}
     </div>
   );
-}
-function Chips({ options, selected, onToggle }: { options: string[]; selected: string[]; onToggle: (v: string) => void }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => (
-        <button key={o} onClick={() => onToggle(o)}
-          className={`rounded-full border px-3.5 py-2 text-sm transition ${selected.includes(o) ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500"}`}>
-          {o}
-        </button>
-      ))}
-    </div>
-  );
-}
-function AddTag({ options, onAdd, taxLabel, addLabel }: { options: TaxonomyItem[]; onAdd: (value: string) => void; taxLabel: (x: TaxonomyItem) => string; addLabel: string }) {
-  if (options.length === 0) return null;
-  return (
-    <select value="" onChange={(e) => e.target.value && onAdd(e.target.value)}
-      className="rounded-full border border-dashed border-border-strong bg-surface px-3 py-1 text-[13px] text-ink-500">
-      <option value="">{addLabel}</option>
-      {options.map((o) => <option key={o.value} value={o.value}>{taxLabel(o)}</option>)}
-    </select>
-  );
-}
-function Actions({ children }: { children: React.ReactNode }) {
-  return <div className="mt-7 flex items-center justify-between gap-3">{children}</div>;
 }

@@ -8,20 +8,21 @@ import type { Photo } from "@/lib/types";
 // 6 kategori; "Çiftlik geneli" ve "Yatma yeri" zorunlu (işaretli), diğerleri teşvik.
 // Fotoğraflar member_photos tablosuna category ile yazılır; sahibinin görünümünde düzenlenir.
 
-export function HostPhotos({ photos, onChange }: { photos: Photo[]; onChange: () => void }) {
+export function HostPhotos({ photos, onChange, generalOnly }: { photos: Photo[]; onChange: () => void; generalOnly?: boolean }) {
   const { t, lang } = useI18n();
   const [busy, setBusy] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const byCat = (key: string) => photos.filter((p) => p.category === key);
 
+  // cat === "" → genel (kategorisiz) galeri.
   async function upload(cat: string, files: FileList | null) {
     if (!files || files.length === 0) return;
-    setBusy(cat);
+    setBusy(cat || "general");
     try {
       for (const file of Array.from(files)) {
         const key = await uploadImage(file, "gallery");
-        await api.post("/profile/photos", { key, category: cat });
+        await api.post("/profile/photos", { key, ...(cat ? { category: cat } : {}) });
       }
       api.invalidate();
       onChange();
@@ -29,7 +30,7 @@ export function HostPhotos({ photos, onChange }: { photos: Photo[]; onChange: ()
       /* sessizce geç — limit/ağ hatası */
     } finally {
       setBusy(null);
-      const el = inputs.current[cat];
+      const el = inputs.current[cat || "general"];
       if (el) el.value = "";
     }
   }
@@ -38,6 +39,29 @@ export function HostPhotos({ photos, onChange }: { photos: Photo[]; onChange: ()
     setBusy(id);
     try { await api.del(`/profile/photos/${id}`); api.invalidate(); onChange(); }
     finally { setBusy(null); }
+  }
+
+  // Genel galeri modu (herkese açık; kategorisiz).
+  if (generalOnly) {
+    const general = photos.filter((p) => !p.category);
+    return (
+      <div>
+        <div className="flex flex-wrap gap-3">
+          {general.map((ph) => (
+            <div key={ph.id} className="group relative size-24 overflow-hidden rounded-lg bg-sand-100">
+              {ph.url && <img src={ph.url} alt="" className="size-full object-cover" />}
+              <button type="button" onClick={() => remove(ph.id)} disabled={busy === ph.id}
+                className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-ink-900/70 text-[11px] text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Kaldır", "Remove")}>✕</button>
+            </div>
+          ))}
+          <button type="button" onClick={() => inputs.current["general"]?.click()} disabled={busy === "general"}
+            className="grid size-24 place-items-center rounded-lg border border-dashed border-border-strong text-xs text-ink-500 transition hover:border-forest-600 hover:text-forest-700">
+            {busy === "general" ? "…" : t("+ Fotoğraf", "+ Photo")}
+          </button>
+        </div>
+        <input ref={(el) => { inputs.current["general"] = el; }} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => upload("", e.target.files)} />
+      </div>
+    );
   }
 
   return (
