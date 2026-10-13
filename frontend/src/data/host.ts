@@ -29,36 +29,36 @@ export interface HostDetails {
 export interface LabeledKey { key: string; tr: string; en: string; icon?: string }
 
 export const HELP_TYPES: LabeledKey[] = [
-  { key: "gardening",   tr: "Bahçe & tarım işleri", en: "Gardening & farming" },
-  { key: "planting",    tr: "Ekim & dikim",          en: "Planting & sowing" },
-  { key: "harvest",     tr: "Hasat",                 en: "Harvesting" },
-  { key: "animals",     tr: "Hayvan bakımı",         en: "Animal care" },
-  { key: "cooking",     tr: "Yemek hazırlama",       en: "Cooking meals" },
-  { key: "housework",   tr: "Ev işleri",             en: "Help around the house" },
-  { key: "maintenance", tr: "Bakım & tamir",         en: "Maintenance & repairs" },
-  { key: "building",    tr: "İnşaat & DIY",          en: "Building & DIY" },
-  { key: "crafts",      tr: "El sanatları",          en: "Crafts" },
-  { key: "ecoprojects", tr: "Eko/permakültür projeleri", en: "Eco / permaculture projects" },
+  { key: "gardening",   icon: "🌱", tr: "Bahçe & tarım işleri", en: "Gardening & farming" },
+  { key: "planting",    icon: "🌰", tr: "Ekim & dikim",          en: "Planting & sowing" },
+  { key: "harvest",     icon: "🧺", tr: "Hasat",                 en: "Harvesting" },
+  { key: "animals",     icon: "🐾", tr: "Hayvan bakımı",         en: "Animal care" },
+  { key: "cooking",     icon: "🍳", tr: "Yemek hazırlama",       en: "Cooking meals" },
+  { key: "housework",   icon: "🧹", tr: "Ev işleri",             en: "Help around the house" },
+  { key: "maintenance", icon: "🔧", tr: "Bakım & tamir",         en: "Maintenance & repairs" },
+  { key: "building",    icon: "🧱", tr: "İnşaat & DIY",          en: "Building & DIY" },
+  { key: "crafts",      icon: "🎨", tr: "El sanatları",          en: "Crafts" },
+  { key: "ecoprojects", icon: "🌍", tr: "Eko/permakültür projeleri", en: "Eco / permaculture projects" },
 ];
 
 export const AMENITIES: LabeledKey[] = [
-  { key: "private_room",   tr: "Özel oda",          en: "Private room" },
-  { key: "shared_room",    tr: "Ortak/paylaşımlı oda", en: "Shared room" },
-  { key: "camping",        tr: "Kamp alanı",        en: "Camping space" },
-  { key: "shared_kitchen", tr: "Ortak mutfak",      en: "Shared kitchen" },
-  { key: "bathroom",       tr: "Banyo erişimi",     en: "Bathroom access" },
-  { key: "toilet",         tr: "Tuvalet",           en: "Toilet" },
-  { key: "laundry",        tr: "Çamaşır makinesi",  en: "Laundry" },
-  { key: "wifi",           tr: "İnternet",          en: "Internet access" },
-  { key: "pets",           tr: "Evcil hayvan var",  en: "Pets on site" },
-  { key: "bike",           tr: "Bisiklet",          en: "Bicycles" },
-  { key: "transport",      tr: "Ulaşım yardımı",    en: "Help with transport" },
+  { key: "private_room",   icon: "🛏️", tr: "Özel oda",          en: "Private room" },
+  { key: "shared_room",    icon: "🛌", tr: "Ortak/paylaşımlı oda", en: "Shared room" },
+  { key: "camping",        icon: "⛺", tr: "Kamp alanı",        en: "Camping space" },
+  { key: "shared_kitchen", icon: "🍳", tr: "Ortak mutfak",      en: "Shared kitchen" },
+  { key: "bathroom",       icon: "🚿", tr: "Banyo erişimi",     en: "Bathroom access" },
+  { key: "toilet",         icon: "🚻", tr: "Tuvalet",           en: "Toilet" },
+  { key: "laundry",        icon: "👕", tr: "Çamaşır makinesi",  en: "Laundry" },
+  { key: "wifi",           icon: "📶", tr: "İnternet",          en: "Internet access" },
+  { key: "pets",           icon: "🐾", tr: "Evcil hayvan var",  en: "Pets on site" },
+  { key: "bike",           icon: "🚲", tr: "Bisiklet",          en: "Bicycles" },
+  { key: "transport",      icon: "🚌", tr: "Ulaşım yardımı",    en: "Help with transport" },
 ];
 
 export const MEAL_TYPES: LabeledKey[] = [
-  { key: "vegetarian", tr: "Vejetaryen", en: "Vegetarian" },
-  { key: "vegan",      tr: "Vegan",      en: "Vegan" },
-  { key: "omnivore",   tr: "Karışık (et dahil)", en: "Omnivore (incl. meat)" },
+  { key: "vegetarian", icon: "🥗", tr: "Vejetaryen", en: "Vegetarian" },
+  { key: "vegan",      icon: "🌱", tr: "Vegan",      en: "Vegan" },
+  { key: "omnivore",   icon: "🍖", tr: "Karışık (et dahil)", en: "Omnivore (incl. meat)" },
 ];
 
 export const LANGUAGES: LabeledKey[] = [

@@ -189,103 +189,188 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 // ───────────────────────── read-only view ─────────────────────────
 
+// Worldpackers tarzı gruplu görünüm: düz liste yerine anlamlı bölümler —
+// Ne yapacaksın · Sana neler sunuluyor · Bizimle deneyim · Gereksinimler · Ev kuralları.
 export function HostDetailsView({ host }: { host: HostDetails }) {
   const { t, lang } = useI18n();
   if (hostIsEmpty(host)) return null;
-  const helpLabels = (host.helpTypes ?? []).map((k) => labelOf(HELP_TYPES, k, lang));
-  const amenLabels = (host.amenities ?? []).map((k) => labelOf(AMENITIES, k, lang));
-  const mealLabels = (host.mealTypes ?? []).map((k) => labelOf(MEAL_TYPES, k, lang));
-  const langLabels = (host.languages ?? []).map((k) => labelOf(LANGUAGES, k, lang));
+
+  const help = host.helpTypes ?? [];
+  const amen = host.amenities ?? [];
+  const mealTypes = host.mealTypes ?? [];
+  const langs = host.languages ?? [];
   const wants = host.wantsExperience ? labelOf(WANTS_EXPERIENCE, host.wantsExperience, lang) : null;
   const routine = (host.dailyRoutine ?? []).filter((r) => r.activity?.trim());
   const rules = host.houseRules ?? [];
   const around = host.around ?? [];
 
+  const hasWork = !!(host.work || help.length || host.maxVolunteers || host.hoursNote);
+  const hasOffer = !!(host.accommodation || host.meals || mealTypes.length || host.daysOff || host.learn || amen.length || langs.length);
+  const hasExp = !!(routine.length || around.length || host.nearby);
+  const hasReq = !!(wants || host.minStay);
+
   return (
-    <div className="space-y-5 text-sm">
-      {host.work && <Row label={t("Yapılacak işler", "The help")}><p className="whitespace-pre-wrap text-ink-700">{host.work}</p></Row>}
-      {helpLabels.length > 0 && <Chips label={t("Yardım türleri", "Types of help")} items={helpLabels} />}
-      {host.accommodation && <Row label={t("Konaklama", "Accommodation")}><p className="whitespace-pre-wrap text-ink-700">{host.accommodation}</p></Row>}
-      {host.minStay && <Row label={t("Minimum kalış", "Minimum stay")}><p className="text-ink-700">{host.minStay}</p></Row>}
-      {host.maxVolunteers && <Row label={t("Aynı anda max gönüllü", "Max volunteers at once")}><p className="text-ink-700">{host.maxVolunteers}</p></Row>}
-      {amenLabels.length > 0 && <Chips label={t("Olanaklar", "Amenities")} items={amenLabels} />}
-      {langLabels.length > 0 && <Chips label={t("Konuşulan diller", "Languages spoken")} items={langLabels} />}
-      {(mealLabels.length > 0 || host.meals) && (
-        <Row label={t("Yemek", "Meals")}>
-          {mealLabels.length > 0 && (
-            <div className="mb-1 flex flex-wrap gap-1.5">
-              {mealLabels.map((l) => <span key={l} className="rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{l}</span>)}
+    <div className="space-y-9">
+      {/* 1 — Ne yapacaksın */}
+      {hasWork && (
+        <GSection icon="🧑‍🌾" title={t("Ne yapacaksın", "What you'll do")}>
+          {host.work && <p className="mb-4 whitespace-pre-wrap text-[14.5px] leading-relaxed text-ink-700">{host.work}</p>}
+          {help.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {help.map((k) => (
+                <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-ink-700">
+                  <span>{iconOf(HELP_TYPES, k)}</span>{labelOf(HELP_TYPES, k, lang)}
+                </span>
+              ))}
             </div>
           )}
-          {host.meals && <p className="text-ink-700">{host.meals}</p>}
-        </Row>
-      )}
-      {host.learn && <Row label={t("Neler öğrenilebilir?", "What you can learn")}><p className="whitespace-pre-wrap text-ink-700">{host.learn}</p></Row>}
-      {wants && <Row label={t("Aranan gönüllü", "Volunteer wanted")}><p className="text-ink-700">{wants}</p></Row>}
-
-      {routine.length > 0 && (
-        <Row label={t("📅 Günlük akış", "📅 Daily routine")}>
-          <ul className="space-y-1">
-            {routine.map((r, i) => (
-              <li key={i} className="flex gap-2 text-ink-700">
-                {r.time && <span className="shrink-0 font-semibold text-forest-700">{r.time}</span>}
-                <span>{r.activity}</span>
-              </li>
-            ))}
-          </ul>
-        </Row>
+          {(host.maxVolunteers || host.hoursNote) && (
+            <div className="divide-y divide-border">
+              {host.maxVolunteers && <Fact icon="👥" title={t("Aynı anda en fazla", "At once, up to")} note={host.maxVolunteers} />}
+              {host.hoursNote && <Fact icon="⏱️" title={t("Çalışma düzeni", "Work schedule")} note={host.hoursNote} />}
+            </div>
+          )}
+        </GSection>
       )}
 
-      {host.daysOff && <Row label={t("🌿 İzin günleri", "🌿 Days off")}><p className="whitespace-pre-wrap text-ink-700">{host.daysOff}</p></Row>}
+      {/* 2 — Sana neler sunuluyor */}
+      {hasOffer && (
+        <GSection icon="🎁" title={t("Sana neler sunuluyor", "What you get")}>
+          {(host.accommodation || host.meals || mealTypes.length > 0 || host.daysOff || host.learn) && (
+            <div className="mb-4 divide-y divide-border">
+              {host.accommodation && <Fact icon="🛏️" title={t("Konaklama", "Accommodation")} note={host.accommodation} />}
+              {(host.meals || mealTypes.length > 0) && (
+                <div className="flex gap-3.5 py-3">
+                  <div className="w-6 shrink-0 text-center text-[18px] leading-snug">🍽️</div>
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-semibold text-ink-900">{t("Yemek", "Meals")}</div>
+                    {mealTypes.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {mealTypes.map((k) => (
+                          <span key={k} className="inline-flex items-center gap-1 rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{iconOf(MEAL_TYPES, k)} {labelOf(MEAL_TYPES, k, lang)}</span>
+                        ))}
+                      </div>
+                    )}
+                    {host.meals && <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-600">{host.meals}</p>}
+                  </div>
+                </div>
+              )}
+              {host.daysOff && <Fact icon="🌿" title={t("İzin günleri", "Days off")} note={host.daysOff} />}
+              {host.learn && <Fact icon="🌱" title={t("Neler öğrenebilirsin", "What you can learn")} note={host.learn} />}
+            </div>
+          )}
+          {(amen.length > 0 || langs.length > 0) && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              {amen.length > 0 && (
+                <ChipGroup label={t("🏠 Konaklama & olanaklar", "🏠 Facilities & amenities")}>
+                  {amen.map((k) => (
+                    <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe3c8] bg-offer-bg px-3 py-1.5 text-[13px] text-forest-700">
+                      <span>{iconOf(AMENITIES, k)}</span>{labelOf(AMENITIES, k, lang)}
+                    </span>
+                  ))}
+                </ChipGroup>
+              )}
+              {langs.length > 0 && (
+                <ChipGroup label={t("🗣️ Konuşulan diller", "🗣️ Languages spoken")}>
+                  {langs.map((k) => (
+                    <span key={k} className="rounded-full border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-ink-700">{labelOf(LANGUAGES, k, lang)}</span>
+                  ))}
+                </ChipGroup>
+              )}
+            </div>
+          )}
+        </GSection>
+      )}
 
+      {/* 3 — Bizimle deneyim */}
+      {hasExp && (
+        <GSection icon="🌾" title={t("Bizimle deneyim", "The experience")}>
+          {routine.length > 0 && (
+            <div className="mb-5">
+              <div className="mb-3 text-[13px] font-medium text-ink-600">📅 {t("Tipik bir gün", "A typical day")}</div>
+              <div className="ml-1 flex flex-col gap-3 border-l-2 border-sand-300 pl-4">
+                {routine.map((r, i) => (
+                  <div key={i} className="relative">
+                    <span className="absolute -left-[22px] top-1.5 size-2.5 rounded-full bg-moss-500 shadow-[0_0_0_3px_var(--color-bg)]" />
+                    {r.time && <div className="text-[12px] font-semibold text-clay-600">{r.time}</div>}
+                    <p className="text-[14px] text-ink-700">{r.activity}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {around.length > 0 && (
+            <div className="rounded-[var(--radius-lg)] border border-border bg-surface px-4">
+              <div className="divide-y divide-border">
+                {around.map((r) => (
+                  <Fact key={r.key} icon={iconOf(AROUND_US, r.key)} title={labelOf(AROUND_US, r.key, lang)} note={r.note} />
+                ))}
+              </div>
+            </div>
+          )}
+          {host.nearby && <p className="mt-4 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-700">{host.nearby}</p>}
+        </GSection>
+      )}
+
+      {/* 4 — Gereksinimler */}
+      {hasReq && (
+        <GSection icon="✅" title={t("Gereksinimler", "Requirements")}>
+          <div className="divide-y divide-border">
+            {wants && <Fact icon="🌟" title={t("Aranan gönüllü", "Volunteer wanted")} note={wants} />}
+            {host.minStay && <Fact icon="⏳" title={t("Minimum kalış", "Minimum stay")} note={host.minStay} />}
+          </div>
+        </GSection>
+      )}
+
+      {/* 5 — Ev kuralları */}
       {rules.length > 0 && (
-        <Row label={t("🏠 Ev kuralları & ipuçları", "🏠 House rules & tips")}>
-          <ul className="space-y-1.5">
+        <GSection icon="🏠" title={t("Ev kuralları & ipuçları", "House rules & tips")}>
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {rules.map((r) => (
-              <li key={r.key} className="text-ink-700">
-                <span className="font-medium">{iconOf(HOUSE_RULES, r.key)} {labelOf(HOUSE_RULES, r.key, lang)}</span>
-                {r.note && <span className="text-ink-600"> — {r.note}</span>}
-              </li>
+              <div key={r.key} className="flex gap-2.5 rounded-xl border border-border bg-sand-100 px-3.5 py-3">
+                <div className="text-[17px] leading-snug">{iconOf(HOUSE_RULES, r.key)}</div>
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-semibold text-ink-900">{labelOf(HOUSE_RULES, r.key, lang)}</div>
+                  {r.note && <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-600">{r.note}</p>}
+                </div>
+              </div>
             ))}
-          </ul>
-        </Row>
+          </div>
+        </GSection>
       )}
-
-      {around.length > 0 && (
-        <Row label={t("🧭 Çevrede", "🧭 Around us")}>
-          <ul className="space-y-1.5">
-            {around.map((r) => (
-              <li key={r.key} className="text-ink-700">
-                <span className="font-medium">{iconOf(AROUND_US, r.key)} {labelOf(AROUND_US, r.key, lang)}</span>
-                {r.note && <span className="text-ink-600"> — {r.note}</span>}
-              </li>
-            ))}
-          </ul>
-        </Row>
-      )}
-
-      {/* legacy alanlar (eski kayıtlar) */}
-      {host.hoursNote && <Row label={t("Çalışma düzeni", "Work schedule")}><p className="text-ink-700">{host.hoursNote}</p></Row>}
-      {host.nearby && <Row label={t("Çevrede / boş zaman", "Nearby / free time")}><p className="whitespace-pre-wrap text-ink-700">{host.nearby}</p></Row>}
     </div>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function GSection({ icon, title, hint, children }: { icon?: string; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3.5 flex items-baseline gap-2.5">
+        <h3 className="font-display text-[19px] font-semibold text-ink-900">{icon && <span className="mr-1.5">{icon}</span>}{title}</h3>
+        {hint && <span className="text-[12.5px] text-ink-400">{hint}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Fact({ icon, title, note }: { icon: string; title: string; note?: string }) {
+  return (
+    <div className="flex gap-3.5 py-3">
+      <div className="w-6 shrink-0 text-center text-[18px] leading-snug">{icon}</div>
+      <div className="min-w-0">
+        <div className="text-[14px] font-semibold text-ink-900">{title}</div>
+        {note && <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink-600">{note}</p>}
+      </div>
+    </div>
+  );
+}
+
+function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-clay-600">{label}</div>
-      {children}
+      <div className="mb-2.5 text-[13px] font-medium text-ink-700">{label}</div>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
-  );
-}
-
-function Chips({ label, items }: { label: string; items: string[] }) {
-  return (
-    <Row label={label}>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((l) => <span key={l} className="rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{l}</span>)}
-      </div>
-    </Row>
   );
 }
