@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
 import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
-import { AvailabilityField, availabilityEmpty, type Availability } from "@/features/profile/Availability";
+import { AvailabilityField, availabilityEmpty, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import { countryNames } from "@/data/countries";
 import type { HostDetails } from "@/data/host";
@@ -342,8 +342,8 @@ export function OnboardingPage() {
           )}
 
           {curId === "calendar" && (
-            <Step title={t("Takvim", "Calendar")} lead={f.wantsHost ? t("Gönüllüler hangi tarihlerde başvurabilir? Opsiyonel ama eşleşme için çok etkili.", "When can volunteers apply? Optional but very effective for matching.") : t("Hangi tarihlerde müsaitsin? Opsiyonel ama eşleşme için çok etkili.", "When are you available? Optional but very effective for matching.")}>
-              <AvailabilityField value={availability} onChange={setAvailability} label={t("Tarih aralığı", "Date range")} />
+            <Step title={t("Takvim", "Calendar")} lead={f.wantsHost ? t("Gönüllüleri hangi aylarda ağırlayabilirsin? Opsiyonel ama eşleşme için çok etkili.", "Which months can you host volunteers? Optional but very effective for matching.") : t("Hangi aylarda müsaitsin? Opsiyonel ama eşleşme için çok etkili.", "Which months are you available? Optional but very effective for matching.")}>
+              <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(f.wantsHost, f.isVolunteer, t)} />
             </Step>
           )}
 

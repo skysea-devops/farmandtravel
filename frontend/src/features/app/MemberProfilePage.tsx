@@ -286,7 +286,7 @@ export function MemberProfilePage() {
 
       {/* --- Takvim --- */}
       {activeTab === "takvim" && (
-        <Block title={t("📅 Takvim", "📅 Calendar")}>
+        <Block title={t("Takvim", "Calendar")}>
           <AvailabilityView value={m.availability!} label={availabilityLabel(isHost, isVolunteer, t)} />
         </Block>
       )}
