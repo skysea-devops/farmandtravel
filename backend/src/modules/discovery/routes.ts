@@ -16,15 +16,18 @@ const MEMBER_TEXT = ["bio", "headline", "country"] as const;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string | undefined): s is string => !!s && UUID_RE.test(s);
 
-// Map colour category for the public Keşfet map:
-//   host      → çiftlik/yer sahibi (green)
-//   volunteer → gönüllü / deneyim-konaklama arayan (orange)
-//   other     → öğrenen, mentor, ortak, destekçi, aktivite takip eden… (gray)
-// A member can carry several tags; host wins over volunteer wins over other.
-export type MemberCategory = "host" | "volunteer" | "other";
+// Map colour category for the public Keşfet map (4 renk):
+//   host_active → gönüllü arayan yer sahibi (green)
+//   host_idle   → yer sahibi ama şu an gönüllü aramıyor (gold)
+//   volunteer   → gönüllü / deneyim-konaklama arayan (orange)
+//   other       → öğrenen, mentor, ortak, destekçi, aktivite takip eden… (gray)
+// A member can carry several tags; yer sahibi > gönüllü > diğer.
+export type MemberCategory = "host_active" | "host_idle" | "volunteer" | "other";
 export function categoryOf(tags: Tag[]): MemberCategory {
   const has = (axis: string, value: string) => tags.some((t) => t.axis === axis && t.value === value);
-  if (has("situation", "farm-owner") || has("offer", "place-experience")) return "host";
+  const isPlaceOwner = has("situation", "farm-owner") || has("offer", "place-experience");
+  const wantsVolunteers = has("seek", "volunteers") || has("offer", "place-experience");
+  if (isPlaceOwner) return wantsVolunteers ? "host_active" : "host_idle";
   if (has("offer", "volunteer-labor") || has("situation", "seeking-experience") || has("seek", "hosting")) return "volunteer";
   return "other";
 }

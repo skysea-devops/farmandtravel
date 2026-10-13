@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "@/lib/i18n";
+import { MAP_COLORS, type MapCategory } from "./categories";
 
-export type MapCategory = "host" | "volunteer" | "other";
+export type { MapCategory };
 export interface MapPin {
   id: string;
   name: string;
@@ -13,13 +14,10 @@ export interface MapPin {
   lng: number;
 }
 
-// host = çiftlik/yer sahibi (yeşil), volunteer = gönüllü (turuncu), other = diğer (gri)
-const COLORS: Record<MapCategory, string> = { host: "#3a7d44", volunteer: "#e08a3c", other: "#9a9a90" };
-
 function pinIcon(category: MapCategory) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg);background:${COLORS[category]}"></span>`,
+    html: `<span style="display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg);background:${MAP_COLORS[category]}"></span>`,
     iconSize: [20, 20],
     iconAnchor: [10, 20],
   });
@@ -79,9 +77,10 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
         {t("📍 Konumuma git", "📍 Go to my location")}
       </button>
       <div className="absolute bottom-3.5 left-3.5 z-[500] rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.host, transform: "rotate(-45deg)" }} /> {t("Çiftlik / yer sahipleri", "Farm / place owners")}</div>
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.volunteer, transform: "rotate(-45deg)" }} /> {t("Gönüllüler", "Volunteers")}</div>
-        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: COLORS.other, transform: "rotate(-45deg)" }} /> {t("Öğrenen & destekçiler", "Learners & supporters")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: MAP_COLORS.host_active, transform: "rotate(-45deg)" }} /> {t("Gönüllü arayan yer sahipleri", "Place owners seeking volunteers")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: MAP_COLORS.host_idle, transform: "rotate(-45deg)" }} /> {t("Yer sahibi (şu an aramıyor)", "Place owners (not seeking now)")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: MAP_COLORS.volunteer, transform: "rotate(-45deg)" }} /> {t("Gönüllüler", "Volunteers")}</div>
+        <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: MAP_COLORS.other, transform: "rotate(-45deg)" }} /> {t("Öğrenen & destekçiler", "Learners & supporters")}</div>
       </div>
     </div>
   );
