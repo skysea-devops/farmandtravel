@@ -100,6 +100,39 @@ export function MemberProfilePage() {
     <div className="max-w-3xl">
       <Link to="/app/kesfet" className="mb-4 inline-block text-sm text-forest-600 hover:underline">{t("← Keşfet", "← Discover")}</Link>
 
+      {/* Hero — şahsi (kategorisiz) fotoğraflardan 3-4 örnek. Çiftlik fotoğrafları
+          rehber sekmesinde; burada tekrar etmez. Tam set Fotoğraflar sekmesinde. */}
+      {(() => {
+        const shown = general.filter((p) => p.url).slice(0, 4);
+        if (shown.length === 0) return null;
+        const extra = general.filter((p) => p.url).length - shown.length;
+        const [first, ...rest] = shown;
+        return (
+          <div className="mb-5 flex h-[220px] gap-1.5 overflow-hidden rounded-[var(--radius-lg)] sm:h-[280px]">
+            <a href={first.url!} target="_blank" rel="noreferrer" className="relative flex-[1.4] overflow-hidden bg-sand-100">
+              <img src={first.url!} alt="" className="h-full w-full object-cover transition hover:scale-[1.03]" />
+            </a>
+            {rest.length > 0 && (
+              <div className="flex flex-1 flex-col gap-1.5">
+                {rest.map((p, i) => {
+                  const showMore = i === rest.length - 1 && extra > 0;
+                  return showMore ? (
+                    <button key={p.id} type="button" onClick={() => setTab("foto")} className="relative flex-1 overflow-hidden bg-sand-100">
+                      <img src={p.url!} alt="" className="h-full w-full object-cover" />
+                      <span className="absolute inset-0 grid place-items-center bg-ink-900/55 text-sm font-semibold text-white">+{extra} {t("daha", "more")}</span>
+                    </button>
+                  ) : (
+                    <a key={p.id} href={p.url!} target="_blank" rel="noreferrer" className="relative flex-1 overflow-hidden bg-sand-100">
+                      <img src={p.url!} alt="" className="h-full w-full object-cover transition hover:scale-[1.03]" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Başlık kartı — avatar, kimlik, künye ve eylemler bir arada, ferah. */}
       <header className="mb-5 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
