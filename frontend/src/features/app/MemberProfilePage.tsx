@@ -17,7 +17,7 @@ import { VolunteerExperienceView } from "@/features/profile/VolunteerDetails";
 import type { Axis, MemberDetail, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
-type TabId = "genel" | "rehber" | "takvim" | "foto" | "degerlendirme";
+type TabId = "genel" | "rehber" | "takvim" | "foto";
 
 export function MemberProfilePage() {
   const { id } = useParams();
@@ -91,7 +91,6 @@ export function MemberProfilePage() {
     ...(hasGuide ? [{ id: "rehber" as TabId, label: t("Çiftlik rehberi", "Farm guide") }] : []),
     ...(hasCalendar ? [{ id: "takvim" as TabId, label: t("Takvim", "Calendar") }] : []),
     ...(general.length ? [{ id: "foto" as TabId, label: t("Fotoğraflar", "Photos") }] : []),
-    { id: "degerlendirme", label: t("Değerlendirmeler", "Reviews") },
   ];
   const activeTab = TABS.some((x) => x.id === tab) ? tab : "genel";
 
@@ -201,19 +200,18 @@ export function MemberProfilePage() {
               </div>
             </Block>
           )}
+
+          <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
         </>
       )}
 
-      {/* --- Çiftlik rehberi + konaklama fotoğrafları --- */}
+      {/* --- Çiftlik rehberi (gruplu) + konaklama fotoğrafları --- */}
       {activeTab === "rehber" && (
         <>
-          {!hostIsEmpty(m.host) && (
-            <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
-              <HostDetailsView host={m.host!} />
-            </Block>
-          )}
+          {!hostIsEmpty(m.host) && <HostDetailsView host={m.host!} />}
           {hostPhotos.length > 0 && (
-            <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
+            <section className={hostIsEmpty(m.host) ? "" : "mt-9"}>
+              <h3 className="font-display mb-3.5 text-[19px] font-semibold text-ink-900"><span className="mr-1.5">📸</span>{t("Konaklama fotoğrafları", "Accommodation photos")}</h3>
               <div className="space-y-4">
                 {HOST_PHOTO_CATEGORIES.map((cat) => {
                   const items = hostPhotos.filter((p) => p.category === cat.key);
@@ -232,7 +230,7 @@ export function MemberProfilePage() {
                   );
                 })}
               </div>
-            </Block>
+            </section>
           )}
         </>
       )}
@@ -255,11 +253,6 @@ export function MemberProfilePage() {
             ))}
           </div>
         </Block>
-      )}
-
-      {/* --- Değerlendirmeler --- */}
-      {activeTab === "degerlendirme" && (
-        <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
       )}
     </div>
   );
