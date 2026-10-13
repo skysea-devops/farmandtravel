@@ -107,9 +107,10 @@ export function MemberProfilePage() {
       {/* Hero — şahsi (kategorisiz) fotoğraflardan 3-4 örnek. Çiftlik fotoğrafları
           rehber sekmesinde; burada tekrar etmez. Tam set Fotoğraflar sekmesinde. */}
       {(() => {
-        const shown = general.filter((p) => p.url).slice(0, 4);
-        if (shown.length === 0) return null;
-        const extra = general.filter((p) => p.url).length - shown.length;
+        const withUrl = general.filter((p) => p.url);
+        if (withUrl.length === 0) return null;
+        const shown = withUrl.slice(0, 4);
+        const extra = withUrl.length - shown.length;
         const [first, ...rest] = shown;
         return (
           <div className="mb-5 flex h-[220px] gap-1.5 overflow-hidden rounded-[var(--radius-lg)] sm:h-[280px]">
@@ -285,7 +286,7 @@ export function MemberProfilePage() {
 
       {/* --- Takvim --- */}
       {activeTab === "takvim" && (
-        <Block title={t("📅 Takvim", "📅 Calendar")}>
+        <Block title={t("Takvim", "Calendar")}>
           <AvailabilityView value={m.availability!} label={availabilityLabel(isHost, isVolunteer, t)} />
         </Block>
       )}

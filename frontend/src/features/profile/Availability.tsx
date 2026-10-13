@@ -1,82 +1,154 @@
 import { useI18n } from "@/lib/i18n";
 
-// Müsaitlik / tarih aralığı — host "gönüllü aradığım tarihler", gönüllü
-// "müsait olduğum tarihler" olarak doldurur. profile.availability altında saklanır.
+// Takvim / müsaitlik — Worldpackers tarzı 3 durumlu aylık takvim.
+// Her ay: open (müsait) · busy (yoğun talep) · closed (müsait değil) · belirtilmemiş.
+// profile.availability altında saklanır. Eski from/to/flexible alanları geriye dönük
+// uyumluluk için korunur (months yoksa görünümde onlardan türetilir).
+export type MonthState = "open" | "busy" | "closed";
+
 export interface Availability {
-  from?: string;     // YYYY-MM-DD
-  to?: string;       // YYYY-MM-DD
-  flexible?: boolean; // esnek / tüm yıl açık
-  note?: string;     // "yaz ayları", "hafta sonları" gibi
+  months?: Record<string, MonthState>; // "YYYY-MM" -> durum
+  note?: string;                        // "yaz ayları", "hafta sonları" gibi
+  // legacy (eski kayıtlar):
+  from?: string;
+  to?: string;
+  flexible?: boolean;
+}
+
+// Önümüzdeki 12 ay (bu aydan itibaren).
+function next12Months(): { key: string; d: Date }[] {
+  const out: { key: string; d: Date }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, d });
+  }
+  return out;
+}
+
+const monShort = (d: Date, lang: string) => d.toLocaleDateString(lang === "en" ? "en-GB" : "tr-TR", { month: "short" });
+
+// Görünüm/düzenleme için ay haritası: months varsa onu, yoksa eski from/to aralığını
+// "open" olarak türetir.
+export function monthsOf(a?: Availability | null): Record<string, MonthState> {
+  if (!a) return {};
+  if (a.months && Object.keys(a.months).length) return a.months;
+  if (a.from || a.to) {
+    const out: Record<string, MonthState> = {};
+    const start = a.from ? new Date(a.from) : new Date();
+    const end = a.to ? new Date(a.to) : start;
+    const d = new Date(start.getFullYear(), start.getMonth(), 1);
+    let guard = 0;
+    while (d <= end && guard < 36) {
+      out[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`] = "open";
+      d.setMonth(d.getMonth() + 1);
+      guard++;
+    }
+    return out;
+  }
+  return {};
 }
 
 export function availabilityEmpty(a?: Availability | null): boolean {
-  return !a || !(a.from || a.to || a.flexible || a.note);
+  if (!a) return true;
+  const hasMonths = Object.values(monthsOf(a)).some(Boolean);
+  return !(hasMonths || a.note);
 }
 
-// Role'e göre etiket (host → gönüllü aradığın tarihler, gönüllü → müsait olduğun tarihler).
+// Role'e göre etiket (host → gönüllü aradığın aylar, gönüllü → müsait olduğun aylar).
 export function availabilityLabel(isHost: boolean, isVolunteer: boolean, t: (tr: string, en: string) => string): string {
-  if (isHost && !isVolunteer) return t("Gönüllü aradığın tarihler", "Dates you're looking for volunteers");
-  if (isVolunteer && !isHost) return t("Müsait olduğun tarihler", "Dates you're available");
-  return t("Uygun tarihlerin", "Your available dates");
+  if (isHost && !isVolunteer) return t("Gönüllü aradığın aylar", "Months you're looking for volunteers");
+  if (isVolunteer && !isHost) return t("Müsait olduğun aylar", "Months you're available");
+  return t("Uygun ayların", "Your available months");
 }
 
-function fmt(iso: string, lang: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(lang === "en" ? "en-GB" : "tr-TR", { day: "numeric", month: "short", year: "numeric" });
+// Durum renkleri (hücre + lejant). open yeşil, busy kehribar, closed yumuşak kırmızı.
+const CELL: Record<MonthState, string> = {
+  open: "border-forest-600 bg-forest-600 text-white",
+  busy: "border-clay-500 bg-clay-500 text-white",
+  closed: "border-[#e3cfc9] bg-[#f3e6e2] text-[#8a2f29]",
+};
+const DOT: Record<MonthState, string> = {
+  open: "bg-forest-600",
+  busy: "bg-clay-500",
+  closed: "bg-[#c98b82]",
+};
+const stateText = (t: (tr: string, en: string) => string): Record<MonthState, string> => ({
+  open: t("Müsait", "Available"),
+  busy: t("Yoğun talep", "In high demand"),
+  closed: t("Müsait değil", "Not available"),
+});
+
+function Legend() {
+  const { t } = useI18n();
+  const ST = stateText(t);
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-ink-500">
+      {(["open", "busy", "closed"] as MonthState[]).map((s) => (
+        <span key={s} className="inline-flex items-center gap-1.5"><span className={`size-2.5 rounded-full ${DOT[s]}`} /> {ST[s]}</span>
+      ))}
+    </div>
+  );
 }
 
-export function availabilityText(a: Availability, lang: string, t: (tr: string, en: string) => string): string {
-  const parts: string[] = [];
-  if (a.from && a.to) parts.push(`${fmt(a.from, lang)} – ${fmt(a.to, lang)}`);
-  else if (a.from) parts.push(t(`${fmt(a.from, lang)}'den itibaren`, `from ${fmt(a.from, lang)}`));
-  else if (a.to) parts.push(t(`${fmt(a.to, lang)}'e kadar`, `until ${fmt(a.to, lang)}`));
-  if (a.flexible) parts.push(t("esnek / tüm yıl", "flexible / year-round"));
-  return parts.join(" · ");
-}
+const cycle = (s?: MonthState): MonthState | undefined =>
+  s === undefined ? "open" : s === "open" ? "busy" : s === "busy" ? "closed" : undefined;
 
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
 
 export function AvailabilityField({ value, onChange, label }: { value: Availability; onChange: (a: Availability) => void; label: string }) {
   const { t, lang } = useI18n();
-  // Native date picker uses its own locale; set lang on the input so the EN site's
-  // calendar shows English months/format (and the TR site stays Turkish).
-  const locale = lang === "en" ? "en-GB" : "tr-TR";
-  const set = (patch: Partial<Availability>) => onChange({ ...value, ...patch });
+  const months = monthsOf(value);
+  const setMonth = (key: string) => {
+    const next = cycle(months[key]);
+    const m = { ...months };
+    if (next === undefined) delete m[key]; else m[key] = next;
+    onChange({ ...value, months: m });
+  };
   return (
     <div>
-      <div className="mb-1.5 text-[13px] font-semibold text-ink-700">{label}</div>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs text-ink-500">
-          <span className="mb-1 block">{t("Başlangıç", "From")}</span>
-          <input type="date" lang={locale} className={inp} value={value.from ?? ""} disabled={value.flexible}
-            onChange={(e) => set({ from: e.target.value || undefined })} />
-        </label>
-        <label className="text-xs text-ink-500">
-          <span className="mb-1 block">{t("Bitiş", "To")}</span>
-          <input type="date" lang={locale} className={inp} value={value.to ?? ""} disabled={value.flexible} min={value.from || undefined}
-            onChange={(e) => set({ to: e.target.value || undefined })} />
-        </label>
-        <label className="flex items-center gap-2 pb-2.5 text-[13px] text-ink-700">
-          <input type="checkbox" checked={!!value.flexible} onChange={(e) => set({ flexible: e.target.checked })} />
-          {t("Esnek / tüm yıl", "Flexible / year-round")}
-        </label>
+      <div className="mb-1 text-[13px] font-semibold text-ink-700">{label}</div>
+      <p className="mb-3 text-[12.5px] text-ink-500">{t("Her aya dokunarak durumunu değiştir.", "Tap a month to change its status.")}</p>
+      <div className="mb-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+        {next12Months().map(({ key, d }) => {
+          const st = months[key];
+          return (
+            <button key={key} type="button" onClick={() => setMonth(key)}
+              className={`rounded-lg border px-1 py-2 text-center text-[13px] font-medium capitalize transition ${st ? CELL[st] : "border-dashed border-border-strong bg-surface text-ink-500 hover:border-forest-500"}`}>
+              {monShort(d, lang)}
+              {d.getMonth() === 0 && <span className="ml-0.5 text-[10px] opacity-80">'{String(d.getFullYear()).slice(2)}</span>}
+            </button>
+          );
+        })}
       </div>
-      <input className={`${inp} mt-2`} value={value.note ?? ""} onChange={(e) => set({ note: e.target.value || undefined })}
+      <Legend />
+      <input className={`${inp} mt-3`} value={value.note ?? ""} onChange={(e) => onChange({ ...value, note: e.target.value || undefined })}
         placeholder={t("Not (ör. yaz ayları, hafta sonları) — opsiyonel", "Note (e.g. summer months, weekends) — optional")} />
     </div>
   );
 }
 
 export function AvailabilityView({ value, label }: { value: Availability; label: string }) {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
   if (availabilityEmpty(value)) return null;
-  const text = availabilityText(value, lang, t);
+  const months = monthsOf(value);
   return (
     <div>
-      <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-clay-600">📅 {label}</div>
-      {text && <p className="text-sm font-medium text-ink-800">{text}</p>}
-      {value.note && <p className="text-sm text-ink-600">{value.note}</p>}
+      <div className="mb-2.5 text-[13px] font-medium text-ink-600">{label}</div>
+      <div className="mb-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+        {next12Months().map(({ key, d }) => {
+          const st = months[key];
+          return (
+            <div key={key}
+              className={`rounded-lg border px-1 py-2 text-center text-[13px] font-medium capitalize ${st ? CELL[st] : "border-border bg-sand-100 text-ink-300"}`}>
+              {monShort(d, lang)}
+              {d.getMonth() === 0 && <span className="ml-0.5 text-[10px] opacity-80">'{String(d.getFullYear()).slice(2)}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <Legend />
+      {value.note && <p className="mt-2.5 text-sm text-ink-600">{value.note}</p>}
     </div>
   );
 }
