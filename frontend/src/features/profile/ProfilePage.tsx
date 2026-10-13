@@ -133,7 +133,6 @@ export function ProfilePage() {
     ...(wantsVolunteers ? [{ id: "rehber" as TabId, label: t("Çiftlik rehberi", "Farm guide") }] : []),
     { id: "foto", label: t("Fotoğraflar", "Photos") },
     ...(isPlaceOwner ? [{ id: "dogrulama" as TabId, label: t("Doğrulama", "Verification") }] : []),
-    { id: "degerlendirme", label: t("Değerlendirmeler", "Reviews") },
   ];
   const activeTab = TABS.some((x) => x.id === tab) ? tab : "genel";
 
@@ -185,6 +184,7 @@ export function ProfilePage() {
           <Block title={t("Hakkımda", "About me")}>
             {p.bio ? <p className="text-sm text-ink-700">{p.bio}</p> : <p className="text-sm text-ink-400">{t("Henüz tanıtım eklenmedi. Onboarding'den düzenleyebilirsin.", "No intro yet.")}</p>}
           </Block>
+          <MyReviews data={rev} />
           <ActivityEligibilityCard elig={elig} />
         </>
       )}
@@ -302,9 +302,6 @@ export function ProfilePage() {
           <ProofUpload done={!!p.proofAddress} onChange={load} />
         </Block>
       )}
-
-      {/* --- Değerlendirmeler --- */}
-      {activeTab === "degerlendirme" && <MyReviews data={rev} />}
     </div>
   );
 }
