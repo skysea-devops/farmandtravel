@@ -7,6 +7,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { StarInput } from "@/components/ui/StarInput";
 import { cn } from "@/lib/cn";
+import { MapPin, CalendarDays, Eye, Mail, Phone, Building2, Shield, Bookmark, BookmarkCheck, Handshake, MessageCircle, Images, Check, Clock, Star } from "lucide-react";
+import { PHOTO_ICONS, DomainIcon } from "@/lib/icons";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
@@ -111,8 +113,8 @@ export function MemberProfilePage() {
             </div>
             {m.headline && <p className="mt-1 text-sm text-ink-600">{m.headline}</p>}
             <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-ink-500">
-              <span className="inline-flex items-center gap-1.5">📍 {loc || t("Konum belirtilmedi", "No location")}</span>
-              {m.joinedAt && <span className="inline-flex items-center gap-1.5">🗓️ {t("Üye:", "Member since")} {monthYear(m.joinedAt, lang)}</span>}
+              <span className="inline-flex items-center gap-1.5"><MapPin size={14} strokeWidth={1.75} className="text-ink-400" /> {loc || t("Konum belirtilmedi", "No location")}</span>
+              {m.joinedAt && <span className="inline-flex items-center gap-1.5"><CalendarDays size={14} strokeWidth={1.75} className="text-ink-400" /> {t("Üye:", "Member since")} {monthYear(m.joinedAt, lang)}</span>}
               {(m.ratingCount ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-ink-600"><Stars value={m.ratingAvg ?? 0} /> <span className="font-semibold">{m.ratingAvg}</span> ({m.ratingCount})</span>
               )}
@@ -124,16 +126,19 @@ export function MemberProfilePage() {
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
           {connected && (
-            <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>{t("💬 Mesaj gönder", "💬 Send a message")}</Button>
+            <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}><MessageCircle size={16} strokeWidth={1.75} /> {t("Mesaj gönder", "Send a message")}</Button>
           )}
-          <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? t("🔖 Kaydedildi", "🔖 Saved") : t("🔖 Kaydet", "🔖 Save")}</Button>
+          <Button variant="outline" disabled={busy} onClick={toggleSaved}>
+            {m.saved ? <><BookmarkCheck size={16} strokeWidth={1.75} /> {t("Kaydedildi", "Saved")}</> : <><Bookmark size={16} strokeWidth={1.75} /> {t("Kaydet", "Save")}</>}
+          </Button>
           <ReportButton reportedId={m.id} context="profile"
             className="ml-auto rounded-lg border border-border-strong px-3 py-1.5 text-sm text-ink-500 transition hover:border-[#8a2f29] hover:text-[#8a2f29]" />
         </div>
 
         {!connected && (
-          <p className="mt-3 text-[12.5px] text-ink-400">
-            {t("👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı sonrası görünür.", "👁️ Contact details (email, phone, full address) become visible only after a mutual connection.")}
+          <p className="mt-3 flex items-start gap-1.5 text-[12.5px] text-ink-400">
+            <Eye size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+            <span>{t("İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı sonrası görünür.", "Contact details (email, phone, full address) become visible only after a mutual connection.")}</span>
           </p>
         )}
       </header>
@@ -142,12 +147,12 @@ export function MemberProfilePage() {
 
       {connected && m.contact && (
         <div className="mb-5 rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-5">
-          <h2 className="mb-2.5 text-[15px] font-semibold text-forest-700">{t("✓ Bağlantı kuruldu — iletişim bilgileri", "✓ Connected — contact details")}</h2>
-          <div className="space-y-1 text-sm text-ink-700">
-            {m.contact.contactEmail && <div>✉️ {m.contact.contactEmail}</div>}
-            {m.contact.phone && <div>📞 {m.contact.phone}</div>}
-            {m.contact.addressExact && <div>📍 {m.contact.addressExact}</div>}
-            {m.contact.employer && <div>🏢 {m.contact.employer}</div>}
+          <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-forest-700"><Check size={17} strokeWidth={2} /> {t("Bağlantı kuruldu — iletişim bilgileri", "Connected — contact details")}</h2>
+          <div className="space-y-2 text-sm text-ink-700">
+            {m.contact.contactEmail && <div className="flex items-center gap-2.5"><Mail size={15} strokeWidth={1.75} className="text-forest-600" /> {m.contact.contactEmail}</div>}
+            {m.contact.phone && <div className="flex items-center gap-2.5"><Phone size={15} strokeWidth={1.75} className="text-forest-600" /> {m.contact.phone}</div>}
+            {m.contact.addressExact && <div className="flex items-center gap-2.5"><MapPin size={15} strokeWidth={1.75} className="text-forest-600" /> {m.contact.addressExact}</div>}
+            {m.contact.employer && <div className="flex items-center gap-2.5"><Building2 size={15} strokeWidth={1.75} className="text-forest-600" /> {m.contact.employer}</div>}
             {!m.contact.contactEmail && !m.contact.phone && <div className="text-ink-500">{t("Bu üye henüz iletişim bilgisi eklememiş.", "This member hasn't added contact details yet.")}</div>}
           </div>
         </div>
@@ -173,7 +178,7 @@ export function MemberProfilePage() {
           </Block>
 
           {m.volunteer?.experience && (
-            <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+            <Block title={t("Gönüllü bilgisi", "Volunteer info")}>
               <VolunteerExperienceView value={m.volunteer} />
             </Block>
           )}
@@ -210,15 +215,18 @@ export function MemberProfilePage() {
         <>
           {!hostIsEmpty(m.host) && <HostDetailsView host={m.host!} />}
           {hostPhotos.length > 0 && (
-            <section className={hostIsEmpty(m.host) ? "" : "mt-9"}>
-              <h3 className="font-display mb-3.5 text-[19px] font-semibold text-ink-900"><span className="mr-1.5">📸</span>{t("Konaklama fotoğrafları", "Accommodation photos")}</h3>
+            <section className={hostIsEmpty(m.host) ? "" : "mt-10 border-t border-border pt-8"}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-sand-100 text-forest-700"><Images size={18} strokeWidth={1.75} /></span>
+                <h3 className="font-display text-[19px] font-semibold text-ink-900">{t("Konaklama fotoğrafları", "Accommodation photos")}</h3>
+              </div>
               <div className="space-y-4">
                 {HOST_PHOTO_CATEGORIES.map((cat) => {
                   const items = hostPhotos.filter((p) => p.category === cat.key);
                   if (items.length === 0) return null;
                   return (
                     <div key={cat.key}>
-                      <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
+                      <div className="mb-1.5 flex items-center gap-1.5 text-[13px] font-medium text-ink-600"><DomainIcon map={PHOTO_ICONS} k={cat.key} size={15} className="text-ink-400" /> {lang === "en" ? cat.en : cat.tr}</div>
                       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {items.map((ph) => ph.url && (
                           <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
@@ -349,7 +357,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
       ) : data.canReview ? (
         <div className="mb-4">
           {!open ? (
-            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>{t("★ Değerlendir", "★ Write a review")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Star size={15} strokeWidth={1.75} /> {t("Değerlendir", "Write a review")}</Button>
           ) : (
             <div className="rounded-[var(--radius-lg)] border border-border bg-bg p-4">
               <div className={`mb-3 rounded-lg p-3 transition ${rateErr ? "bg-clay-500/5 ring-2 ring-clay-500" : "bg-surface"}`}>
@@ -434,7 +442,7 @@ function AdminMessage({ memberId, name }: { memberId: string; name: string }) {
   return (
     <div className="mb-4 rounded-[var(--radius-lg)] border border-[#d9c7a3] bg-[#f7f0df] p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold text-[#6b5518]">🛡️ Admin: bu üyeye mesaj gönder</h2>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[#6b5518]"><Shield size={16} strokeWidth={1.75} /> Admin: bu üyeye mesaj gönder</h2>
         {!open && <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Mesaj yaz</Button>}
       </div>
       {open && (
@@ -459,12 +467,12 @@ function ConnectAction({ m, busy, onConnect, onAccept }: {
 }) {
   const { t } = useI18n();
   const conn = m.connection;
-  if (!conn) return <Button disabled={busy} onClick={onConnect}>{t("🤝 Bağlantı kur", "🤝 Connect")}</Button>;
-  if (conn.status === "accepted") return <Button variant="outline" disabled>{t("✓ Bağlısınız", "✓ Connected")}</Button>;
+  if (!conn) return <Button disabled={busy} onClick={onConnect}><Handshake size={16} strokeWidth={1.75} /> {t("Bağlantı kur", "Connect")}</Button>;
+  if (conn.status === "accepted") return <Button variant="outline" disabled><Check size={16} strokeWidth={1.75} /> {t("Bağlısınız", "Connected")}</Button>;
   if (conn.status === "rejected") return <Button variant="outline" disabled>{t("İstek reddedildi", "Request declined")}</Button>;
   // pending
-  if (conn.direction === "incoming") return <Button disabled={busy} onClick={onAccept}>{t("🤝 İsteği kabul et", "🤝 Accept request")}</Button>;
-  return <Button variant="outline" disabled>{t("⏳ İstek gönderildi", "⏳ Request sent")}</Button>;
+  if (conn.direction === "incoming") return <Button disabled={busy} onClick={onAccept}><Handshake size={16} strokeWidth={1.75} /> {t("İsteği kabul et", "Accept request")}</Button>;
+  return <Button variant="outline" disabled><Clock size={15} strokeWidth={1.75} /> {t("İstek gönderildi", "Request sent")}</Button>;
 }
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {

@@ -1,7 +1,10 @@
+import type { LucideIcon } from "lucide-react";
+import { HandHelping, Gift, Trees, ClipboardCheck, House, Users, Clock, BedDouble, Utensils, TreePalm, Sprout, Star, CalendarClock, CalendarDays } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { HELP_ICONS, AMENITY_ICONS, MEAL_ICONS, AROUND_ICONS, RULE_ICONS, DomainIcon } from "@/lib/icons";
 import {
   HELP_TYPES, AMENITIES, MEAL_TYPES, LANGUAGES, HOUSE_RULES, AROUND_US, WANTS_EXPERIENCE,
-  labelOf, iconOf, hostIsEmpty, type HostDetails, type RuleItem, type RoutineRow, type LabeledKey,
+  labelOf, hostIsEmpty, type HostDetails, type RuleItem, type RoutineRow, type LabeledKey,
 } from "@/data/host";
 
 const ta = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600 resize-y";
@@ -189,7 +192,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 // ───────────────────────── read-only view ─────────────────────────
 
-// Worldpackers tarzı gruplu görünüm: düz liste yerine anlamlı bölümler —
+// Gruplu, çizgi-ikonlu görünüm. Ana bölümler tam-genişlik ayıraçla ayrılır:
 // Ne yapacaksın · Sana neler sunuluyor · Bizimle deneyim · Gereksinimler · Ev kuralları.
 export function HostDetailsView({ host }: { host: HostDetails }) {
   const { t, lang } = useI18n();
@@ -210,24 +213,24 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
   const hasReq = !!(wants || host.minStay);
 
   return (
-    <div className="space-y-9">
+    <div className="divide-y divide-border">
       {/* 1 — Ne yapacaksın */}
       {hasWork && (
-        <GSection icon="🧑‍🌾" title={t("Ne yapacaksın", "What you'll do")}>
+        <GSection icon={HandHelping} title={t("Ne yapacaksın", "What you'll do")}>
           {host.work && <p className="mb-4 whitespace-pre-wrap text-[14.5px] leading-relaxed text-ink-700">{host.work}</p>}
           {help.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-2">
               {help.map((k) => (
-                <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-ink-700">
-                  <span>{iconOf(HELP_TYPES, k)}</span>{labelOf(HELP_TYPES, k, lang)}
+                <span key={k} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] text-ink-700">
+                  <DomainIcon map={HELP_ICONS} k={k} size={15} className="text-forest-600" />{labelOf(HELP_TYPES, k, lang)}
                 </span>
               ))}
             </div>
           )}
           {(host.maxVolunteers || host.hoursNote) && (
             <div className="divide-y divide-border">
-              {host.maxVolunteers && <Fact icon="👥" title={t("Aynı anda en fazla", "At once, up to")} note={host.maxVolunteers} />}
-              {host.hoursNote && <Fact icon="⏱️" title={t("Çalışma düzeni", "Work schedule")} note={host.hoursNote} />}
+              {host.maxVolunteers && <Fact icon={Users} title={t("Aynı anda en fazla", "At once, up to")} note={host.maxVolunteers} />}
+              {host.hoursNote && <Fact icon={Clock} title={t("Çalışma düzeni", "Work schedule")} note={host.hoursNote} />}
             </div>
           )}
         </GSection>
@@ -235,45 +238,47 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
 
       {/* 2 — Sana neler sunuluyor */}
       {hasOffer && (
-        <GSection icon="🎁" title={t("Sana neler sunuluyor", "What you get")}>
+        <GSection icon={Gift} title={t("Sana neler sunuluyor", "What you get")}>
           {(host.accommodation || host.meals || mealTypes.length > 0 || host.daysOff || host.learn) && (
-            <div className="mb-4 divide-y divide-border">
-              {host.accommodation && <Fact icon="🛏️" title={t("Konaklama", "Accommodation")} note={host.accommodation} />}
+            <div className="mb-5 divide-y divide-border">
+              {host.accommodation && <Fact icon={BedDouble} title={t("Konaklama", "Accommodation")} note={host.accommodation} />}
               {(host.meals || mealTypes.length > 0) && (
-                <div className="flex gap-3.5 py-3">
-                  <div className="w-6 shrink-0 text-center text-[18px] leading-snug">🍽️</div>
+                <div className="flex gap-3.5 py-3.5">
+                  <span className="mt-0.5 shrink-0 text-ink-400"><Utensils size={18} strokeWidth={1.75} /></span>
                   <div className="min-w-0">
                     <div className="text-[14px] font-semibold text-ink-900">{t("Yemek", "Meals")}</div>
                     {mealTypes.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         {mealTypes.map((k) => (
-                          <span key={k} className="inline-flex items-center gap-1 rounded-full bg-sand-100 px-2.5 py-1 text-[12px] text-ink-700">{iconOf(MEAL_TYPES, k)} {labelOf(MEAL_TYPES, k, lang)}</span>
+                          <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[12px] text-ink-700">
+                            <DomainIcon map={MEAL_ICONS} k={k} size={13} className="text-forest-600" />{labelOf(MEAL_TYPES, k, lang)}
+                          </span>
                         ))}
                       </div>
                     )}
-                    {host.meals && <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-600">{host.meals}</p>}
+                    {host.meals && <p className="mt-2 text-[13.5px] leading-relaxed text-ink-600">{host.meals}</p>}
                   </div>
                 </div>
               )}
-              {host.daysOff && <Fact icon="🌿" title={t("İzin günleri", "Days off")} note={host.daysOff} />}
-              {host.learn && <Fact icon="🌱" title={t("Neler öğrenebilirsin", "What you can learn")} note={host.learn} />}
+              {host.daysOff && <Fact icon={TreePalm} title={t("İzin günleri", "Days off")} note={host.daysOff} />}
+              {host.learn && <Fact icon={Sprout} title={t("Neler öğrenebilirsin", "What you can learn")} note={host.learn} />}
             </div>
           )}
           {(amen.length > 0 || langs.length > 0) && (
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               {amen.length > 0 && (
-                <ChipGroup label={t("🏠 Konaklama & olanaklar", "🏠 Facilities & amenities")}>
+                <ChipGroup label={t("Konaklama & olanaklar", "Facilities & amenities")}>
                   {amen.map((k) => (
-                    <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe3c8] bg-offer-bg px-3 py-1.5 text-[13px] text-forest-700">
-                      <span>{iconOf(AMENITIES, k)}</span>{labelOf(AMENITIES, k, lang)}
+                    <span key={k} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] text-ink-700">
+                      <DomainIcon map={AMENITY_ICONS} k={k} size={15} className="text-forest-600" />{labelOf(AMENITIES, k, lang)}
                     </span>
                   ))}
                 </ChipGroup>
               )}
               {langs.length > 0 && (
-                <ChipGroup label={t("🗣️ Konuşulan diller", "🗣️ Languages spoken")}>
+                <ChipGroup label={t("Konuşulan diller", "Languages spoken")}>
                   {langs.map((k) => (
-                    <span key={k} className="rounded-full border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-ink-700">{labelOf(LANGUAGES, k, lang)}</span>
+                    <span key={k} className="rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] text-ink-700">{labelOf(LANGUAGES, k, lang)}</span>
                   ))}
                 </ChipGroup>
               )}
@@ -284,10 +289,10 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
 
       {/* 3 — Bizimle deneyim */}
       {hasExp && (
-        <GSection icon="🌾" title={t("Bizimle deneyim", "The experience")}>
+        <GSection icon={Trees} title={t("Bizimle deneyim", "The experience")}>
           {routine.length > 0 && (
-            <div className="mb-5">
-              <div className="mb-3 text-[13px] font-medium text-ink-600">📅 {t("Tipik bir gün", "A typical day")}</div>
+            <div className="mb-6">
+              <div className="mb-3 flex items-center gap-1.5 text-[13px] font-medium text-ink-600"><CalendarDays size={15} strokeWidth={1.75} /> {t("Tipik bir gün", "A typical day")}</div>
               <div className="ml-1 flex flex-col gap-3 border-l-2 border-sand-300 pl-4">
                 {routine.map((r, i) => (
                   <div key={i} className="relative">
@@ -303,7 +308,7 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
             <div className="rounded-[var(--radius-lg)] border border-border bg-surface px-4">
               <div className="divide-y divide-border">
                 {around.map((r) => (
-                  <Fact key={r.key} icon={iconOf(AROUND_US, r.key)} title={labelOf(AROUND_US, r.key, lang)} note={r.note} />
+                  <Fact key={r.key} map={AROUND_ICONS} mapKey={r.key} title={labelOf(AROUND_US, r.key, lang)} note={r.note} />
                 ))}
               </div>
             </div>
@@ -314,21 +319,21 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
 
       {/* 4 — Gereksinimler */}
       {hasReq && (
-        <GSection icon="✅" title={t("Gereksinimler", "Requirements")}>
+        <GSection icon={ClipboardCheck} title={t("Gereksinimler", "Requirements")}>
           <div className="divide-y divide-border">
-            {wants && <Fact icon="🌟" title={t("Aranan gönüllü", "Volunteer wanted")} note={wants} />}
-            {host.minStay && <Fact icon="⏳" title={t("Minimum kalış", "Minimum stay")} note={host.minStay} />}
+            {wants && <Fact icon={Star} title={t("Aranan gönüllü", "Volunteer wanted")} note={wants} />}
+            {host.minStay && <Fact icon={CalendarClock} title={t("Minimum kalış", "Minimum stay")} note={host.minStay} />}
           </div>
         </GSection>
       )}
 
       {/* 5 — Ev kuralları */}
       {rules.length > 0 && (
-        <GSection icon="🏠" title={t("Ev kuralları & ipuçları", "House rules & tips")}>
+        <GSection icon={House} title={t("Ev kuralları & ipuçları", "House rules & tips")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {rules.map((r) => (
-              <div key={r.key} className="flex gap-2.5 rounded-xl border border-border bg-sand-100 px-3.5 py-3">
-                <div className="text-[17px] leading-snug">{iconOf(HOUSE_RULES, r.key)}</div>
+              <div key={r.key} className="flex gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+                <span className="mt-0.5 shrink-0 text-forest-600"><DomainIcon map={RULE_ICONS} k={r.key} size={17} /></span>
                 <div className="min-w-0">
                   <div className="text-[13.5px] font-semibold text-ink-900">{labelOf(HOUSE_RULES, r.key, lang)}</div>
                   {r.note && <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-600">{r.note}</p>}
@@ -342,22 +347,25 @@ export function HostDetailsView({ host }: { host: HostDetails }) {
   );
 }
 
-function GSection({ icon, title, hint, children }: { icon?: string; title: string; hint?: string; children: React.ReactNode }) {
+function GSection({ icon: Ic, title, hint, children }: { icon: LucideIcon; title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section>
-      <div className="mb-3.5 flex items-baseline gap-2.5">
-        <h3 className="font-display text-[19px] font-semibold text-ink-900">{icon && <span className="mr-1.5">{icon}</span>}{title}</h3>
-        {hint && <span className="text-[12.5px] text-ink-400">{hint}</span>}
+    <section className="py-7 first:pt-0 last:pb-0">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-sand-100 text-forest-700"><Ic size={18} strokeWidth={1.75} /></span>
+        <h3 className="font-display text-[19px] font-semibold text-ink-900">{title}</h3>
+        {hint && <span className="ml-auto text-[12.5px] text-ink-400">{hint}</span>}
       </div>
       {children}
     </section>
   );
 }
 
-function Fact({ icon, title, note }: { icon: string; title: string; note?: string }) {
+function Fact({ icon: Ic, map, mapKey, title, note }: { icon?: LucideIcon; map?: Record<string, LucideIcon>; mapKey?: string; title: string; note?: string }) {
   return (
-    <div className="flex gap-3.5 py-3">
-      <div className="w-6 shrink-0 text-center text-[18px] leading-snug">{icon}</div>
+    <div className="flex gap-3.5 py-3.5">
+      <span className="mt-0.5 shrink-0 text-ink-400">
+        {Ic ? <Ic size={18} strokeWidth={1.75} /> : map && mapKey ? <DomainIcon map={map} k={mapKey} /> : null}
+      </span>
       <div className="min-w-0">
         <div className="text-[14px] font-semibold text-ink-900">{title}</div>
         {note && <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink-600">{note}</p>}
@@ -369,7 +377,7 @@ function Fact({ icon, title, note }: { icon: string; title: string; note?: strin
 function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-2.5 text-[13px] font-medium text-ink-700">{label}</div>
+      <div className="mb-2.5 text-[13px] font-medium text-ink-600">{label}</div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
