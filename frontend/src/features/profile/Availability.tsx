@@ -1,10 +1,10 @@
 import { useI18n } from "@/lib/i18n";
 
-// Takvim / müsaitlik — Worldpackers tarzı 3 durumlu aylık takvim.
-// Her ay: open (müsait) · busy (yoğun talep) · closed (müsait değil) · belirtilmemiş.
+// Takvim / müsaitlik — 2 durumlu aylık takvim.
+// Her ay: open (müsait) · closed (müsait değil) · belirtilmemiş.
 // profile.availability altında saklanır. Eski from/to/flexible alanları geriye dönük
 // uyumluluk için korunur (months yoksa görünümde onlardan türetilir).
-export type MonthState = "open" | "busy" | "closed";
+export type MonthState = "open" | "closed";
 
 export interface Availability {
   months?: Record<string, MonthState>; // "YYYY-MM" -> durum
@@ -32,7 +32,12 @@ const monShort = (d: Date, lang: string) => d.toLocaleDateString(lang === "en" ?
 // "open" olarak türetir.
 export function monthsOf(a?: Availability | null): Record<string, MonthState> {
   if (!a) return {};
-  if (a.months && Object.keys(a.months).length) return a.months;
+  if (a.months && Object.keys(a.months).length) {
+    // Eski "busy" kayıtlarını "open"a indir (artık 2 durum).
+    const out: Record<string, MonthState> = {};
+    for (const [k, v] of Object.entries(a.months)) out[k] = v === "closed" ? "closed" : "open";
+    return out;
+  }
   if (a.from || a.to) {
     const out: Record<string, MonthState> = {};
     const start = a.from ? new Date(a.from) : new Date();
@@ -62,20 +67,17 @@ export function availabilityLabel(isHost: boolean, isVolunteer: boolean, t: (tr:
   return t("Uygun ayların", "Your available months");
 }
 
-// Durum renkleri (hücre + lejant). open yeşil, busy kehribar, closed yumuşak kırmızı.
+// Durum renkleri (hücre + lejant). open yeşil, closed yumuşak kırmızı.
 const CELL: Record<MonthState, string> = {
   open: "border-forest-600 bg-forest-600 text-white",
-  busy: "border-clay-500 bg-clay-500 text-white",
   closed: "border-[#e3cfc9] bg-[#f3e6e2] text-[#8a2f29]",
 };
 const DOT: Record<MonthState, string> = {
   open: "bg-forest-600",
-  busy: "bg-clay-500",
   closed: "bg-[#c98b82]",
 };
 const stateText = (t: (tr: string, en: string) => string): Record<MonthState, string> => ({
   open: t("Müsait", "Available"),
-  busy: t("Yoğun talep", "In high demand"),
   closed: t("Müsait değil", "Not available"),
 });
 
@@ -84,7 +86,7 @@ function Legend() {
   const ST = stateText(t);
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-ink-500">
-      {(["open", "busy", "closed"] as MonthState[]).map((s) => (
+      {(["open", "closed"] as MonthState[]).map((s) => (
         <span key={s} className="inline-flex items-center gap-1.5"><span className={`size-2.5 rounded-full ${DOT[s]}`} /> {ST[s]}</span>
       ))}
     </div>
@@ -92,7 +94,7 @@ function Legend() {
 }
 
 const cycle = (s?: MonthState): MonthState | undefined =>
-  s === undefined ? "open" : s === "open" ? "busy" : s === "busy" ? "closed" : undefined;
+  s === undefined ? "open" : s === "open" ? "closed" : undefined;
 
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
 
