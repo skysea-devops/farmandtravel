@@ -6,6 +6,7 @@ import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { StarInput } from "@/components/ui/StarInput";
+import { cn } from "@/lib/cn";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monthYear } from "@/lib/time";
@@ -16,6 +17,7 @@ import { VolunteerExperienceView } from "@/features/profile/VolunteerDetails";
 import type { Axis, MemberDetail, Profile, ReviewsData } from "@/lib/types";
 
 const AXES: Axis[] = ["situation", "seek", "offer", "topic"];
+type TabId = "genel" | "rehber" | "takvim" | "foto" | "degerlendirme";
 
 export function MemberProfilePage() {
   const { id } = useParams();
@@ -29,6 +31,7 @@ export function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [tab, setTab] = useState<TabId>("genel");
 
   useEffect(() => {
     api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
@@ -71,42 +74,75 @@ export function MemberProfilePage() {
 
   const loc = [m.city, m.country].filter(Boolean).join(", ");
   const matchedKeys = new Set(m.matched.map((tg) => `${tg.axis}:${tg.value}`));
+  const connected = m.connection?.status === "accepted";
+
+  // Rol tespiti (rafine model) — hangi sekmelerin görüneceğini belirler.
+  const isHost = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner") || (tg.axis === "seek" && tg.value === "volunteers"));
+  const isVolunteer = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "volunteer-labor") || (tg.axis === "situation" && tg.value === "seeking-experience") || (tg.axis === "seek" && tg.value === "hosting"));
+
+  const general = (m.photos ?? []).filter((p) => !p.category);
+  const hostPhotos = (m.photos ?? []).filter((p) => p.category);
+  const hasGuide = !hostIsEmpty(m.host) || hostPhotos.length > 0;
+  const hasCalendar = !availabilityEmpty(m.availability);
+
+  // Sekmeler veriye göre; boş sekme gösterilmez.
+  const TABS: { id: TabId; label: string }[] = [
+    { id: "genel", label: t("Genel", "Overview") },
+    ...(hasGuide ? [{ id: "rehber" as TabId, label: t("Çiftlik rehberi", "Farm guide") }] : []),
+    ...(hasCalendar ? [{ id: "takvim" as TabId, label: t("Takvim", "Calendar") }] : []),
+    ...(general.length ? [{ id: "foto" as TabId, label: t("Fotoğraflar", "Photos") }] : []),
+    { id: "degerlendirme", label: t("Değerlendirmeler", "Reviews") },
+  ];
+  const activeTab = TABS.some((x) => x.id === tab) ? tab : "genel";
 
   return (
     <div className="max-w-3xl">
       <Link to="/app/kesfet" className="mb-4 inline-block text-sm text-forest-600 hover:underline">{t("← Keşfet", "← Discover")}</Link>
 
-      <div className="mb-5 flex items-center gap-4">
-        <Avatar url={m.avatarUrl} className="size-20" />
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl font-semibold">{m.firstName}</h1>
-          <div className="text-sm text-ink-500">{loc || t("Konum belirtilmedi", "No location")}{m.headline ? ` · ${m.headline}` : ""}</div>
-          {m.joinedAt && <div className="mt-0.5 text-xs text-ink-400">🗓️ {t("Üye:", "Member since")} {monthYear(m.joinedAt, lang)}</div>}
-          <div className="mt-1 flex items-center gap-2">
-            {(m.ratingCount ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-[13px] text-ink-600"><Stars value={m.ratingAvg ?? 0} /> {m.ratingAvg} ({m.ratingCount})</span>
-            )}
-            {m.score > 0 && <span className="rounded-full bg-moss-500/15 px-2 py-0.5 text-[11px] font-semibold text-forest-700">{t("Seninle uyumlu", "A match for you")}</span>}
+      {/* Başlık kartı — avatar, kimlik, künye ve eylemler bir arada, ferah. */}
+      <header className="mb-5 rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <Avatar url={m.avatarUrl} className="size-24 shrink-0 ring-4 ring-sand-100" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h1 className="font-display text-[26px] font-semibold leading-tight">{m.firstName}</h1>
+              {m.score > 0 && (
+                <span className="rounded-full bg-moss-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-forest-700">{t("Seninle uyumlu", "A match for you")}</span>
+              )}
+            </div>
+            {m.headline && <p className="mt-1 text-sm text-ink-600">{m.headline}</p>}
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-ink-500">
+              <span className="inline-flex items-center gap-1.5">📍 {loc || t("Konum belirtilmedi", "No location")}</span>
+              {m.joinedAt && <span className="inline-flex items-center gap-1.5">🗓️ {t("Üye:", "Member since")} {monthYear(m.joinedAt, lang)}</span>}
+              {(m.ratingCount ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-ink-600"><Stars value={m.ratingAvg ?? 0} /> <span className="font-semibold">{m.ratingAvg}</span> ({m.ratingCount})</span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
-        {m.connection?.status === "accepted" && (
-          <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>{t("💬 Mesaj gönder", "💬 Send a message")}</Button>
-        )}
-        <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? t("🔖 Kaydedildi", "🔖 Saved") : t("🔖 Kaydet", "🔖 Save")}</Button>
-        <div className="ml-auto flex items-center">
+        {/* Eylem çubuğu */}
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
+          {connected && (
+            <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}>{t("💬 Mesaj gönder", "💬 Send a message")}</Button>
+          )}
+          <Button variant="outline" disabled={busy} onClick={toggleSaved}>{m.saved ? t("🔖 Kaydedildi", "🔖 Saved") : t("🔖 Kaydet", "🔖 Save")}</Button>
           <ReportButton reportedId={m.id} context="profile"
-            className="rounded-lg border border-border-strong px-3 py-1.5 text-sm text-ink-500 transition hover:border-[#8a2f29] hover:text-[#8a2f29]" />
+            className="ml-auto rounded-lg border border-border-strong px-3 py-1.5 text-sm text-ink-500 transition hover:border-[#8a2f29] hover:text-[#8a2f29]" />
         </div>
-      </div>
+
+        {!connected && (
+          <p className="mt-3 text-[12.5px] text-ink-400">
+            {t("👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı sonrası görünür.", "👁️ Contact details (email, phone, full address) become visible only after a mutual connection.")}
+          </p>
+        )}
+      </header>
 
       {isAdmin && <AdminMessage memberId={m.id} name={m.firstName ?? "bu üye"} />}
 
-      {m.connection?.status === "accepted" && m.contact && (
-        <div className="mb-4 rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-5">
+      {connected && m.contact && (
+        <div className="mb-5 rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-5">
           <h2 className="mb-2.5 text-[15px] font-semibold text-forest-700">{t("✓ Bağlantı kuruldu — iletişim bilgileri", "✓ Connected — contact details")}</h2>
           <div className="space-y-1 text-sm text-ink-700">
             {m.contact.contactEmail && <div>✉️ {m.contact.contactEmail}</div>}
@@ -118,99 +154,113 @@ export function MemberProfilePage() {
         </div>
       )}
 
-      {m.bio && (
-        <Block title={t("Hakkında", "About")}><p className="text-sm text-ink-700">{m.bio}</p></Block>
-      )}
-
-      {!availabilityEmpty(m.availability) && (() => {
-        const isHost = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "place-experience") || (tg.axis === "situation" && tg.value === "farm-owner") || (tg.axis === "seek" && tg.value === "volunteers"));
-        const isVolunteer = m.tags.some((tg) => (tg.axis === "offer" && tg.value === "volunteer-labor") || (tg.axis === "situation" && tg.value === "seeking-experience") || (tg.axis === "seek" && tg.value === "hosting"));
-        return (
-          <Block title={t("📅 Müsaitlik", "📅 Availability")}>
-            <AvailabilityView value={m.availability!} label={availabilityLabel(isHost, isVolunteer, t)} />
-          </Block>
-        );
-      })()}
-
-      {m.volunteer?.experience && (
-        <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
-          <VolunteerExperienceView value={m.volunteer} />
-        </Block>
-      )}
-
-      {(() => {
-        // Genel (kategorisiz) fotoğraflar burada; çiftlik rehberi + konaklama fotoğrafları
-        // en altta (değerlendirmelerden sonra) gösterilir.
-        const general = (m.photos ?? []).filter((p) => !p.category);
-        if (general.length === 0) return null;
-        return (
-          <Block title={t("Fotoğraflar", "Photos")}>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {general.map((ph) => ph.url && (
-                <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
-                  <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
-                </a>
-              ))}
-            </div>
-          </Block>
-        );
-      })()}
-
-      {AXES.map((axis) => {
-        const tags = m.tags.filter((tg) => tg.axis === axis);
-        if (tags.length === 0) return null;
-        return (
-          <Block key={axis} title={AXIS_LABEL[axis]}>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tg) => (
-                <span key={tg.value} className={matchedKeys.has(`${tg.axis}:${tg.value}`) ? "rounded-full ring-2 ring-moss-500/40" : ""}>
-                  <Tag axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>
-                </span>
-              ))}
-            </div>
-          </Block>
-        );
-      })}
-
-      <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
-
-      {/* Çiftlik rehberi + konaklama fotoğrafları: en altta, değerlendirmelerden sonra. */}
-      {!hostIsEmpty(m.host) && (
-        <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
-          <HostDetailsView host={m.host!} />
-        </Block>
-      )}
-
-      {(() => {
-        const hostPhotos = (m.photos ?? []).filter((p) => p.category);
-        if (hostPhotos.length === 0) return null;
-        return (
-          <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
-            <div className="space-y-4">
-              {HOST_PHOTO_CATEGORIES.map((cat) => {
-                const items = hostPhotos.filter((p) => p.category === cat.key);
-                if (items.length === 0) return null;
-                return (
-                  <div key={cat.key}>
-                    <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {items.map((ph) => ph.url && (
-                        <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
-                          <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Block>
-        );
-      })()}
-
-      <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
-        {t("👁️ İletişim bilgileri (e-posta, telefon, tam adres) yalnızca karşılıklı bağlantı kabul edildikten sonra görünür.", "👁️ Contact details (email, phone, full address) are visible only after a mutual connection is accepted.")}
+      {/* Sekmeler */}
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
+        {TABS.map((x) => (
+          <button key={x.id} onClick={() => setTab(x.id)}
+            className={cn("-mb-px whitespace-nowrap border-b-2 px-3.5 py-2 text-sm font-medium transition",
+              activeTab === x.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700")}>
+            {x.label}
+          </button>
+        ))}
       </div>
+
+      {/* --- Genel --- */}
+      {activeTab === "genel" && (
+        <>
+          <Block title={t("Hakkında", "About")}>
+            {m.bio ? <p className="text-sm leading-relaxed text-ink-700">{m.bio}</p>
+              : <p className="text-sm text-ink-400">{t("Henüz bir tanıtım yazısı eklenmemiş.", "No intro added yet.")}</p>}
+          </Block>
+
+          {m.volunteer?.experience && (
+            <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+              <VolunteerExperienceView value={m.volunteer} />
+            </Block>
+          )}
+
+          {AXES.some((axis) => m.tags.some((tg) => tg.axis === axis)) && (
+            <Block title={t("İlgi & beceri", "Interests & skills")}>
+              <div className="space-y-4">
+                {AXES.map((axis) => {
+                  const tags = m.tags.filter((tg) => tg.axis === axis);
+                  if (tags.length === 0) return null;
+                  return (
+                    <div key={axis}>
+                      <div className="mb-1.5 text-[13px] font-medium text-ink-500">{AXIS_LABEL[axis]}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tg) => (
+                          <span key={tg.value} className={matchedKeys.has(`${tg.axis}:${tg.value}`) ? "rounded-full ring-2 ring-moss-500/40" : ""}>
+                            <Tag axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Block>
+          )}
+        </>
+      )}
+
+      {/* --- Çiftlik rehberi + konaklama fotoğrafları --- */}
+      {activeTab === "rehber" && (
+        <>
+          {!hostIsEmpty(m.host) && (
+            <Block title={t("🏡 Çiftlik rehberi", "🏡 Farm guide")}>
+              <HostDetailsView host={m.host!} />
+            </Block>
+          )}
+          {hostPhotos.length > 0 && (
+            <Block title={t("🏡 Konaklama fotoğrafları", "🏡 Accommodation photos")}>
+              <div className="space-y-4">
+                {HOST_PHOTO_CATEGORIES.map((cat) => {
+                  const items = hostPhotos.filter((p) => p.category === cat.key);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={cat.key}>
+                      <div className="mb-1.5 text-[13px] font-medium text-ink-600">{cat.icon} {lang === "en" ? cat.en : cat.tr}</div>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {items.map((ph) => ph.url && (
+                          <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+                            <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Block>
+          )}
+        </>
+      )}
+
+      {/* --- Takvim --- */}
+      {activeTab === "takvim" && (
+        <Block title={t("📅 Takvim", "📅 Calendar")}>
+          <AvailabilityView value={m.availability!} label={availabilityLabel(isHost, isVolunteer, t)} />
+        </Block>
+      )}
+
+      {/* --- Fotoğraflar (genel) --- */}
+      {activeTab === "foto" && (
+        <Block title={t("Fotoğraflar", "Photos")}>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {general.map((ph) => ph.url && (
+              <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-sand-100">
+                <img src={ph.url} alt="" className="h-full w-full object-cover transition hover:scale-105" />
+              </a>
+            ))}
+          </div>
+        </Block>
+      )}
+
+      {/* --- Değerlendirmeler --- */}
+      {activeTab === "degerlendirme" && (
+        <ReviewsSection key={m.id} memberId={m.id} name={m.firstName ?? t("Bu üye", "This member")} />
+      )}
     </div>
   );
 }
