@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
+import { countryNames } from "@/data/countries";
 import { fullDate } from "@/lib/time";
 import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember, ReportsData, ReportItem, VerificationData } from "@/lib/types";
 
@@ -236,6 +237,9 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
   const [warnBody, setWarnBody] = useState("");
   const [sent, setSent] = useState(false);
   const [verif, setVerif] = useState<VerificationData | null | undefined>(undefined); // undefined=kapalı, null=yükleniyor
+  const [locOpen, setLocOpen] = useState(false);
+  const [cty, setCty] = useState(m.country ?? "");
+  const [cit, setCit] = useState(m.city ?? "");
 
   async function toggleVerif() {
     if (verif !== undefined) { setVerif(undefined); return; }
@@ -273,6 +277,16 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
     try { await adminApi.message(m.id, warnBody.trim()); setSent(true); setWarnOpen(false); setWarnBody(""); }
     finally { setBusy(false); }
   }
+  async function saveLoc() {
+    setBusy(true);
+    try { await adminApi.setLocation(m.id, cty, cit); setLocOpen(false); onAction(); }
+    finally { setBusy(false); }
+  }
+  // Ülke seçenekleri; mevcut değer listede yoksa (ör. "Diğer"/"Other") başa ekle.
+  const countryOpts = (() => {
+    const base = [...countryNames("tr"), "Diğer"];
+    return m.country && !base.includes(m.country) ? [m.country, ...base] : base;
+  })();
 
   return (
     <div className="px-4 py-3 text-sm">
@@ -295,6 +309,33 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
           <div className="mt-0.5 truncate font-mono text-[10px] text-ink-400">{m.sub}</div>
         </div>
         <div className="shrink-0 text-right text-xs text-ink-500">{fullDate(m.createdAt, "tr")}</div>
+      </div>
+
+      {/* Ülke/şehir düzelt — her durumdaki üye için. */}
+      <div className="mt-2">
+        <button type="button" onClick={() => setLocOpen((o) => !o)}
+          className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+          📍 Ülke/şehir düzelt
+        </button>
+        {locOpen && (
+          <div className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-sand-100 px-3 py-2.5">
+            <label className="text-xs">
+              <span className="mb-1 block font-medium text-ink-600">Ülke</span>
+              <select value={cty} onChange={(e) => setCty(e.target.value)}
+                className="rounded-lg border border-border-strong bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-forest-600">
+                <option value="">—</option>
+                {countryOpts.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="mb-1 block font-medium text-ink-600">Şehir</span>
+              <input value={cit} onChange={(e) => setCit(e.target.value)} placeholder="Şehir"
+                className="rounded-lg border border-border-strong bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-forest-600" />
+            </label>
+            <Button size="sm" disabled={busy} onClick={saveLoc}>Kaydet</Button>
+            <button type="button" onClick={() => setLocOpen(false)} className="text-xs text-ink-500 hover:underline">Vazgeç</button>
+          </div>
+        )}
       </div>
 
       {(isPending || isLive) && (
