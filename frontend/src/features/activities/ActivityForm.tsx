@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { activities as actApi, uploadImage } from "@/lib/api";
+import { activities as actApi, uploadImage, uploadVideo } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { ActivityItem, ActivityKind } from "@/lib/types";
 
@@ -18,6 +18,9 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   const [online, setOnline] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [youtubeId, setYoutubeId] = useState("");
+  const [videoSource, setVideoSource] = useState<"youtube" | "upload">("upload");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPct, setVideoPct] = useState(0);
   const [durationMin, setDurationMin] = useState("");
   const [access, setAccess] = useState<"public" | "members">("members");
   const [section, setSection] = useState<"meetups" | "knowledge" | "academy">("knowledge");
@@ -29,17 +32,26 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (title.trim().length < 3) return;
-    if (kind === "video" && youtubeId.trim().length < 1) { setMsg(t("YouTube video ID gerekli.", "YouTube video ID is required.")); return; }
+    if (kind === "video") {
+      if (videoSource === "youtube" && youtubeId.trim().length < 1) { setMsg(t("YouTube video ID gerekli.", "YouTube video ID is required.")); return; }
+      if (videoSource === "upload" && !videoFile) { setMsg(t("Video dosyası seç.", "Choose a video file.")); return; }
+    }
     setBusy(true); setMsg(null);
     try {
       let imageKey: string | undefined;
       if (kind === "photo" && file) imageKey = await uploadImage(file, "gallery");
+      let videoKey: string | undefined;
+      if (kind === "video" && videoSource === "upload" && videoFile) {
+        setVideoPct(0);
+        videoKey = await uploadVideo(videoFile, setVideoPct);
+      }
       const dur = durationMin.trim() ? Number(durationMin) : undefined;
       const created = await actApi.submit<ActivityItem>({
         kind, title, desc: desc || undefined, place: place || undefined, imageKey,
         eventDate: kind === "meeting" && eventDate ? new Date(eventDate).toISOString() : undefined,
         online: kind === "meeting" ? online : undefined,
-        youtubeId: kind === "video" ? youtubeId.trim() : undefined,
+        youtubeId: kind === "video" && videoSource === "youtube" ? youtubeId.trim() : undefined,
+        videoKey: kind === "video" && videoSource === "upload" ? videoKey : undefined,
         durationMin: kind === "video" && dur && !Number.isNaN(dur) ? dur : undefined,
         ...(admin ? { access } : {}),
         ...(kind === "video" ? { section } : {}),
@@ -51,7 +63,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
           ? t("Yayınlandı! Sitede görünüyor.", "Published! It's live on the site.")
           : t("Gönderildi! Bir yönetici onayladıktan sonra yayınlanacak.", "Sent! It will be published once an admin approves it."),
       );
-      setTitle(""); setDesc(""); setPlace(""); setEventDate(""); setFile(null); setYoutubeId(""); setDurationMin(""); setDetail(""); setLink("");
+      setTitle(""); setDesc(""); setPlace(""); setEventDate(""); setFile(null); setYoutubeId(""); setVideoFile(null); setVideoPct(0); setDurationMin(""); setDetail(""); setLink("");
       setTimeout(onDone, 1200);
     } catch {
       setMsg(t("Gönderilemedi, tekrar dene.", "Couldn't send, please try again."));
@@ -106,16 +118,34 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
               <option value="academy">{t("Akademi (eğitim)", "Academy (training)")}</option>
             </select>
           </label>
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Video kaynağı", "Video source")}</span>
+            <select value={videoSource} onChange={(e) => setVideoSource(e.target.value as "youtube" | "upload")} className={inp}>
+              <option value="upload">{t("Dosya yükle (üyelere özel)", "Upload file (members only)")}</option>
+              <option value="youtube">{t("YouTube linki (herkese açık olabilir)", "YouTube link (can be public)")}</option>
+            </select>
+          </label>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-ink-700">{t("YouTube video ID", "YouTube video ID")}</span>
-              <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} className={inp} placeholder="jOW8K7XUX4o" maxLength={20} />
-            </label>
+            {videoSource === "youtube" ? (
+              <label className="text-sm">
+                <span className="mb-1 block font-medium text-ink-700">{t("YouTube video ID", "YouTube video ID")}</span>
+                <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} className={inp} placeholder="jOW8K7XUX4o" maxLength={20} />
+              </label>
+            ) : (
+              <label className="text-sm">
+                <span className="mb-1 block font-medium text-ink-700">{t("Video dosyası", "Video file")}</span>
+                <input type="file" accept="video/mp4,video/webm,video/quicktime" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} className="text-sm" />
+                {videoFile && <span className="mt-1 block text-xs text-ink-400">{(videoFile.size / 1048576).toFixed(0)} MB{busy && videoPct > 0 ? ` · ${t("yükleniyor", "uploading")} %${videoPct}` : ""}</span>}
+              </label>
+            )}
             <label className="text-sm">
               <span className="mb-1 block font-medium text-ink-700">{t("Süre (dk)", "Duration (min)")}</span>
               <input value={durationMin} onChange={(e) => setDurationMin(e.target.value.replace(/\D/g, ""))} className={inp} placeholder="45" inputMode="numeric" />
             </label>
           </div>
+          {videoSource === "upload" && (
+            <p className="mt-2 text-xs text-ink-400">{t("Yüklediğin videolar yalnızca üyelere oynatılır; dışarıya açık link verilmez.", "Uploaded videos play only for members; no public link is shared.")}</p>
+          )}
         </>
       )}
 

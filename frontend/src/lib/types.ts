@@ -22,6 +22,8 @@ export interface ActivityItem {
   desc: string | null;
   image: string | null;
   youtubeId: string | null;
+  videoUrl?: string | null; // kendi barındırılan video (kilit açıkken kısa ömürlü link)
+  hasVideo?: boolean;
   author: string | null;
   place: string | null;
   when: string | null;
