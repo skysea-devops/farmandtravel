@@ -255,3 +255,15 @@ activitiesRoutes.get("/activities/:id", auth, async (c) => {
   await translateFields([out], [...ACTIVITY_TEXT, "detail"], reqLang(c));
   return c.json(out);
 });
+
+// --- Admin: sabitle / sabiti kaldır (Son etkinlikler / öne çıkan) ---
+activitiesRoutes.post("/admin/activities/:id/pin", auth, requireAdmin, async (c) => {
+  const r = await query<ActivityRow>(`UPDATE activities SET pinned=true WHERE id=$1 RETURNING ${COLS}`, [c.req.param("id")]);
+  if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
+  return c.json(await toDto(r.rows[0]!, true));
+});
+activitiesRoutes.post("/admin/activities/:id/unpin", auth, requireAdmin, async (c) => {
+  const r = await query<ActivityRow>(`UPDATE activities SET pinned=false WHERE id=$1 RETURNING ${COLS}`, [c.req.param("id")]);
+  if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
+  return c.json(await toDto(r.rows[0]!, true));
+});
