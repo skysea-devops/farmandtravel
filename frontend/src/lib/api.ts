@@ -174,6 +174,24 @@ export async function uploadImage(file: File, kind: "avatar" | "gallery"): Promi
 }
 
 // Upload a document (adres kanıtı): image or PDF, raw (no shrink). kind="doc".
+// Upload a self-hosted video (Akademi/seminer). Presigned S3 PUT; XHR for progress.
+export async function uploadVideo(file: File, onProgress?: (pct: number) => void): Promise<string> {
+  const ct = ["video/mp4", "video/webm", "video/quicktime"].includes(file.type) ? file.type : "video/mp4";
+  const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {
+    kind: "video", contentType: ct, size: file.size,
+  });
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl);
+    xhr.setRequestHeader("content-type", ct);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("Yükleme başarısız")));
+    xhr.onerror = () => reject(new Error("Yükleme başarısız"));
+    xhr.send(file);
+  });
+  return key;
+}
+
 export async function uploadDoc(file: File): Promise<string> {
   const ct = ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type) ? file.type : "application/pdf";
   const { uploadUrl, key } = await api.post<{ uploadUrl: string; key: string }>("/uploads/presign", {

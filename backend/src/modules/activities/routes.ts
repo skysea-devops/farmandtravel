@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { auth, currentUser, requireAdmin, requireMembership } from "../../shared/http/auth.js";
 import { query } from "../../shared/db/pool.js";
-import { safeUrl } from "../../shared/media/s3.js";
+import { safeUrl, presignGet } from "../../shared/media/s3.js";
 import { Forbidden, NotFound } from "../../shared/errors/index.js";
 import { reqLang } from "../../shared/http/lang.js";
 import { translateFields } from "../../shared/text/translate.js";
@@ -59,6 +59,7 @@ interface ActivityRow {
   image_key: string | null;
   image_url: string | null;
   youtube_id: string | null;
+  video_key: string | null;
   author_name: string | null;
   place: string | null;
   event_at: string | null;
@@ -81,6 +82,8 @@ interface ActivityRow {
 async function toDto(r: ActivityRow, viewerPaid: boolean) {
   const image = r.image_key ? await safeUrl(r.image_key) : r.image_url;
   const unlocked = r.access === "public" || viewerPaid;
+  // Kendi barındırılan video: yalnızca kilit açıkken 4 saatlik presigned GET linki.
+  const videoUrl = unlocked && r.video_key ? await presignGet(r.video_key, 4 * 3600) : null;
   return {
     id: r.id,
     kind: r.kind,
@@ -90,6 +93,8 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
     access: r.access,
     section: r.section ?? (r.kind === "video" ? "knowledge" : r.kind === "photo" ? "member" : "announcements"),
     youtubeId: unlocked ? r.youtube_id : null,
+    videoUrl,
+    hasVideo: !!r.video_key,
     author: r.author_name,
     place: r.place,
     when: r.event_at,
@@ -107,7 +112,7 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
   };
 }
 
-const COLS = `id, author_id, kind, title, description, image_key, image_url, youtube_id,
+const COLS = `id, author_id, kind, title, description, image_key, image_url, youtube_id, video_key,
               author_name, place, event_at, event_date, online, status, pinned, created_at, published_at,
               access, section, duration_min, detail, link`;
 const PCOUNT = `(SELECT count(*)::int FROM activity_participants ap WHERE ap.activity_id = activities.id) AS participant_count`;
@@ -165,7 +170,7 @@ const base = {
   link: z.string().max(500).optional(),             // kayıt/katılım linki
 };
 const submitSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("video"), youtubeId: z.string().min(1).max(20), durationMin: z.number().int().min(1).max(100000).optional(), ...base }),
+  z.object({ kind: z.literal("video"), youtubeId: z.string().max(20).optional(), videoKey: z.string().max(300).optional(), durationMin: z.number().int().min(1).max(100000).optional(), ...base }),
   z.object({ kind: z.literal("photo"), imageKey: z.string().min(1).max(300), ...base }),
   z.object({ kind: z.literal("meeting"), when: z.string().max(120).optional(), eventDate: z.string().datetime().optional(), online: z.boolean().optional(), ...base }),
   z.object({ kind: z.literal("announcement"), ...base }),
@@ -182,6 +187,9 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   // Pull kind-specific fields safely out of the narrowed union.
   const imageKey = "imageKey" in b ? b.imageKey : undefined;
   const youtubeId = "youtubeId" in b ? b.youtubeId : undefined;
+  const videoKey = "videoKey" in b ? b.videoKey : undefined;
+  if (b.kind === "video" && !youtubeId && !videoKey) return c.json({ error: "video_source_required", message: "YouTube ID veya yüklenmiş video gerekli." }, 400);
+  if (videoKey && !videoKey.startsWith(`video/${memberId}/`)) throw Forbidden("Bu video sana ait değil");
   const when = "when" in b ? b.when : undefined;
   const online = "online" in b ? b.online : undefined;
   const eventDate = "eventDate" in b ? b.eventDate : undefined;
@@ -196,9 +204,9 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const status = isAdmin ? "published" : "pending";
   const publishedAt = isAdmin ? new Date().toISOString() : null;
   const r = await query<ActivityRow>(
-    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, event_date, online, status, published_at, access, section, duration_min, detail, link)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING ${COLS}`,
-    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, section, durationMin ?? null, b.detail ?? null, b.link ?? null],
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, video_key, place, event_at, event_date, online, status, published_at, access, section, duration_min, detail, link)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, videoKey ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, section, durationMin ?? null, b.detail ?? null, b.link ?? null],
   );
   return c.json(await toDto(r.rows[0]!, true));
 });

@@ -228,7 +228,12 @@ function ActivityDetail({ id }: { id: string }) {
         </div>
       ) : (
         <div className="mt-5 space-y-5">
-          {a.kind === "video" && a.youtubeId && (
+          {a.kind === "video" && a.videoUrl && (
+            <div className="aspect-video overflow-hidden rounded-[var(--radius-lg)] border border-border bg-black">
+              <video className="h-full w-full" src={a.videoUrl} controls controlsList="nodownload" playsInline preload="metadata" />
+            </div>
+          )}
+          {a.kind === "video" && !a.videoUrl && a.youtubeId && (
             <div className="aspect-video overflow-hidden rounded-[var(--radius-lg)] border border-border bg-black">
               <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${a.youtubeId}`} title={a.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
