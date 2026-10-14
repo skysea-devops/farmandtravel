@@ -91,7 +91,7 @@ reviewsRoutes.post("/reviews", auth, requireMembership, async (c) => {
 
 // My own reviews: received (about me, only the visible ones) + written (all mine,
 // each tagged with its publishing state so I can see what's pending/held).
-reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
+reviewsRoutes.get("/reviews/me", auth, async (c) => {
   const { memberId } = currentUser(c);
 
   const recv = await query<{
@@ -166,7 +166,7 @@ reviewsRoutes.get("/reviews/me", auth, requireMembership, async (c) => {
 
 // Public reviews for a member: only the visible ones (+ summary over visible).
 // My own review of them is returned separately so I can always see/edit it.
-reviewsRoutes.get("/members/:id/reviews", auth, requireMembership, async (c) => {
+reviewsRoutes.get("/members/:id/reviews", auth, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
   if (!isUuid(id)) return c.json({ error: "not_found", message: "Üye bulunamadı" }, 404);
