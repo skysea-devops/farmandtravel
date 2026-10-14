@@ -20,7 +20,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   const [youtubeId, setYoutubeId] = useState("");
   const [durationMin, setDurationMin] = useState("");
   const [access, setAccess] = useState<"public" | "members">("members");
-  const [section, setSection] = useState<"meetups" | "knowledge">("knowledge");
+  const [section, setSection] = useState<"meetups" | "knowledge" | "academy">("knowledge");
   const [detail, setDetail] = useState("");
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState(false);
@@ -100,9 +100,10 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
         <>
           <label className="mt-3 block text-sm">
             <span className="mb-1 block font-medium text-ink-700">{t("Bölüm", "Section")}</span>
-            <select value={section} onChange={(e) => setSection(e.target.value as "meetups" | "knowledge")} className={inp}>
+            <select value={section} onChange={(e) => setSection(e.target.value as "meetups" | "knowledge" | "academy")} className={inp}>
               <option value="meetups">{t("Topluluk Buluşmaları", "Community meetups")}</option>
               <option value="knowledge">{t("Bilgi Paylaşımı", "Knowledge sharing")}</option>
+              <option value="academy">{t("Akademi (eğitim)", "Academy (training)")}</option>
             </select>
           </label>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
