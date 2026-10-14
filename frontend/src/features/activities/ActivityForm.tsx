@@ -20,6 +20,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   const [youtubeId, setYoutubeId] = useState("");
   const [durationMin, setDurationMin] = useState("");
   const [access, setAccess] = useState<"public" | "members">("members");
+  const [section, setSection] = useState<"meetups" | "knowledge">("knowledge");
   const [detail, setDetail] = useState("");
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,6 +42,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
         youtubeId: kind === "video" ? youtubeId.trim() : undefined,
         durationMin: kind === "video" && dur && !Number.isNaN(dur) ? dur : undefined,
         ...(admin ? { access } : {}),
+        ...(kind === "video" ? { section } : {}),
         detail: detail.trim() || undefined,
         link: link.trim() || undefined,
       });
@@ -95,16 +97,25 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
       </label>
 
       {kind === "video" && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
-            <span className="mb-1 block font-medium text-ink-700">{t("YouTube video ID", "YouTube video ID")}</span>
-            <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} className={inp} placeholder="jOW8K7XUX4o" maxLength={20} />
+        <>
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Bölüm", "Section")}</span>
+            <select value={section} onChange={(e) => setSection(e.target.value as "meetups" | "knowledge")} className={inp}>
+              <option value="meetups">{t("Topluluk Buluşmaları", "Community meetups")}</option>
+              <option value="knowledge">{t("Bilgi Paylaşımı", "Knowledge sharing")}</option>
+            </select>
           </label>
-          <label className="text-sm">
-            <span className="mb-1 block font-medium text-ink-700">{t("Süre (dk)", "Duration (min)")}</span>
-            <input value={durationMin} onChange={(e) => setDurationMin(e.target.value.replace(/\D/g, ""))} className={inp} placeholder="45" inputMode="numeric" />
-          </label>
-        </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("YouTube video ID", "YouTube video ID")}</span>
+              <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} className={inp} placeholder="jOW8K7XUX4o" maxLength={20} />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("Süre (dk)", "Duration (min)")}</span>
+              <input value={durationMin} onChange={(e) => setDurationMin(e.target.value.replace(/\D/g, ""))} className={inp} placeholder="45" inputMode="numeric" />
+            </label>
+          </div>
+        </>
       )}
 
       {kind === "photo" && (

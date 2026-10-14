@@ -69,6 +69,7 @@ interface ActivityRow {
   created_at: string;
   published_at: string | null;
   access: string;
+  section: string | null;
   duration_min: number | null;
   detail: string | null;
   link: string | null;
@@ -87,6 +88,7 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
     desc: r.description,
     image,
     access: r.access,
+    section: r.section ?? (r.kind === "video" ? "knowledge" : r.kind === "photo" ? "member" : "announcements"),
     youtubeId: unlocked ? r.youtube_id : null,
     author: r.author_name,
     place: r.place,
@@ -107,7 +109,7 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
 
 const COLS = `id, author_id, kind, title, description, image_key, image_url, youtube_id,
               author_name, place, event_at, event_date, online, status, pinned, created_at, published_at,
-              access, duration_min, detail, link`;
+              access, section, duration_min, detail, link`;
 const PCOUNT = `(SELECT count(*)::int FROM activity_participants ap WHERE ap.activity_id = activities.id) AS participant_count`;
 const SELECT = `SELECT ${COLS}, ${PCOUNT} FROM activities`;
 
@@ -158,6 +160,7 @@ const base = {
   desc: z.string().max(2000).optional(),
   place: z.string().max(120).optional(),
   access: z.enum(["public", "members"]).optional(), // yalnız admin public yapabilir
+  section: z.enum(["meetups", "knowledge", "member", "announcements"]).optional(),
   detail: z.string().max(4000).optional(),          // katılım şartları / uzun açıklama
   link: z.string().max(500).optional(),             // kayıt/katılım linki
 };
@@ -185,15 +188,17 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const durationMin = "durationMin" in b ? b.durationMin : undefined;
   // Yalnız admin bir içeriği "public" (ücretsiz/tanıtım) yapabilir; üye gönderileri members.
   const access = isAdmin ? (b.access ?? "members") : "members";
+  // Bölüm: video için seçilir (meetups/knowledge), değilse türden türetilir.
+  const section = b.section ?? (b.kind === "video" ? "knowledge" : b.kind === "photo" ? "member" : "announcements");
   if (imageKey && !imageKey.startsWith(`gallery/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
   const name = await query<{ first_name: string | null }>("SELECT first_name FROM members WHERE id=$1", [memberId]);
   // Admins create & publish directly; members' submissions go to the approval queue.
   const status = isAdmin ? "published" : "pending";
   const publishedAt = isAdmin ? new Date().toISOString() : null;
   const r = await query<ActivityRow>(
-    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, event_date, online, status, published_at, access, duration_min, detail, link)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING ${COLS}`,
-    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, durationMin ?? null, b.detail ?? null, b.link ?? null],
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, event_date, online, status, published_at, access, section, duration_min, detail, link)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, section, durationMin ?? null, b.detail ?? null, b.link ?? null],
   );
   return c.json(await toDto(r.rows[0]!, true));
 });

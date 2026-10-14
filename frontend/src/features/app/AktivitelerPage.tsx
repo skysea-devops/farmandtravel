@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { api, activities as actApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { listTime } from "@/lib/time";
@@ -27,32 +28,55 @@ export function AktivitelerPage() {
   return id ? <ActivityDetail id={id} /> : <ActivityList />;
 }
 
+type Section = "meetups" | "knowledge" | "member" | "announcements";
+const secOf = (a: ActivityItem): Section =>
+  (a.section as Section) ?? (a.kind === "video" ? "knowledge" : a.kind === "photo" ? "member" : "announcements");
+
 function ActivityList() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const paid = usePaid();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
+  const [sec, setSec] = useState<Section>("meetups");
 
   useEffect(() => {
-    actApi.list<{ items: ActivityItem[] }>(30).then((r) => setItems(r.items)).catch(() => setItems([]));
+    actApi.list<{ items: ActivityItem[] }>(60).then((r) => setItems(r.items)).catch(() => setItems([]));
   }, []);
+
+  const SECTIONS: { id: Section; label: string }[] = [
+    { id: "meetups", label: t("Topluluk Buluşmaları", "Community meetups") },
+    { id: "knowledge", label: t("Bilgi Paylaşımı", "Knowledge sharing") },
+    { id: "member", label: t("Üye Etkinlikleri", "Member activities") },
+    { id: "announcements", label: t("Duyurular", "Announcements") },
+  ];
+  const filtered = (items ?? []).filter((a) => secOf(a) === sec);
 
   return (
     <div>
-      <div className="mb-5">
+      <div className="mb-4">
         <h1 className="font-display mb-1 text-2xl font-semibold">{t("Aktiviteler", "Activities")}</h1>
         <p className="text-sm text-ink-500">{t("Topluluğun videoları, seminer kayıtları ve etkinlikleri. Üyelere özel içeriğe üyelikle erişirsin.", "Community videos, recorded sessions and events. Members-only content opens with membership.")}</p>
       </div>
 
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
+        {SECTIONS.map((s) => (
+          <button key={s.id} onClick={() => setSec(s.id)}
+            className={cn("-mb-px whitespace-nowrap border-b-2 px-3.5 py-2 text-sm font-medium transition",
+              sec === s.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700")}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {items === null ? (
         <div className="py-16 text-center text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
-      ) : items.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-          {t("Henüz aktivite yok.", "No activities yet.")}
+          {t("Bu bölümde henüz içerik yok.", "Nothing here yet.")}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((a) => {
+          {filtered.map((a) => {
             const Icon = KIND_ICON[a.kind] ?? Megaphone;
             const locked = a.access === "members" && paid === false;
             return (
