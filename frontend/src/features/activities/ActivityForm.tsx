@@ -14,7 +14,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [place, setPlace] = useState("");
-  const [when, setWhen] = useState("");
+  const [eventDate, setEventDate] = useState(""); // datetime-local
   const [online, setOnline] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [youtubeId, setYoutubeId] = useState("");
@@ -36,7 +36,8 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
       const dur = durationMin.trim() ? Number(durationMin) : undefined;
       const created = await actApi.submit<ActivityItem>({
         kind, title, desc: desc || undefined, place: place || undefined, imageKey,
-        when: when || undefined, online: kind === "meeting" ? online : undefined,
+        eventDate: kind === "meeting" && eventDate ? new Date(eventDate).toISOString() : undefined,
+        online: kind === "meeting" ? online : undefined,
         youtubeId: kind === "video" ? youtubeId.trim() : undefined,
         durationMin: kind === "video" && dur && !Number.isNaN(dur) ? dur : undefined,
         ...(admin ? { access } : {}),
@@ -48,7 +49,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
           ? t("Yayınlandı! Sitede görünüyor.", "Published! It's live on the site.")
           : t("Gönderildi! Bir yönetici onayladıktan sonra yayınlanacak.", "Sent! It will be published once an admin approves it."),
       );
-      setTitle(""); setDesc(""); setPlace(""); setWhen(""); setFile(null); setYoutubeId(""); setDurationMin(""); setDetail(""); setLink("");
+      setTitle(""); setDesc(""); setPlace(""); setEventDate(""); setFile(null); setYoutubeId(""); setDurationMin(""); setDetail(""); setLink("");
       setTimeout(onDone, 1200);
     } catch {
       setMsg(t("Gönderilemedi, tekrar dene.", "Couldn't send, please try again."));
@@ -114,15 +115,21 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
       )}
 
       {kind === "meeting" && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
-            <span className="mb-1 block font-medium text-ink-700">{t("Tarih/saat/yer", "Date/time/place")}</span>
-            <input value={when} onChange={(e) => setWhen(e.target.value)} className={inp} placeholder={t("18 Eylül, 20:00 · Zoom", "18 Sep, 20:00 · Zoom")} />
-          </label>
-          <label className="mt-6 flex items-center gap-2 text-sm text-ink-700">
+        <>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("Tarih & saat", "Date & time")}</span>
+              <input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className={inp} />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink-700">{t("Yer / platform", "Place / platform")}</span>
+              <input value={place} onChange={(e) => setPlace(e.target.value)} className={inp} placeholder={t("Zoom / Sintra", "Zoom / Sintra")} />
+            </label>
+          </div>
+          <label className="mt-3 flex items-center gap-2 text-sm text-ink-700">
             <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} /> {t("Online buluşma", "Online meetup")}
           </label>
-        </div>
+        </>
       )}
 
       {(kind === "photo" || kind === "announcement") && (

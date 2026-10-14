@@ -62,6 +62,7 @@ interface ActivityRow {
   author_name: string | null;
   place: string | null;
   event_at: string | null;
+  event_date: string | null;
   online: boolean | null;
   status: string;
   pinned: boolean;
@@ -90,6 +91,8 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
     author: r.author_name,
     place: r.place,
     when: r.event_at,
+    eventDate: r.event_date,
+    past: r.event_date ? new Date(r.event_date).getTime() < Date.now() : false,
     online: r.online,
     pinned: r.pinned,
     status: r.status,
@@ -103,7 +106,7 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
 }
 
 const COLS = `id, author_id, kind, title, description, image_key, image_url, youtube_id,
-              author_name, place, event_at, online, status, pinned, created_at, published_at,
+              author_name, place, event_at, event_date, online, status, pinned, created_at, published_at,
               access, duration_min, detail, link`;
 const PCOUNT = `(SELECT count(*)::int FROM activity_participants ap WHERE ap.activity_id = activities.id) AS participant_count`;
 const SELECT = `SELECT ${COLS}, ${PCOUNT} FROM activities`;
@@ -130,8 +133,10 @@ activitiesRoutes.get("/activities", async (c) => {
 activitiesRoutes.post("/activities/:id/join", auth, requireMembership, async (c) => {
   const { memberId } = currentUser(c);
   const id = c.req.param("id");
-  const ok = await query("SELECT 1 FROM activities WHERE id=$1 AND status='published'", [id]);
+  const ok = await query<{ event_date: string | null }>("SELECT event_date FROM activities WHERE id=$1 AND status='published'", [id]);
   if (!ok.rowCount) throw NotFound("Aktivite bulunamadı");
+  const ed = ok.rows[0]?.event_date;
+  if (ed && new Date(ed).getTime() < Date.now()) return c.json({ error: "event_ended", message: "Bu etkinlik sona erdi." }, 400);
   await query("INSERT INTO activity_participants (activity_id, member_id) VALUES ($1,$2) ON CONFLICT DO NOTHING", [id, memberId]);
   const cnt = await query<{ n: string }>("SELECT count(*)::int AS n FROM activity_participants WHERE activity_id=$1", [id]);
   return c.json({ joined: true, participantCount: Number(cnt.rows[0]?.n ?? 0) });
@@ -159,7 +164,7 @@ const base = {
 const submitSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("video"), youtubeId: z.string().min(1).max(20), durationMin: z.number().int().min(1).max(100000).optional(), ...base }),
   z.object({ kind: z.literal("photo"), imageKey: z.string().min(1).max(300), ...base }),
-  z.object({ kind: z.literal("meeting"), when: z.string().min(1).max(120), online: z.boolean().optional(), ...base }),
+  z.object({ kind: z.literal("meeting"), when: z.string().max(120).optional(), eventDate: z.string().datetime().optional(), online: z.boolean().optional(), ...base }),
   z.object({ kind: z.literal("announcement"), ...base }),
 ]);
 activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
@@ -176,6 +181,7 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const youtubeId = "youtubeId" in b ? b.youtubeId : undefined;
   const when = "when" in b ? b.when : undefined;
   const online = "online" in b ? b.online : undefined;
+  const eventDate = "eventDate" in b ? b.eventDate : undefined;
   const durationMin = "durationMin" in b ? b.durationMin : undefined;
   // Yalnız admin bir içeriği "public" (ücretsiz/tanıtım) yapabilir; üye gönderileri members.
   const access = isAdmin ? (b.access ?? "members") : "members";
@@ -185,9 +191,9 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const status = isAdmin ? "published" : "pending";
   const publishedAt = isAdmin ? new Date().toISOString() : null;
   const r = await query<ActivityRow>(
-    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, online, status, published_at, access, duration_min, detail, link)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING ${COLS}`,
-    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, b.place ?? null, when ?? null, online ?? null, status, publishedAt, access, durationMin ?? null, b.detail ?? null, b.link ?? null],
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, place, event_at, event_date, online, status, published_at, access, duration_min, detail, link)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, durationMin ?? null, b.detail ?? null, b.link ?? null],
   );
   return c.json(await toDto(r.rows[0]!, true));
 });

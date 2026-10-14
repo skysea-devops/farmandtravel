@@ -29,6 +29,8 @@ export interface ActivityItem {
   pinned: boolean;
   status: "pending" | "published" | "rejected";
   date: string; // ISO timestamp
+  eventDate?: string | null; // yapısal etkinlik tarihi (geçmiş kontrolü)
+  past?: boolean;            // eventDate geçmişte mi
   access?: "public" | "members";
   durationMin?: number | null;
   participantCount?: number;

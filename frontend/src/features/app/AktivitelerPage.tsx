@@ -91,7 +91,7 @@ function ActivityList() {
 }
 
 function ActivityDetail({ id }: { id: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const paid = usePaid();
   const [a, setA] = useState<ActivityItem | null | undefined>(undefined); // undefined=loading, null=not found
@@ -161,9 +161,15 @@ function ActivityDetail({ id }: { id: string }) {
             <img src={a.image} alt="" className="w-full rounded-[var(--radius-lg)] border border-border object-cover" />
           )}
 
-          {(a.when || a.place || a.online != null) && (
+          {(a.eventDate || a.when || a.place || a.online != null) && (
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[var(--radius-lg)] border border-border bg-surface px-4 py-3 text-sm text-ink-700">
-              {a.when && <span className="inline-flex items-center gap-1.5"><CalendarDays size={15} strokeWidth={1.75} className="text-forest-600" /> {a.when}</span>}
+              {(a.eventDate || a.when) && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays size={15} strokeWidth={1.75} className="text-forest-600" />
+                  {a.eventDate ? new Date(a.eventDate).toLocaleString(lang === "en" ? "en-GB" : "tr-TR", { dateStyle: "medium", timeStyle: "short" }) : a.when}
+                  {a.past && <span className="ml-1.5 rounded-full bg-sand-200 px-2 py-0.5 text-[11px] font-medium text-ink-500">{t("Geçti", "Ended")}</span>}
+                </span>
+              )}
               {a.place && <span className="inline-flex items-center gap-1.5"><MapPin size={15} strokeWidth={1.75} className="text-forest-600" /> {a.place}</span>}
               {a.online != null && <span className="inline-flex items-center gap-1.5">{a.online ? <><span className="size-2 rounded-full bg-forest-500" /> {t("Online", "Online")}</> : t("Yüz yüze", "In person")}</span>}
               {(a.participantCount ?? 0) > 0 && <span className="inline-flex items-center gap-1.5"><Users size={15} strokeWidth={1.75} className="text-forest-600" /> {a.participantCount} {t("katılımcı", "joined")}</span>}
@@ -179,9 +185,13 @@ function ActivityDetail({ id }: { id: string }) {
 
           <div className="flex flex-wrap items-center gap-2.5">
             {a.kind === "meeting" && (
-              <Button onClick={toggleJoin} disabled={joining} variant={a.joined ? "outline" : "primary"}>
-                {a.joined ? <><Check size={16} strokeWidth={2} /> {t("Katılıyorsun", "You're in")}</> : t("Katıl", "Join")}
-              </Button>
+              a.past && !a.joined ? (
+                <span className="inline-flex items-center rounded-full bg-sand-100 px-4 py-2 text-sm font-medium text-ink-500">{t("Bu etkinlik sona erdi", "This event has ended")}</span>
+              ) : (
+                <Button onClick={toggleJoin} disabled={joining || (a.past && !a.joined)} variant={a.joined ? "outline" : "primary"}>
+                  {a.joined ? <><Check size={16} strokeWidth={2} /> {t("Katılıyorsun", "You're in")}</> : t("Katıl", "Join")}
+                </Button>
+              )
             )}
             {a.link && (
               <a href={a.link} target="_blank" rel="noreferrer"
