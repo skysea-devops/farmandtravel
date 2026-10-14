@@ -29,7 +29,7 @@ export function AktivitelerPage() {
   return id ? <ActivityDetail id={id} /> : <ActivityList />;
 }
 
-type Section = "meetups" | "knowledge" | "member" | "announcements";
+type Section = "meetups" | "knowledge" | "academy" | "member" | "announcements";
 const secOf = (a: ActivityItem): Section =>
   (a.section as Section) ?? (a.kind === "video" ? "knowledge" : a.kind === "photo" ? "member" : "announcements");
 
@@ -47,6 +47,7 @@ function ActivityList() {
   const SECTIONS: { id: Section; label: string }[] = [
     { id: "meetups", label: t("Topluluk Buluşmaları", "Community meetups") },
     { id: "knowledge", label: t("Bilgi Paylaşımı", "Knowledge sharing") },
+    { id: "academy", label: t("Akademi", "Academy") },
     { id: "member", label: t("Üye Etkinlikleri", "Member activities") },
     { id: "announcements", label: t("Duyurular", "Announcements") },
   ];

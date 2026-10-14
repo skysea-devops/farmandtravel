@@ -160,7 +160,7 @@ const base = {
   desc: z.string().max(2000).optional(),
   place: z.string().max(120).optional(),
   access: z.enum(["public", "members"]).optional(), // yalnız admin public yapabilir
-  section: z.enum(["meetups", "knowledge", "member", "announcements"]).optional(),
+  section: z.enum(["meetups", "knowledge", "academy", "member", "announcements"]).optional(),
   detail: z.string().max(4000).optional(),          // katılım şartları / uzun açıklama
   link: z.string().max(500).optional(),             // kayıt/katılım linki
 };

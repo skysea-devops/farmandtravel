@@ -32,7 +32,7 @@ export interface ActivityItem {
   eventDate?: string | null; // yapısal etkinlik tarihi (geçmiş kontrolü)
   past?: boolean;            // eventDate geçmişte mi
   access?: "public" | "members";
-  section?: "meetups" | "knowledge" | "member" | "announcements";
+  section?: "meetups" | "knowledge" | "academy" | "member" | "announcements";
   durationMin?: number | null;
   participantCount?: number;
   locked?: boolean;          // members içerik + ödemesiz görüntüleyen
