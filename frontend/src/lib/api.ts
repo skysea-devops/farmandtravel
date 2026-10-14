@@ -195,6 +195,8 @@ export const activities = {
   adminList: <T>(status = "pending") => api.get<T>(`/admin/activities?status=${status}`),
   approve: async (id: string) => { const r = await api.post(`/admin/activities/${id}/approve`); api.invalidate(); return r; },
   reject: async (id: string) => { const r = await api.post(`/admin/activities/${id}/reject`); api.invalidate(); return r; },
+  pin: async (id: string) => { const r = await api.post(`/admin/activities/${id}/pin`); api.invalidate(); return r; },
+  unpin: async (id: string) => { const r = await api.post(`/admin/activities/${id}/unpin`); api.invalidate(); return r; },
 };
 
 export const admin = {

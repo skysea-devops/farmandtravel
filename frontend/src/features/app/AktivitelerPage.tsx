@@ -1,26 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check } from "lucide-react";
+import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check, Pin, PinOff } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { api, activities as actApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { listTime } from "@/lib/time";
+import { LatestActivities } from "@/features/activities/LatestActivities";
 import type { ActivityItem, Profile } from "@/lib/types";
 
 const KIND_ICON: Record<string, LucideIcon> = { video: PlayCircle, photo: ImageIcon, meeting: CalendarDays, announcement: Megaphone };
 const kindLabel = (k: string, t: (tr: string, en: string) => string) =>
   k === "video" ? t("Video", "Video") : k === "photo" ? t("Paylaşım", "Post") : k === "meeting" ? t("Etkinlik", "Event") : t("Duyuru", "Announcement");
 
-function usePaid() {
-  const [paid, setPaid] = useState<boolean | null>(null);
+function useMe() {
+  const [me, setMe] = useState<{ paid: boolean | null; admin: boolean }>({ paid: null, admin: false });
   useEffect(() => {
     api.getCached<Profile>("/profile/me")
-      .then((p) => setPaid(!!p.isAdmin || p.plan === "frontier" || p.plan === "active"))
-      .catch(() => setPaid(false));
+      .then((p) => setMe({ paid: !!p.isAdmin || p.plan === "frontier" || p.plan === "active", admin: !!p.isAdmin }))
+      .catch(() => setMe({ paid: false, admin: false }));
   }, []);
-  return paid;
+  return me;
 }
 
 export function AktivitelerPage() {
@@ -35,7 +36,7 @@ const secOf = (a: ActivityItem): Section =>
 function ActivityList() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const paid = usePaid();
+  const { paid } = useMe();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
   const [sec, setSec] = useState<Section>("meetups");
 
@@ -57,6 +58,8 @@ function ActivityList() {
         <h1 className="font-display mb-1 text-2xl font-semibold">{t("Aktiviteler", "Activities")}</h1>
         <p className="text-sm text-ink-500">{t("Topluluğun videoları, seminer kayıtları ve etkinlikleri. Üyelere özel içeriğe üyelikle erişirsin.", "Community videos, recorded sessions and events. Members-only content opens with membership.")}</p>
       </div>
+
+      <div className="mb-6"><LatestActivities limit={4} showHeader /></div>
 
       <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
         {SECTIONS.map((s) => (
@@ -117,14 +120,22 @@ function ActivityList() {
 function ActivityDetail({ id }: { id: string }) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const paid = usePaid();
+  const { paid, admin } = useMe();
   const [a, setA] = useState<ActivityItem | null | undefined>(undefined); // undefined=loading, null=not found
   const [joining, setJoining] = useState(false);
+  const [pinning, setPinning] = useState(false);
 
   function load() {
     actApi.detail<ActivityItem>(id).then(setA).catch(() => setA(null));
   }
   useEffect(load, [id]);
+
+  async function togglePin() {
+    if (!a) return;
+    setPinning(true);
+    try { if (a.pinned) await actApi.unpin(id); else await actApi.pin(id); setA({ ...a, pinned: !a.pinned }); }
+    finally { setPinning(false); }
+  }
 
   async function toggleJoin() {
     if (!a) return;
@@ -148,9 +159,17 @@ function ActivityDetail({ id }: { id: string }) {
 
   return (
     <div className="max-w-3xl">
-      <Link to="/app/aktiviteler" className="mb-4 inline-flex items-center gap-1 text-sm text-forest-600 hover:underline">
-        <ChevronLeft size={15} strokeWidth={2} /> {t("Aktiviteler", "Activities")}
-      </Link>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Link to="/app/aktiviteler" className="inline-flex items-center gap-1 text-sm text-forest-600 hover:underline">
+          <ChevronLeft size={15} strokeWidth={2} /> {t("Aktiviteler", "Activities")}
+        </Link>
+        {admin && (
+          <button type="button" onClick={togglePin} disabled={pinning}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${a.pinned ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong text-ink-700 hover:border-forest-600 hover:text-forest-700"}`}>
+            {a.pinned ? <><PinOff size={13} strokeWidth={1.75} /> {t("Sabiti kaldır", "Unpin")}</> : <><Pin size={13} strokeWidth={1.75} /> {t("Sabitle (Son etkinlikler)", "Pin to Latest")}</>}
+          </button>
+        )}
+      </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px] text-ink-400">
         <span className="inline-flex items-center gap-1 rounded-full bg-sand-100 px-2 py-0.5 font-medium text-ink-600"><Icon size={12} strokeWidth={2} /> {kindLabel(a.kind, t)}</span>
