@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check, Pin, PinOff } from "lucide-react";
+import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check, Pin, PinOff, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -8,7 +8,8 @@ import { api, activities as actApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { listTime } from "@/lib/time";
 import { LatestActivities } from "@/features/activities/LatestActivities";
-import type { ActivityItem, Profile } from "@/lib/types";
+import { ActivityForm } from "@/features/activities/ActivityForm";
+import type { ActivityItem, ActivityEligibility, Profile } from "@/lib/types";
 
 const KIND_ICON: Record<string, LucideIcon> = { video: PlayCircle, photo: ImageIcon, meeting: CalendarDays, announcement: Megaphone };
 const kindLabel = (k: string, t: (tr: string, en: string) => string) =>
@@ -36,13 +37,22 @@ const secOf = (a: ActivityItem): Section =>
 function ActivityList() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { paid } = useMe();
+  const { paid, admin } = useMe();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
   const [sec, setSec] = useState<Section>("meetups");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [elig, setElig] = useState<ActivityEligibility | null>(null);
 
-  useEffect(() => {
+  function loadItems() {
     actApi.list<{ items: ActivityItem[] }>(60).then((r) => setItems(r.items)).catch(() => setItems([]));
-  }, []);
+  }
+  useEffect(loadItems, []);
+
+  async function openShare() {
+    if (paid === false) { navigate("/app/abonelik"); return; }
+    if (!shareOpen && !elig) { try { setElig(await actApi.eligibility<ActivityEligibility>()); } catch { /* yoksay */ } }
+    setShareOpen((o) => !o);
+  }
 
   const SECTIONS: { id: Section; label: string }[] = [
     { id: "meetups", label: t("Topluluk Buluşmaları", "Community meetups") },
@@ -55,10 +65,33 @@ function ActivityList() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="font-display mb-1 text-2xl font-semibold">{t("Aktiviteler", "Activities")}</h1>
-        <p className="text-sm text-ink-500">{t("Topluluğun videoları, seminer kayıtları ve etkinlikleri. Üyelere özel içeriğe üyelikle erişirsin.", "Community videos, recorded sessions and events. Members-only content opens with membership.")}</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display mb-1 text-2xl font-semibold">{t("Aktiviteler", "Activities")}</h1>
+          <p className="text-sm text-ink-500">{t("Topluluğun videoları, seminer kayıtları ve etkinlikleri. Üyelere özel içeriğe üyelikle erişirsin.", "Community videos, recorded sessions and events. Members-only content opens with membership.")}</p>
+        </div>
+        {!admin && (
+          <Button size="sm" onClick={openShare} className="shrink-0"><Plus size={16} strokeWidth={2} /> {t("Paylaş", "Share")}</Button>
+        )}
       </div>
+
+      {shareOpen && !admin && (
+        elig === null ? (
+          <div className="mb-6 rounded-[var(--radius-lg)] border border-border bg-surface p-5 text-sm text-ink-500">{t("Yükleniyor…", "Loading…")}</div>
+        ) : elig.canSubmit ? (
+          <div className="mb-6">
+            <div className="mb-2 text-sm text-ink-600">
+              {t("Olmuş bir paylaşım (fotoğraf) ya da ileriye dönük bir etkinlik (online/yüz yüze) paylaşabilirsin. Gönderimler yönetici onayından sonra yayınlanır.",
+                 "Share a past post (photo) or an upcoming event (online/in-person). Submissions are published after admin approval.")}
+            </div>
+            <ActivityForm onDone={() => { setShareOpen(false); loadItems(); }} />
+          </div>
+        ) : (
+          <div className="mb-6 rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-sand-100 px-4 py-3.5 text-[13.5px] text-ink-700">
+            <b>{t("Aktivite paylaşmak için:", "To share activities:")}</b> {t(`en az ${elig.need.connections} bağlantı, ${elig.need.rating.toFixed(1)} ortalama puan ve ${elig.need.reviews} değerlendirme gerekir. Durumunu "Profilim" sayfasından görebilirsin.`, `at least ${elig.need.connections} connections, ${elig.need.rating.toFixed(1)} average rating and ${elig.need.reviews} reviews. You can see your status on your profile.`)}
+          </div>
+        )
+      )}
 
       <div className="mb-6"><LatestActivities limit={4} showHeader /></div>
 
