@@ -33,10 +33,14 @@ export function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPaid, setIsPaid] = useState(true); // yükleme bitene kadar engelleme
   const [tab, setTab] = useState<TabId>("genel");
 
   useEffect(() => {
-    api.getCached<Profile>("/profile/me").then((p) => setIsAdmin(!!p.isAdmin)).catch(() => {});
+    api.getCached<Profile>("/profile/me").then((p) => {
+      setIsAdmin(!!p.isAdmin);
+      setIsPaid(!!p.isAdmin || p.plan === "frontier" || p.plan === "active");
+    }).catch(() => {});
   }, []);
 
   function load() {
@@ -50,11 +54,13 @@ export function MemberProfilePage() {
 
   async function connect() {
     if (!id) return;
+    if (!isPaid) { navigate("/app/abonelik"); return; }
     setBusy(true);
     try { await connections.request(id); load(); } finally { setBusy(false); }
   }
   async function accept() {
     if (!m?.connection) return;
+    if (!isPaid) { navigate("/app/abonelik"); return; }
     setBusy(true);
     try { await connections.accept(m.connection.connectionId); load(); } finally { setBusy(false); }
   }
@@ -164,7 +170,7 @@ export function MemberProfilePage() {
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <ConnectAction m={m} busy={busy} onConnect={connect} onAccept={accept} />
           {connected && (
-            <Button variant="outline" onClick={() => navigate(`/app/mesajlar/${m.connection!.connectionId}`)}><MessageCircle size={16} strokeWidth={1.75} /> {t("Mesaj gönder", "Send a message")}</Button>
+            <Button variant="outline" onClick={() => navigate(isPaid ? `/app/mesajlar/${m.connection!.connectionId}` : "/app/abonelik")}><MessageCircle size={16} strokeWidth={1.75} /> {t("Mesaj gönder", "Send a message")}</Button>
           )}
           <Button variant="outline" disabled={busy} onClick={toggleSaved}>
             {m.saved ? <><BookmarkCheck size={16} strokeWidth={1.75} /> {t("Kaydedildi", "Saved")}</> : <><Bookmark size={16} strokeWidth={1.75} /> {t("Kaydet", "Save")}</>}

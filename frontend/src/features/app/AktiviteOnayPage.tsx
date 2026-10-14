@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
+import { Users, Flag, Scale, CalendarDays, Megaphone, Inbox, Check, Sprout, MapPin, Eye, Lock, Mail, Ban, RotateCcw, Paperclip, AlertTriangle, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { Avatar } from "@/components/ui/Avatar";
@@ -12,7 +14,7 @@ import { fullDate } from "@/lib/time";
 import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember, ReportsData, ReportItem, VerificationData } from "@/lib/types";
 
 const KIND: Record<string, string> = {
-  video: "🎥 Podcast", photo: "📷 Paylaşım", meeting: "📅 Buluşma", announcement: "📢 Duyuru",
+  video: "Podcast", photo: "Paylaşım", meeting: "Buluşma", announcement: "Duyuru",
 };
 
 type FoundMember = { id: string; firstName: string | null; lastName: string | null; city: string | null; country: string | null };
@@ -21,13 +23,13 @@ const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).j
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
 type TabId = "members" | "reports" | "reviews" | "activities" | "messages" | "inbox";
-const TABS: { id: TabId; label: string }[] = [
-  { id: "members", label: "👥 Üyeler" },
-  { id: "reports", label: "🚩 Şikayetler" },
-  { id: "reviews", label: "⚖️ Değerlendirmeler" },
-  { id: "activities", label: "📅 Aktiviteler" },
-  { id: "messages", label: "📣 Duyuru & Mesaj" },
-  { id: "inbox", label: "📨 Gelen kutusu" },
+const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
+  { id: "members", label: "Üyeler", Icon: Users },
+  { id: "reports", label: "Şikayetler", Icon: Flag },
+  { id: "reviews", label: "Değerlendirmeler", Icon: Scale },
+  { id: "activities", label: "Aktiviteler", Icon: CalendarDays },
+  { id: "messages", label: "Duyuru & Mesaj", Icon: Megaphone },
+  { id: "inbox", label: "Gelen kutusu", Icon: Inbox },
 ];
 
 export function AktiviteOnayPage() {
@@ -77,6 +79,7 @@ export function AktiviteOnayPage() {
               tab === t.id ? "border-forest-600 text-forest-700" : "border-transparent text-ink-500 hover:text-ink-700",
             )}
           >
+            <t.Icon size={15} strokeWidth={1.75} />
             {t.label}
             {t.id === "members" && pending > 0 && (
               <span className="grid min-w-5 place-items-center rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{pending}</span>
@@ -297,8 +300,8 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             {isPending
               ? <span className="shrink-0 rounded-full bg-clay-500/15 px-2 py-0.5 text-[11px] font-semibold text-clay-600">⏳ Onay bekliyor</span>
               : <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.cls)}>{meta.label}</span>}
-            {isLive && <span className="shrink-0 text-[11px] text-forest-600">✓ Keşfet'te</span>}
-            {m.plan === "frontier" && <span className="shrink-0 text-[11px] text-moss-500">🌱 öncü</span>}
+            {isLive && <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-forest-600"><Check size={12} strokeWidth={2} /> Keşfet'te</span>}
+            {m.plan === "frontier" && <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-moss-500"><Sprout size={12} strokeWidth={1.75} /> öncü</span>}
           </div>
           <div className="mt-0.5 truncate text-xs text-ink-500">
             {m.email
@@ -314,8 +317,8 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
       {/* Ülke/şehir düzelt — her durumdaki üye için. */}
       <div className="mt-2">
         <button type="button" onClick={() => setLocOpen((o) => !o)}
-          className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-          📍 Ülke/şehir düzelt
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+          <MapPin size={14} strokeWidth={1.75} /> Ülke/şehir düzelt
         </button>
         {locOpen && (
           <div className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-sand-100 px-3 py-2.5">
@@ -342,21 +345,21 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Link to={`/app/uye/${m.id}`} target="_blank"
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-            👁 Profili incele
+            <span className="inline-flex items-center gap-1.5"><Eye size={14} strokeWidth={1.75} /> Profili incele</span>
           </Link>
-          {isPending && <Button size="sm" disabled={busy} onClick={approve}>✓ Onayla</Button>}
+          {isPending && <Button size="sm" disabled={busy} onClick={approve}><Check size={15} strokeWidth={2} /> Onayla</Button>}
           <button type="button" onClick={toggleVerif}
-            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-            🔒 Doğrulama (adres/belge)
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            <Lock size={14} strokeWidth={1.75} /> Doğrulama (adres/belge)
           </button>
           <button type="button" onClick={() => setWarnOpen((o) => !o)} disabled={busy}
-            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
-            ✉️ Mesaj gönder (uygulama içi)
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-clay-600 transition hover:border-clay-500">
+            <Mail size={14} strokeWidth={1.75} /> Mesaj gönder (uygulama içi)
           </button>
           {m.email && (
             <a href={`mailto:${m.email}`}
               className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-              📧 E-posta gönder
+              <span className="inline-flex items-center gap-1.5"><Mail size={14} strokeWidth={1.75} /> E-posta gönder</span>
             </a>
           )}
           {isLive && (
@@ -366,10 +369,10 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             </button>
           )}
           <button type="button" onClick={suspend} disabled={busy}
-            className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-[#8a2f29] transition hover:border-[#8a2f29]">
-            ⛔ Askıya al
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-[#8a2f29] transition hover:border-[#8a2f29]">
+            <Ban size={14} strokeWidth={1.75} /> Askıya al
           </button>
-          {sent && <span className="text-xs text-forest-600">✓ Mesaj gönderildi</span>}
+          {sent && <span className="inline-flex items-center gap-1 text-xs text-forest-600"><Check size={13} strokeWidth={2} /> Mesaj gönderildi</span>}
         </div>
       )}
 
@@ -379,7 +382,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
             <span className="text-ink-500">Yükleniyor…</span>
           ) : (
             <>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">🔒 Yalnızca ekip görür</div>
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-ink-500"><Lock size={12} strokeWidth={1.75} /> Yalnızca ekip görür</div>
               <div className="text-ink-700">
                 <span className="text-ink-500">Adres: </span>
                 {verif.addressExact ? verif.addressExact : <span className="italic text-ink-400">girilmemiş</span>}
@@ -387,7 +390,7 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
               <div className="mt-1">
                 <span className="text-ink-500">Adres kanıtı: </span>
                 {verif.proofUrl
-                  ? <a href={verif.proofUrl} target="_blank" rel="noreferrer" className="font-medium text-forest-600 underline">📎 Belgeyi aç</a>
+                  ? <a href={verif.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-forest-600 underline"><Paperclip size={13} strokeWidth={1.75} /> Belgeyi aç</a>
                   : <span className="italic text-ink-400">yüklenmemiş</span>}
               </div>
             </>
@@ -400,13 +403,13 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Link to={`/app/uye/${m.id}`} target="_blank"
             className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-            👁 Profili incele
+            <span className="inline-flex items-center gap-1.5"><Eye size={14} strokeWidth={1.75} /> Profili incele</span>
           </Link>
-          <Button size="sm" disabled={busy} onClick={unsuspend}>↩ Askıdan çıkar</Button>
+          <Button size="sm" disabled={busy} onClick={unsuspend}><RotateCcw size={15} strokeWidth={1.75} /> Askıdan çıkar</Button>
           {m.email && (
             <a href={`mailto:${m.email}`}
               className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-              📧 E-posta gönder
+              <span className="inline-flex items-center gap-1.5"><Mail size={14} strokeWidth={1.75} /> E-posta gönder</span>
             </a>
           )}
         </div>
@@ -417,8 +420,8 @@ function RosterRow({ m, onAction }: { m: RosterMember; onAction: () => void }) {
       {m.status === "onboarding" && m.email && (
         <div className="mt-2">
           <a href={`mailto:${m.email}`}
-            className="inline-block rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-            📧 Profilini tamamlaması için e-posta gönder
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
+            <Mail size={14} strokeWidth={1.75} /> Profilini tamamlaması için e-posta gönder
           </a>
         </div>
       )}
@@ -465,7 +468,7 @@ function ReportsSection({ onChange }: { onChange: () => void }) {
 
       {open.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-          Açık şikayet yok. 🎉
+          Açık şikayet yok.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -482,9 +485,9 @@ function ReportsSection({ onChange }: { onChange: () => void }) {
               <div className="mt-3 flex gap-2">
                 <Link to={`/app/uye/${r.reportedId}`} target="_blank"
                   className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-forest-600 hover:text-forest-700">
-                  👁 Şikayet edileni incele
+                  <span className="inline-flex items-center gap-1.5"><Eye size={14} strokeWidth={1.75} /> Şikayet edileni incele</span>
                 </Link>
-                <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => resolve(r.id)}>✓ Çöz (kapat)</Button>
+                <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => resolve(r.id)}><Check size={15} strokeWidth={2} /> Çöz (kapat)</Button>
               </div>
             </div>
           ))}
@@ -577,7 +580,7 @@ function InboxThread({ connectionId, title, onBack }: { connectionId: string; ti
 
   return (
     <div>
-      <button type="button" onClick={onBack} className="mb-3 text-sm text-forest-600 hover:underline">← Gelen kutusu</button>
+      <button type="button" onClick={onBack} className="mb-3 inline-flex items-center gap-1 text-sm text-forest-600 hover:underline"><ChevronLeft size={15} strokeWidth={2} /> Gelen kutusu</button>
       <div className="mb-3 flex items-center gap-2">
         <Avatar url={data?.member?.avatarUrl} className="size-9" />
         <div className="text-sm font-semibold">{title}</div>
@@ -649,7 +652,7 @@ function ReviewModerationCard() {
 
       {items.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-          Bekleyen değerlendirme yok. 🎉
+          Bekleyen değerlendirme yok.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -660,7 +663,7 @@ function ReviewModerationCard() {
                 <span className="text-ink-500">→</span>
                 <span className="font-semibold">{r.revieweeName ?? "Bir üye"}</span>
                 <Stars value={r.rating} />
-                {r.flagged && <span className="rounded-full bg-clay-500/15 px-2 py-0.5 text-[11px] font-semibold text-clay-600">⚠ Uygunsuz olabilir</span>}
+                {r.flagged && <span className="inline-flex items-center gap-1 rounded-full bg-clay-500/15 px-2 py-0.5 text-[11px] font-semibold text-clay-600"><AlertTriangle size={11} strokeWidth={2} /> Uygunsuz olabilir</span>}
               </div>
               {r.comment ? <p className="text-sm text-ink-700">{r.comment}</p> : <p className="text-sm italic text-ink-400">(yorum yok)</p>}
               <div className="mt-3 flex gap-2">
@@ -706,14 +709,14 @@ function ActivitiesSection() {
         <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
       </div>
 
-      {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
+      {createOpen && <ActivityForm admin onDone={() => { setCreateOpen(false); load(); }} />}
 
       <h3 className="font-display mb-3 mt-5 text-[15px] font-semibold">Onay bekleyenler{items.length ? ` (${items.length})` : ""}</h3>
       {loading ? (
         <div className="py-8 text-center text-ink-500">Yükleniyor…</div>
       ) : items.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
-          Onay bekleyen aktivite yok. 🎉
+          Onay bekleyen aktivite yok.
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -725,7 +728,7 @@ function ActivitiesSection() {
                 <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
                 {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
                 {a.kind === "meeting" && a.when && (
-                  <div className="mt-2 text-xs text-ink-600">{a.online ? "🟢 Online" : "📍 Yüz yüze"} · {a.when}</div>
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-600">{a.online ? <><span className="size-2 rounded-full bg-forest-500" /> Online</> : <><MapPin size={13} strokeWidth={1.75} /> Yüz yüze</>} · {a.when}</div>
                 )}
                 <div className="mt-2 text-xs text-ink-500">{[a.author, a.place].filter(Boolean).join(" · ")}</div>
                 <div className="mt-4 flex gap-2">
@@ -765,7 +768,7 @@ function BroadcastCard() {
 
   return (
     <form onSubmit={send} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <h2 className="font-display mb-1 text-lg font-semibold">📣 Herkese mesaj gönder</h2>
+      <h2 className="font-display mb-1 flex items-center gap-2 text-lg font-semibold"><Megaphone size={18} strokeWidth={1.75} /> Herkese mesaj gönder</h2>
       <p className="mb-3 text-sm text-ink-500">Tüm üyelere "Toprakla Yeniden" adıyla mesaj gider; Mesajlar bölümünde görünür.</p>
       <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={4000}
         className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600"
@@ -837,7 +840,7 @@ function DirectMessageCard() {
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <h2 className="font-display mb-1 text-lg font-semibold">✉️ Belirli bir üyeye mesaj gönder</h2>
+      <h2 className="font-display mb-1 flex items-center gap-2 text-lg font-semibold"><Mail size={18} strokeWidth={1.75} /> Belirli bir üyeye mesaj gönder</h2>
       <p className="mb-3 text-sm text-ink-500">İsimle ara, üyeyi seç ve "Toprakla Yeniden" adıyla mesaj gönder. Bağlantın olmasa da yazabilirsin.</p>
 
       {!picked ? (

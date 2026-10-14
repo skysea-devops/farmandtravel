@@ -79,7 +79,7 @@ connectionsRoutes.post("/connections", auth, requireMembership, async (c) => {
 });
 
 // --- My connections: incoming pending, outgoing pending, accepted (with contact) ---
-connectionsRoutes.get("/connections", auth, requireMembership, async (c) => {
+connectionsRoutes.get("/connections", auth, async (c) => {
   const { memberId } = currentUser(c);
 
   const incoming = await query(

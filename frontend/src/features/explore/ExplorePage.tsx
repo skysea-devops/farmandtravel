@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PublicMember } from "@/lib/types";
+import { Search, Lock, Sprout } from "lucide-react";
 import { coordsFor } from "@/data/geo";
 import type { MapPin } from "./MembersMap";
 import { MAP_COLORS } from "./categories";
@@ -126,7 +127,7 @@ export function ExplorePage() {
 
       {/* arama */}
       <div className="mb-3 flex max-w-xl items-center gap-2 rounded-full border border-border-strong bg-surface px-[18px] py-2.5">
-        <span>🔍</span>
+        <Search size={16} strokeWidth={1.75} className="shrink-0 text-ink-400" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("İsim, uzmanlık, şehir, konu ara…", "Search name, expertise, city, topic…")}
           className="w-full border-none bg-transparent text-sm outline-none" />
       </div>
@@ -152,15 +153,15 @@ export function ExplorePage() {
             </button>
           ))}
         </div>
-        <Sel value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder={t("🌍 Tüm ülkeler", "🌍 All countries")} options={countries} />
+        <Sel value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder={t("Tüm ülkeler", "All countries")} options={countries} />
         <select disabled={!cities.length} value={city} onChange={(e) => setCity(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700 disabled:opacity-60">
-          <option value="">{t("🏙️ Tüm şehirler", "🏙️ All cities")}</option>
+          <option value="">{t("Tüm şehirler", "All cities")}</option>
           {cities.map((c) => <option key={c}>{c}</option>)}
         </select>
         <select value={topic} onChange={(e) => setTopic(e.target.value)}
           className="rounded-full border border-border-strong bg-surface px-3.5 py-2 text-[13px] text-ink-700">
-          <option value="">{t("🌱 Tüm konular", "🌱 All topics")}</option>
+          <option value="">{t("Tüm konular", "All topics")}</option>
           {topics.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
         </select>
       </div>
@@ -199,13 +200,13 @@ export function ExplorePage() {
       </div>
 
       <div className="mt-3.5 flex items-center gap-2.5 rounded-xl border border-dashed border-border-strong bg-sand-100 px-4 py-3.5 text-[13.5px] text-ink-700">
-        <span>🔒</span> {t("Profilleri görmek ve bağlantı kurmak için üyelik gerekir. Haritayı ve kimlerin olduğunu üye olmadan görebilirsin.", "Membership is required to view profiles and connect. You can see the map and who's here without signing up.")}
+        <Lock size={16} strokeWidth={1.75} className="shrink-0 text-ink-400" /> {t("Profilleri görmek ve bağlantı kurmak için üyelik gerekir. Haritayı ve kimlerin olduğunu üye olmadan görebilirsin.", "Membership is required to view profiles and connect. You can see the map and who's here without signing up.")}
       </div>
 
       {modal && (
         <div onClick={() => setModal(false)} className="fixed inset-0 z-[1000] flex items-center justify-center bg-forest-900/50 p-5">
           <div onClick={(e) => e.stopPropagation()} className="max-w-sm rounded-[var(--radius-lg)] bg-surface p-7 text-center shadow-xl">
-            <div className="mb-2.5 text-4xl">🌿</div>
+            <div className="mb-3 flex justify-center"><span className="grid size-14 place-items-center rounded-full bg-offer-bg text-forest-700"><Sprout size={28} strokeWidth={1.75} /></span></div>
             <h3 className="font-display mb-2 text-2xl font-semibold">{t("Bağlanmak için üye ol", "Join to connect")}</h3>
             <p className="mb-5 text-sm text-ink-500">{t("Profilleri görmek ve bağlantı kurmak için üyeliğini başlat.", "Start your membership to view profiles and connect.")}</p>
             <Link to="/kayit"><Button className="w-full" size="lg">{t("Üye ol", "Join")}</Button></Link>

@@ -29,6 +29,13 @@ export interface ActivityItem {
   pinned: boolean;
   status: "pending" | "published" | "rejected";
   date: string; // ISO timestamp
+  access?: "public" | "members";
+  durationMin?: number | null;
+  participantCount?: number;
+  locked?: boolean;          // members içerik + ödemesiz görüntüleyen
+  detail?: string | null;    // yalnız kilidi açıkken dolu
+  link?: string | null;      // yalnız kilidi açıkken dolu
+  joined?: boolean;          // detayda: mevcut kullanıcı katıldı mı
 }
 
 export interface ActivityEligibility {

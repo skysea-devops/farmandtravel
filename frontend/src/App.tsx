@@ -15,6 +15,7 @@ import { ProfilePage } from "@/features/profile/ProfilePage";
 import { PanelPage } from "@/features/app/PanelPage";
 import { KesfetPage } from "@/features/app/KesfetPage";
 import { MemberProfilePage } from "@/features/app/MemberProfilePage";
+import { AktivitelerPage } from "@/features/app/AktivitelerPage";
 import { BaglantilarPage } from "@/features/app/BaglantilarPage";
 import { MesajlarPage } from "@/features/app/MesajlarPage";
 import { KaydedilenlerPage } from "@/features/app/KaydedilenlerPage";
@@ -47,6 +48,8 @@ export default function App() {
       <Route path="app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<PanelPage />} />
         <Route path="kesfet" element={<KesfetPage />} />
+        <Route path="aktiviteler" element={<AktivitelerPage />} />
+        <Route path="aktiviteler/:id" element={<AktivitelerPage />} />
         <Route path="uye/:id" element={<MemberProfilePage />} />
         <Route path="baglantilar" element={<BaglantilarPage />} />
         <Route path="mesajlar" element={<MesajlarPage />} />

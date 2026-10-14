@@ -23,6 +23,7 @@ export function AppLayout() {
   const nav = [
     { to: "/app", label: t("Panel", "Home"), icon: "🏠", end: true },
     { to: "/app/kesfet", label: t("Keşfet", "Discover"), icon: "🔍" },
+    { to: "/app/aktiviteler", label: t("Aktiviteler", "Activities"), icon: "🎬" },
     { to: "/app/baglantilar", label: t("Bağlantılar", "Connections"), icon: "🤝" },
     { to: "/app/mesajlar", label: t("Mesajlar", "Messages"), icon: "💬" },
     { to: "/app/kaydedilenler", label: t("Kaydedilenler", "Saved"), icon: "🔖" },

@@ -310,7 +310,7 @@ async function participant(me: string, connectionId: string): Promise<string | n
 }
 
 // Conversation list: accepted connections + last message + unread count.
-messagesRoutes.get("/messages", auth, requireMembership, async (c) => {
+messagesRoutes.get("/messages", auth, async (c) => {
   const { memberId } = currentUser(c);
   const r = await query(
     `SELECT c.id AS "connectionId",

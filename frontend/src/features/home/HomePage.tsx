@@ -56,17 +56,19 @@ export function HomePage() {
 
   const [feed, setFeed] = useState<ActivityItem[]>([]);
   useEffect(() => {
-    actApi.list<{ items: ActivityItem[] }>(4).then((r) => setFeed(r.items)).catch(() => {});
+    actApi.list<{ items: ActivityItem[] }>(6).then((r) => setFeed(r.items)).catch(() => {});
   }, []);
 
-  const homeActivities = feed.slice(0, 4).map((a) => ({
+  // Sabit/herkese açık tanıtım videosu (Özgür) öne çıkar; şeritte tekrar etmesin.
+  const featured = feed.find((a) => a.pinned && a.kind === "video" && a.youtubeId);
+  const homeActivities = feed.filter((a) => a.id !== featured?.id).slice(0, 4).map((a) => ({
     id: a.id,
     cap: a.title,
     who: a.author
-      ? `${a.author} · ${a.place ?? ""}`
+      ? `${a.author}${a.place ? ` · ${a.place}` : ""}`
       : a.kind === "meeting"
-        ? (a.online ? t("🟢 Online buluşma", "🟢 Online meetup") : t("📍 Yüz yüze buluşma", "📍 In-person meetup"))
-        : t("📢 Duyuru", "📢 Announcement"),
+        ? (a.online ? t("Online buluşma", "Online meetup") : t("Yüz yüze buluşma", "In-person meetup"))
+        : t("Duyuru", "Announcement"),
     img: a.kind === "video" && a.youtubeId ? youtubeThumb(a.youtubeId) : (a.image ?? U + "photo-1416879595882-3373a0480b5b?w=600&q=80"),
     isVideo: a.kind === "video",
   }));
@@ -196,16 +198,34 @@ export function HomePage() {
         <p className="mt-4 text-center text-sm text-ink-500">{t("…ve topluluk büyüdükçe çok daha fazlası sizleri bekliyor.", "…and much more as the community grows.")}</p>
       </section>
 
+      {/* Kurucu üyeden — sabit tanıtım videosu */}
+      {featured && featured.youtubeId && (
+        <section className="container-x pb-10">
+          <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface md:flex">
+            <div className="aspect-video bg-black md:w-3/5">
+              <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${featured.youtubeId}`} title={featured.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+            <div className="flex flex-col justify-center gap-2 p-6 md:w-2/5">
+              <span className="text-xs font-semibold tracking-wide text-clay-600">{t("Kurucu üyeden", "From the founder")}</span>
+              <h2 className="font-display text-2xl font-semibold leading-tight">{featured.title}</h2>
+              {featured.desc && <p className="line-clamp-4 text-sm leading-relaxed text-ink-600">{featured.desc}</p>}
+              {featured.author && <div className="text-[13px] text-ink-400">{featured.author}</div>}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Topluluk aktiviteleri */}
       <section className="container-x pb-14">
         <div className="mb-2 flex items-end justify-between">
           <h2 className="font-display text-3xl font-semibold">{t("Topluluktan son aktiviteler", "Latest from the community")}</h2>
-          <Link to="/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">{t("Tümünü gör →", "See all →")}</Link>
+          <Link to="/app/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">{t("Tümünü gör →", "See all →")}</Link>
         </div>
         <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular — topluluğun nabzı.", "Podcasts, meetups, posts and announcements — the pulse of the community.")}</p>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           {homeActivities.map((a) => (
-            <Link key={a.id} to="/aktiviteler" className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
+            <Link key={a.id} to={`/app/aktiviteler/${a.id}`} className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
               {a.isVideo && (
                 <span className="absolute inset-0 grid place-items-center bg-forest-900/25 transition group-hover:bg-forest-900/35">
                   <span className="grid size-11 place-items-center rounded-full bg-white/90 text-lg text-forest-700 shadow">▶</span>
