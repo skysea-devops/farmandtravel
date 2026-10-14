@@ -40,7 +40,7 @@ export function Header() {
         <div className="ml-auto hidden items-center gap-2.5 md:flex">
           {user ? (
             <>
-              <Link to="/app/profil"><Button variant="ghost" size="sm">{t("Profilim", "Profile")}</Button></Link>
+              <Link to="/app"><Button variant="ghost" size="sm">{t("Panelim", "Dashboard")}</Button></Link>
               <Button size="sm" variant="outline" onClick={() => { logout(); nav("/"); }}>{t("Çıkış", "Log out")}</Button>
             </>
           ) : (
@@ -75,7 +75,7 @@ export function Header() {
           <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
             {user ? (
               <>
-                <Link to="/app/profil" onClick={() => setOpen(false)}><Button variant="ghost" size="sm" className="w-full">{t("Profilim", "Profile")}</Button></Link>
+                <Link to="/app" onClick={() => setOpen(false)}><Button variant="ghost" size="sm" className="w-full">{t("Panelim", "Dashboard")}</Button></Link>
                 <Button size="sm" variant="outline" className="w-full" onClick={() => { setOpen(false); logout(); nav("/"); }}>{t("Çıkış", "Log out")}</Button>
               </>
             ) : (
