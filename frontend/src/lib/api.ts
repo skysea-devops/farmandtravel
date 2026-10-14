@@ -186,6 +186,9 @@ export async function uploadDoc(file: File): Promise<string> {
 
 export const activities = {
   list: <T>(limit = 20, offset = 0) => api.getCached<T>(`/activities?limit=${limit}&offset=${offset}`, 60_000),
+  detail: <T>(id: string) => api.get<T>(`/activities/${id}`),
+  join: async <T>(id: string) => { const r = await api.post<T>(`/activities/${id}/join`); api.invalidate(); return r; },
+  leave: async <T>(id: string) => { const r = await api.del<T>(`/activities/${id}/join`); api.invalidate(); return r; },
   eligibility: <T>() => api.get<T>("/activities/eligibility"),
   submit: async <T>(body: unknown) => { const r = await api.post<T>("/activities", body); api.invalidate(); return r; },
   mine: <T>() => api.get<T>("/activities/mine"),

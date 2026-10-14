@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Sprout, Check, Handshake, MessageCircle, CalendarDays, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api, billing } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -15,7 +16,7 @@ export function AbonelikPage() {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const price = t("$30 / yıl", "$30 / year");
+  const price = t("$35 / yıl", "$35 / year");
 
   async function subscribe() {
     setBusy(true); setNote(null);
@@ -32,18 +33,25 @@ export function AbonelikPage() {
 
   const plan = p?.plan ?? "none";
 
+  const benefits: { Icon: typeof Check; text: string }[] = [
+    { Icon: Handshake, text: t("Üyelerle bağlantı kur ve isteklere yanıt ver", "Connect with members and respond to requests") },
+    { Icon: MessageCircle, text: t("Mesajlaş", "Message members") },
+    { Icon: CalendarDays, text: t("Etkinliklere katıl", "Join events") },
+    { Icon: PlayCircle, text: t("Seminer kayıtları ve üyelere özel içeriği izle", "Watch recorded sessions and members-only content") },
+  ];
+
   return (
     <div className="max-w-2xl">
       <h1 className="font-display mb-5 text-2xl font-semibold">{t("Abonelik", "Membership")}</h1>
 
       {plan === "frontier" && (
         <div className="rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-6">
-          <div className="mb-1 text-3xl">🌱</div>
-          <h2 className="font-display text-xl font-semibold text-forest-700">{t("Frontier üyelik · Ücretsiz", "Frontier membership · Free")}</h2>
+          <div className="mb-2 text-forest-700"><Sprout size={28} strokeWidth={1.75} /></div>
+          <h2 className="font-display text-xl font-semibold text-forest-700">{t("Öncü üyelik · Ücretsiz", "Founding membership · Free")}</h2>
           <p className="mt-2 text-sm text-ink-700">
             {t(
-              "Topluluğun ilk üyelerindensin (Frontier). Tüm özellikler (keşfet, bağlantı, mesaj, değerlendirme) açık.",
-              "You're one of the community's first members (Frontier). Everything (explore, connect, message, review) is open.",
+              "Topluluğun ilk üyelerindensin. Tüm özellikler (keşfet, bağlantı, mesaj, etkinlik, üye içeriği) açık.",
+              "You're one of the community's first members. Everything (explore, connect, message, events, member content) is open.",
             )}
           </p>
         </div>
@@ -51,7 +59,7 @@ export function AbonelikPage() {
 
       {plan === "active" && (
         <div className="rounded-[var(--radius-lg)] border border-[#c6e0c2] bg-offer-bg p-6">
-          <h2 className="font-display text-xl font-semibold text-forest-700">{t("Aktif abonelik ✓", "Active membership ✓")}</h2>
+          <h2 className="font-display flex items-center gap-2 text-xl font-semibold text-forest-700"><Check size={22} strokeWidth={2} /> {t("Aktif abonelik", "Active membership")}</h2>
           <p className="mt-2 text-sm text-ink-700">{t("Üyeliğin aktif. Tüm özellikler açık.", "Your membership is active. Everything is open.")}</p>
         </div>
       )}
@@ -61,11 +69,19 @@ export function AbonelikPage() {
           <h2 className="font-display text-xl font-semibold">{t("Üyeliğini başlat", "Start your membership")}</h2>
           <p className="mt-2 text-sm text-ink-700">
             {t(
-              "Topluluğa tam erişim için üyelik gerekir: profilleri gör, bağlantı kur, mesajlaş.",
-              "Full access requires a membership: view profiles, connect and message.",
+              "Keşfet'te gezmek, profilleri görmek ve topluluk içeriğine göz atmak ücretsiz. İletişim ve katılım için üyelik gerekir:",
+              "Browsing Discover, viewing profiles and previewing community content is free. Membership unlocks contact and participation:",
             )}
           </p>
-          <div className="mt-4 flex items-center gap-3">
+          <ul className="mt-4 space-y-2.5">
+            {benefits.map((b, i) => (
+              <li key={i} className="flex items-center gap-2.5 text-sm text-ink-700">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-offer-bg text-forest-600"><b.Icon size={15} strokeWidth={1.75} /></span>
+                {b.text}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
             <span className="font-display text-2xl font-semibold text-forest-700">{price}</span>
             <Button onClick={subscribe} disabled={busy}>{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
           </div>

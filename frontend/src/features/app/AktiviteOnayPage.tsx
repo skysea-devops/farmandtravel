@@ -709,7 +709,7 @@ function ActivitiesSection() {
         <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
       </div>
 
-      {createOpen && <ActivityForm onDone={() => { setCreateOpen(false); load(); }} />}
+      {createOpen && <ActivityForm admin onDone={() => { setCreateOpen(false); load(); }} />}
 
       <h3 className="font-display mb-3 mt-5 text-[15px] font-semibold">Onay bekleyenler{items.length ? ` (${items.length})` : ""}</h3>
       {loading ? (
