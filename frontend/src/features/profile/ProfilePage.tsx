@@ -14,6 +14,8 @@ import { ProofUpload } from "@/features/profile/ProofUpload";
 import { AvailabilityField, availabilityLabel, type Availability } from "@/features/profile/Availability";
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import { SKILLS, INTENTS, derivedTags, intentsFromTags, labelOf as skillLabel } from "@/features/onboarding/intents";
+import { INTENT_ICONS, DomainIcon } from "@/lib/icons";
+import { Check } from "lucide-react";
 import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Profile } from "@/lib/types";
 
@@ -434,13 +436,10 @@ function IntentEditor({ tags, onSaved }: { tags: { axis: Axis; value: string }[]
     if (derived.length === 0) { setMsg(t("En az bir niyet seç.", "Pick at least one intent.")); return; }
     setBusy(true); setMsg(null);
     try {
-      const r = await api.post<{ written: number; review: boolean }>("/profile/intents", { tags: derived });
+      await api.post<{ written: number }>("/profile/intents", { tags: derived });
       api.invalidate();
       onSaved();
-      setMsg(r.review
-        ? t("Kaydedildi. Yer sahibi olarak eklendiğin için profilin adres/mekân doğrulaması amacıyla tekrar incelemeye alındı — onaylanınca Keşfet'te host olarak görünürsün.",
-            "Saved. Since you've added hosting, your profile is back in review for address/place verification — once approved you'll appear as a host in Discover.")
-        : t("Kaydedildi.", "Saved."));
+      setMsg(t("Kaydedildi.", "Saved."));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : t("Kaydedilemedi.", "Couldn't save."));
     } finally { setBusy(false); }
@@ -456,9 +455,9 @@ function IntentEditor({ tags, onSaved }: { tags: { axis: Axis; value: string }[]
             <button key={it.key} type="button" onClick={() => toggle(it.key)}
               className={cn("flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm transition",
                 on ? "border-forest-600 bg-forest-600/5" : "border-border-strong bg-surface hover:border-forest-500")}>
-              <span className="text-lg">{it.icon}</span>
+              <DomainIcon map={INTENT_ICONS} k={it.key} size={18} className={on ? "text-forest-600" : "text-ink-500"} />
               <span className={cn("font-medium", on ? "text-forest-700" : "text-ink-700")}>{lang === "en" ? it.en : it.tr}</span>
-              {on && <span className="ml-auto text-forest-600">✓</span>}
+              {on && <Check size={16} strokeWidth={2} className="ml-auto text-forest-600" />}
             </button>
           );
         })}

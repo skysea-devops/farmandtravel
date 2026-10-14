@@ -8,7 +8,7 @@ import {
   Salad, Leaf, Beef,
   ShoppingBasket, Waypoints, Waves, Footprints, MapPin,
   Sparkles, Trash2, Wine, CigaretteOff, Moon, Shirt, Utensils,
-  Mountain,
+  Mountain, Backpack, GraduationCap, CalendarDays, Handshake,
 } from "lucide-react";
 
 export const HELP_ICONS: Record<string, LucideIcon> = {
@@ -34,6 +34,11 @@ export const RULE_ICONS: Record<string, LucideIcon> = {
 
 export const PHOTO_ICONS: Record<string, LucideIcon> = {
   farm_overview: Mountain, sleeping: BedDouble, building: House, kitchen: CookingPot, toilet: Droplets, bathroom: Bath,
+};
+
+// Niyet ikonları (onboarding + profil niyet editörü).
+export const INTENT_ICONS: Record<string, LucideIcon> = {
+  host: House, volunteer: Backpack, learn: GraduationCap, activity: CalendarDays, material: Wrench, support: Handshake,
 };
 
 // Alan anahtarından ikon render eden yardımcı. Bulunamazsa hiçbir şey çizmez.

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { api, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
+import { Check, Sprout, Lock, Camera, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { INTENT_ICONS, DomainIcon } from "@/lib/icons";
 import { HostDetailsForm } from "@/features/profile/HostDetails";
 import { HostPhotos } from "@/features/profile/HostPhotos";
 import { ProofUpload } from "@/features/profile/ProofUpload";
@@ -166,20 +168,20 @@ export function OnboardingPage() {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16">
         <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-8 text-center">
-          <div className="mb-2 text-4xl">🎉</div>
+          <div className="mb-3 flex justify-center"><span className="grid size-14 place-items-center rounded-full bg-offer-bg text-forest-700"><Sprout size={28} strokeWidth={1.75} /></span></div>
           <h1 className="font-display text-2xl font-semibold">{t("Profilin hazır!", "Your profile is ready!")}</h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-600">
             {t("Ekibimiz profilini kısa sürede inceleyecek; onaylanınca Keşfet'te görünür ve eşleşmeye başlarsın. O zamana dek gezinmeye başlayabilirsin.",
                "Our team will review your profile shortly; once approved you'll appear in Discover and start matching. Meanwhile you can start exploring.")}
           </p>
           <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
-            <div className="font-display text-base font-semibold text-forest-700">{t("🌱 Öncü üye · Ücretsiz", "🌱 Founding member · Free")}</div>
+            <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
             <p className="mt-1 text-sm text-ink-700">
               {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($35/yıl) ileride başlayacak.",
                  "You're among the first members — your access is free. Paid membership ($35/year) will start later.")}
             </p>
           </div>
-          <Button className="mt-6" onClick={() => nav("/app")}>{t("Keşfetmeye başla →", "Start exploring →")}</Button>
+          <Button className="mt-6" onClick={() => nav("/app")}>{t("Keşfetmeye başla", "Start exploring")} <ChevronRight size={16} strokeWidth={2} /></Button>
         </div>
       </div>
     );
@@ -202,7 +204,7 @@ export function OnboardingPage() {
                     i === step ? "bg-sand-100 font-semibold text-forest-700" : "text-ink-500 hover:text-ink-700")}>
                   <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[11px]",
                     i < step ? "border-moss-500 bg-moss-500 text-white" : i === step ? "border-forest-600 text-forest-600" : "border-border-strong")}>
-                    {i < step ? "✓" : i + 1}
+                    {i < step ? <Check size={12} strokeWidth={2.5} /> : i + 1}
                   </span>
                   {s.label}
                 </button>
@@ -231,7 +233,7 @@ export function OnboardingPage() {
               <Field label={<>{t("Profil fotoğrafı", "Profile photo")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel — önerilir", "optional — recommended")})</span></>}>
                 <label className="inline-flex cursor-pointer items-center gap-3 rounded-lg border border-border-strong px-3 py-2 text-sm text-ink-700 transition hover:border-forest-600">
                   <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
-                  {avatarUp ? t("Yükleniyor…", "Uploading…") : avatarKey ? t("✓ Fotoğraf yüklendi — değiştir", "✓ Photo uploaded — change") : t("+ Profil fotoğrafı ekle", "+ Add profile photo")}
+                  {avatarUp ? t("Yükleniyor…", "Uploading…") : avatarKey ? <><Check size={15} strokeWidth={2} /> {t("Fotoğraf yüklendi — değiştir", "Photo uploaded — change")}</> : t("+ Profil fotoğrafı ekle", "+ Add profile photo")}
                 </label>
               </Field>
             </Step>
@@ -251,12 +253,12 @@ export function OnboardingPage() {
                       }}
                       className={cn("flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
                         on ? "border-forest-600 bg-forest-600 text-white" : "border-border-strong bg-surface hover:border-forest-500")}>
-                      <span>{o.icon}</span>{lang === "en" ? o.en : o.tr}
+                      <DomainIcon map={INTENT_ICONS} k={o.key} size={16} />{lang === "en" ? o.en : o.tr}
                     </button>
                   );
                 })}
               </div>
-              <div className="mt-6 mb-1.5 text-[13px] font-semibold uppercase tracking-wide text-clay-600">{t("Ağırlayabileceğin / üretim yaptığın bir yerin var mı?", "Do you have a place to host / produce?")}</div>
+              <div className="mt-6 mb-1.5 text-[13px] font-semibold text-ink-700">{t("Ağırlayabileceğin / üretim yaptığın bir yerin var mı?", "Do you have a place to host / produce?")}</div>
               <p className="mb-2 text-xs text-ink-500">{t("Çiftlik, arazi, bahçe, ekolojik proje, bağ, hayvan barınağı, inziva/atölye merkezi, eko-köy…", "Farm, land, garden, eco project, vineyard, animal sanctuary, retreat/workshop centre, eco-village…")}</p>
               <div className="inline-flex overflow-hidden rounded-full border border-border-strong">
                 <button type="button" onClick={() => setHasPlace(true)} className={cn("px-4 py-2 text-sm", hasPlace === true ? "bg-forest-600 text-white" : "bg-surface text-ink-700")}>{t("Evet, bir yerim var", "Yes, I have a place")}</button>
@@ -269,7 +271,7 @@ export function OnboardingPage() {
 
           {curId === "contact" && (
             <Step title={t("İletişim", "Contact")} lead={f.contactRequired ? t("Gönüllü ağırladığın için bu alanlar zorunlu — karşılıklı güven ve ulaşım için.", "Since you host volunteers these fields are required — for trust and reachability.") : t("Opsiyonel — bağlantı kurduğunda paylaşılır.", "Optional — shared when you connect.")}>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500">🔒 {t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500"><Lock size={14} strokeWidth={1.75} className="shrink-0" /> <span>{t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</span></div>
               <div className="grid gap-x-4 sm:grid-cols-2">
                 <Field label={t("Telefon", "Phone")} req={f.contactRequired}><input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90" /></Field>
                 <Field label={<>{t("Sosyal medya", "Social media")} {!f.contactRequired && <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span>}</>} req={f.contactRequired}><input className={inp} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@kullanici" /></Field>
@@ -297,7 +299,7 @@ export function OnboardingPage() {
             <Step title={t("Çiftlik rehberi & ağırlama fotoğrafları", "Farm guide & accommodation photos")} lead={t("Gönüllülerin ne beklediğini net görmesi için ağırlama bilgilerini doldur.", "Fill in your hosting details so volunteers know what to expect.")}>
               <HostDetailsForm value={host} onChange={setHost} />
               <div className="mt-5 border-t border-border pt-4">
-                <h3 className="font-display mb-1 text-[15px] font-semibold text-forest-700">{t("📸 Yerin fotoğrafları", "📸 Photos of your place")}</h3>
+                <h3 className="font-display mb-1 flex items-center gap-1.5 text-[15px] font-semibold text-forest-700"><Camera size={16} strokeWidth={1.75} /> {t("Yerin fotoğrafları", "Photos of your place")}</h3>
                 <HostPhotos photos={photos} onChange={loadMe} />
               </div>
             </Step>
@@ -305,14 +307,14 @@ export function OnboardingPage() {
 
           {curId === "verify" && (
             <Step title={t("Adres & doğrulama", "Address & verification")} lead={t("Gönüllüler/komşu üreticiler sana ulaşabilsin diye yer bilgini alıyoruz.", "We collect your place info so volunteers/neighbouring producers can reach you.")}>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500">🔒 {t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-sand-100 px-3 py-1.5 text-[13px] text-ink-500"><Lock size={14} strokeWidth={1.75} className="shrink-0" /> <span>{t("Bu bilgiler gizlidir; profilinde görünmez / yalnızca ekip & bağlantıların görür.", "These are private; they don't show on your profile — only the team & your connections see them.")}</span></div>
               <Field label={<>{t("Açık adres", "Full address")} {f.needsAddress ? <span className="font-bold text-[#dc2626]"> *</span> : <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span>}</>}>
                 <textarea className={ta} rows={2} value={addressExact} onChange={(e) => setAddressExact(e.target.value)} placeholder={t("Mahalle, sokak, no, ilçe/il", "Street, no, district/city")} />
               </Field>
               <Field label={<>{t("Adres kanıtı belgesi", "Proof of address")} <span className="text-[12px] font-medium text-ink-300">({t("opsiyonel", "optional")})</span></>}>
                 <ProofUpload done={proofAddress} onChange={loadMe} />
               </Field>
-              <div className="rounded-lg border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-[13.5px] text-ink-700">ℹ️ {t("Belge zorunlu değil; onay sürecinde gerekli görülürse ekibimiz isteyebilir.", "The document isn't required; our team may request it during review if needed.")}</div>
+              <div className="flex items-start gap-2 rounded-lg border-l-4 border-forest-500 bg-sand-100 px-4 py-3 text-[13.5px] text-ink-700"><Info size={15} strokeWidth={1.75} className="mt-0.5 shrink-0" /> <span>{t("Belge zorunlu değil; onay sürecinde gerekli görülürse ekibimiz isteyebilir.", "The document isn't required; our team may request it during review if needed.")}</span></div>
             </Step>
           )}
 
@@ -362,8 +364,8 @@ export function OnboardingPage() {
           )}
 
           <div className="mt-7 flex items-center justify-between border-t border-border pt-5">
-            <Button variant="ghost" onClick={goBack} className={step === 0 ? "invisible" : ""}>{t("← Geri", "← Back")}</Button>
-            <Button onClick={goNext} disabled={busy || miss.length > 0}>{busy ? t("Kaydediliyor…", "Saving…") : isLast ? t("Kaydet ve bitir", "Save and finish") : t("Kaydet ve devam et →", "Save and continue →")}</Button>
+            <Button variant="ghost" onClick={goBack} className={step === 0 ? "invisible" : ""}><ChevronLeft size={16} strokeWidth={2} /> {t("Geri", "Back")}</Button>
+            <Button onClick={goNext} disabled={busy || miss.length > 0}>{busy ? t("Kaydediliyor…", "Saving…") : isLast ? t("Kaydet ve bitir", "Save and finish") : <>{t("Kaydet ve devam et", "Save and continue")} <ChevronRight size={16} strokeWidth={2} /></>}</Button>
           </div>
         </div>
       </div>
