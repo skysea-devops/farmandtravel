@@ -681,13 +681,20 @@ function ReviewModerationCard() {
 // ── Aktiviteler ──────────────────────────────────────────────────────────────
 // Admin kendi aktivitesini doğrudan yayınlar; üye gönderileri onay bekler.
 function ActivitiesSection() {
-  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [items, setItems] = useState<ActivityItem[]>([]);         // onay bekleyenler
+  const [live, setLive] = useState<ActivityItem[]>([]);           // yayındakiler
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
-  const load = () =>
-    actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
+  const load = () => {
+    setLoading(true);
+    return Promise.all([
+      actApi.adminList<{ items: ActivityItem[] }>("pending").then((r) => setItems(r.items)).catch(() => {}),
+      actApi.adminList<{ items: ActivityItem[] }>("published").then((r) => setLive(r.items)).catch(() => {}),
+    ]).finally(() => setLoading(false));
+  };
   useEffect(() => { load(); }, []);
 
   async function act(id: string, kind: "approve" | "reject") {
@@ -695,8 +702,14 @@ function ActivitiesSection() {
     try {
       if (kind === "approve") await actApi.approve(id);
       else await actApi.reject(id);
-      setItems((xs) => xs.filter((a) => a.id !== id));
+      await load();
     } finally { setBusy(null); }
+  }
+
+  async function togglePin(a: ActivityItem) {
+    setBusy(a.id);
+    try { a.pinned ? await actApi.unpin(a.id) : await actApi.pin(a.id); await load(); }
+    finally { setBusy(null); }
   }
 
   return (
@@ -704,13 +717,14 @@ function ActivitiesSection() {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold">Aktiviteler</h2>
-          <p className="text-sm text-ink-500">Kendi oluşturduğun aktiviteler doğrudan yayınlanır; üye gönderileri aşağıda onay bekler.</p>
+          <p className="text-sm text-ink-500">Kendi oluşturduğun aktiviteler doğrudan yayınlanır; üye gönderileri aşağıda onay bekler. Yayındaki tüm aktiviteleri her admin düzenleyebilir.</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
+        <Button size="sm" onClick={() => { setCreateOpen((o) => !o); setEditId(null); }}>{createOpen ? "Kapat" : "＋ Aktivite oluştur"}</Button>
       </div>
 
       {createOpen && <ActivityForm admin onDone={() => { setCreateOpen(false); load(); }} />}
 
+      {/* Onay bekleyenler */}
       <h3 className="font-display mb-3 mt-5 text-[15px] font-semibold">Onay bekleyenler{items.length ? ` (${items.length})` : ""}</h3>
       {loading ? (
         <div className="py-8 text-center text-ink-500">Yükleniyor…</div>
@@ -727,8 +741,8 @@ function ActivitiesSection() {
                 <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{KIND[a.kind] ?? a.kind}</div>
                 <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
                 {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
-                {a.kind === "meeting" && a.when && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-600">{a.online ? <><span className="size-2 rounded-full bg-forest-500" /> Online</> : <><MapPin size={13} strokeWidth={1.75} /> Yüz yüze</>} · {a.when}</div>
+                {a.kind === "meeting" && (a.eventDate || a.when) && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-600">{a.online ? <><span className="size-2 rounded-full bg-forest-500" /> Online</> : <><MapPin size={13} strokeWidth={1.75} /> Yüz yüze</>} · {a.eventDate ? new Date(a.eventDate).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" }) : a.when}</div>
                 )}
                 <div className="mt-2 text-xs text-ink-500">{[a.author, a.place].filter(Boolean).join(" · ")}</div>
                 <div className="mt-4 flex gap-2">
@@ -736,6 +750,42 @@ function ActivitiesSection() {
                   <Button size="sm" variant="outline" disabled={busy === a.id} onClick={() => act(a.id, "reject")}>Reddet</Button>
                 </div>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Yayındakiler — her admin düzenleyebilir */}
+      <h3 className="font-display mb-3 mt-8 text-[15px] font-semibold">Yayındakiler{live.length ? ` (${live.length})` : ""}</h3>
+      {!loading && live.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">
+          Yayında aktivite yok.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {live.map((a) => (
+            <div key={a.id} className="rounded-[var(--radius-lg)] border border-border bg-surface">
+              {editId === a.id ? (
+                <div className="p-4">
+                  <ActivityForm admin edit={a} onDone={() => { setEditId(null); load(); }} />
+                  <div className="-mt-4"><Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Vazgeç</Button></div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3 p-4">
+                  {a.image && <div className="size-14 shrink-0 rounded-lg bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-semibold tracking-wide text-clay-600">{KIND[a.kind] ?? a.kind}{a.pinned ? " · SABİT" : ""}</div>
+                    <div className="truncate font-display text-[15px] font-semibold">{a.title}</div>
+                    <div className="mt-0.5 text-xs text-ink-500">
+                      {[a.author, a.eventDate ? new Date(a.eventDate).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" }) : null, a.lang ? (a.lang === "both" ? "TR+EN" : a.lang === "en" ? "İngilizce" : "Türkçe") : null].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" variant="outline" disabled={busy === a.id} onClick={() => { setEditId(a.id); setCreateOpen(false); }}>Düzenle</Button>
+                    <Button size="sm" variant="ghost" disabled={busy === a.id} onClick={() => togglePin(a)}>{a.pinned ? "Sabiti kaldır" : "Sabitle"}</Button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

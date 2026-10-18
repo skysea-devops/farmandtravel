@@ -6,34 +6,45 @@ import type { ActivityItem, ActivityKind } from "@/lib/types";
 
 const inp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
 
+// ISO → datetime-local input değeri (yerel saat).
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 // Paylaşım formu. Üye gönderir → pending; admin gönderir → published (backend karar verir).
 // admin=true iken video türü, erişim (public/members), süre, detay ve link alanları açılır.
-export function ActivityForm({ onDone, admin = false }: { onDone: () => void; admin?: boolean }) {
+// edit verilirse düzenleme modu: alanlar doldurulur, PATCH ile güncellenir, tür kilitlenir.
+export function ActivityForm({ onDone, admin = false, edit }: { onDone: () => void; admin?: boolean; edit?: ActivityItem }) {
   const { t } = useI18n();
-  const [kind, setKind] = useState<ActivityKind>(admin ? "video" : "photo");
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [place, setPlace] = useState("");
-  const [eventDate, setEventDate] = useState(""); // datetime-local
-  const [online, setOnline] = useState(false);
+  const editing = !!edit;
+  const [kind, setKind] = useState<ActivityKind>(edit ? edit.kind : admin ? "video" : "photo");
+  const [title, setTitle] = useState(edit?.title ?? "");
+  const [desc, setDesc] = useState(edit?.desc ?? "");
+  const [place, setPlace] = useState(edit?.place ?? "");
+  const [eventDate, setEventDate] = useState(edit?.eventDate ? toLocalInput(edit.eventDate) : ""); // datetime-local
+  const [online, setOnline] = useState(!!edit?.online);
   const [file, setFile] = useState<File | null>(null);
-  const [youtubeId, setYoutubeId] = useState("");
-  const [videoSource, setVideoSource] = useState<"youtube" | "upload">("upload");
+  const [youtubeId, setYoutubeId] = useState(edit?.youtubeId ?? "");
+  const [videoSource, setVideoSource] = useState<"youtube" | "upload">(edit?.youtubeId ? "youtube" : "upload");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPct, setVideoPct] = useState(0);
-  const [durationMin, setDurationMin] = useState("");
-  const [access, setAccess] = useState<"public" | "members">("members");
-  const [section, setSection] = useState<"meetups" | "knowledge" | "academy">("knowledge");
-  const [detail, setDetail] = useState("");
-  const [link, setLink] = useState("");
-  const [evLang, setEvLang] = useState<"tr" | "en" | "both">("tr");
+  const [durationMin, setDurationMin] = useState(edit?.durationMin ? String(edit.durationMin) : "");
+  const [access, setAccess] = useState<"public" | "members">(edit?.access ?? "members");
+  const [section, setSection] = useState<"meetups" | "knowledge" | "academy">(
+    edit && (edit.section === "meetups" || edit.section === "knowledge" || edit.section === "academy") ? edit.section : "knowledge",
+  );
+  const [detail, setDetail] = useState(edit?.detail ?? "");
+  const [link, setLink] = useState(edit?.link ?? "");
+  const [evLang, setEvLang] = useState<"tr" | "en" | "both">(edit?.lang ?? "tr");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (title.trim().length < 3) return;
-    if (kind === "video") {
+    if (kind === "video" && !editing) {
       if (videoSource === "youtube" && youtubeId.trim().length < 1) { setMsg(t("YouTube video ID gerekli.", "YouTube video ID is required.")); return; }
       if (videoSource === "upload" && !videoFile) { setMsg(t("Video dosyası seç.", "Choose a video file.")); return; }
     }
@@ -47,6 +58,27 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
         videoKey = await uploadVideo(videoFile, setVideoPct);
       }
       const dur = durationMin.trim() ? Number(durationMin) : undefined;
+
+      // --- Düzenleme: değişebilir alanları PATCH ile gönder (kısmi). ---
+      if (editing && edit) {
+        await actApi.update<ActivityItem>(edit.id, {
+          title, desc: desc.trim() || null, place: place.trim() || null,
+          ...(kind === "meeting" ? { eventDate: eventDate ? new Date(eventDate).toISOString() : null, online } : {}),
+          ...(admin ? { access } : {}),
+          ...(kind === "video" ? { section } : {}),
+          ...(kind === "meeting" || kind === "video" ? { lang: evLang } : {}),
+          detail: detail.trim() || null,
+          link: link.trim() || null,
+          ...(kind === "video" && videoSource === "youtube" ? { youtubeId: youtubeId.trim() || null } : {}),
+          ...(kind === "video" ? { durationMin: dur && !Number.isNaN(dur) ? dur : null } : {}),
+          ...(imageKey ? { imageKey } : {}),
+          ...(videoKey ? { videoKey } : {}),
+        });
+        setMsg(t("Güncellendi.", "Updated."));
+        setTimeout(onDone, 900);
+        return;
+      }
+
       const created = await actApi.submit<ActivityItem>({
         kind, title, desc: desc || undefined, place: place || undefined, imageKey,
         eventDate: kind === "meeting" && eventDate ? new Date(eventDate).toISOString() : undefined,
@@ -68,7 +100,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
       setTitle(""); setDesc(""); setPlace(""); setEventDate(""); setFile(null); setYoutubeId(""); setVideoFile(null); setVideoPct(0); setDurationMin(""); setDetail(""); setLink("");
       setTimeout(onDone, 1200);
     } catch {
-      setMsg(t("Gönderilemedi, tekrar dene.", "Couldn't send, please try again."));
+      setMsg(t(editing ? "Güncellenemedi, tekrar dene." : "Gönderilemedi, tekrar dene.", editing ? "Couldn't update, please try again." : "Couldn't send, please try again."));
     } finally {
       setBusy(false);
     }
@@ -76,11 +108,11 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
 
   return (
     <form onSubmit={submit} className="mb-8 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <h3 className="font-display mb-3 text-lg font-semibold">{t("Aktivite paylaş", "Share an activity")}</h3>
+      <h3 className="font-display mb-3 text-lg font-semibold">{editing ? t("Aktiviteyi düzenle", "Edit activity") : t("Aktivite paylaş", "Share an activity")}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-ink-700">{t("Tür", "Type")}</span>
-          <select value={kind} onChange={(e) => setKind(e.target.value as ActivityKind)} className={inp}>
+          <select value={kind} onChange={(e) => setKind(e.target.value as ActivityKind)} className={inp} disabled={editing}>
             {admin && <option value="video">{t("Video / seminer kaydı", "Video / recorded session")}</option>}
             <option value="photo">{t("Paylaşım (fotoğraf)", "Post (photo)")}</option>
             <option value="meeting">{t("Buluşma / etkinlik", "Meetup / event")}</option>
@@ -217,7 +249,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
       )}
 
       <div className="mt-4 flex items-center gap-3">
-        <Button type="submit" disabled={busy}>{busy ? t("Gönderiliyor…", "Sending…") : t("Gönder", "Submit")}</Button>
+        <Button type="submit" disabled={busy}>{busy ? (editing ? t("Kaydediliyor…", "Saving…") : t("Gönderiliyor…", "Sending…")) : editing ? t("Kaydet", "Save") : t("Gönder", "Submit")}</Button>
         {msg && <span className="text-sm text-ink-600">{msg}</span>}
       </div>
     </form>

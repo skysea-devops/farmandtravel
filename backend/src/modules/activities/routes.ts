@@ -279,3 +279,44 @@ activitiesRoutes.post("/admin/activities/:id/unpin", auth, requireAdmin, async (
   if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
   return c.json(await toDto(r.rows[0]!, true));
 });
+
+// --- Admin: düzenle (herhangi bir admin, yazarı olmasa da) ---
+// Yalnız gönderilen alanlar güncellenir (kısmi). Kind değiştirilmez.
+const editSchema = z.object({
+  title: z.string().min(3).max(140).optional(),
+  desc: z.string().max(2000).nullable().optional(),
+  place: z.string().max(120).nullable().optional(),
+  eventDate: z.string().datetime().nullable().optional(),
+  online: z.boolean().nullable().optional(),
+  access: z.enum(["public", "members"]).optional(),
+  section: z.enum(["meetups", "knowledge", "academy", "member", "announcements"]).optional(),
+  lang: z.enum(["tr", "en", "both"]).nullable().optional(),
+  detail: z.string().max(4000).nullable().optional(),
+  link: z.string().max(500).nullable().optional(),
+  youtubeId: z.string().max(20).nullable().optional(),
+  durationMin: z.number().int().min(1).max(100000).nullable().optional(),
+  imageKey: z.string().max(300).optional(),
+  videoKey: z.string().max(300).optional(),
+});
+const EDIT_COL: Record<string, string> = {
+  title: "title", desc: "description", place: "place", eventDate: "event_date",
+  online: "online", access: "access", section: "section", lang: "lang",
+  detail: "detail", link: "link", youtubeId: "youtube_id", durationMin: "duration_min",
+  imageKey: "image_key", videoKey: "video_key",
+};
+activitiesRoutes.patch("/admin/activities/:id", auth, requireAdmin, async (c) => {
+  const { memberId } = currentUser(c);
+  const b = editSchema.parse(await c.req.json());
+  if (b.imageKey && !b.imageKey.startsWith(`gallery/${memberId}/`)) throw Forbidden("Bu dosya sana ait değil");
+  if (b.videoKey && !b.videoKey.startsWith(`video/${memberId}/`)) throw Forbidden("Bu video sana ait değil");
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  for (const [k, col] of Object.entries(EDIT_COL)) {
+    if (k in b) { vals.push((b as Record<string, unknown>)[k] ?? null); sets.push(`${col}=$${vals.length}`); }
+  }
+  if (!sets.length) return c.json({ error: "no_fields", message: "Güncellenecek alan yok." }, 400);
+  vals.push(c.req.param("id"));
+  const r = await query<ActivityRow>(`UPDATE activities SET ${sets.join(", ")} WHERE id=$${vals.length} RETURNING ${COLS}`, vals);
+  if (!r.rowCount) throw NotFound("Aktivite bulunamadı");
+  return c.json(await toDto(r.rows[0]!, true));
+});
