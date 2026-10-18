@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check, Pin, PinOff, Plus } from "lucide-react";
+import { PlayCircle, Image as ImageIcon, CalendarDays, Megaphone, Lock, Users, Clock, MapPin, ChevronLeft, ExternalLink, Check, Pin, PinOff, Plus, Languages } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -239,7 +239,7 @@ function ActivityDetail({ id }: { id: string }) {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             </div>
           )}
-          {a.kind === "photo" && a.image && (
+          {(a.kind === "photo" || a.kind === "meeting") && a.image && (
             <img src={a.image} alt="" className="w-full rounded-[var(--radius-lg)] border border-border object-cover" />
           )}
 
@@ -254,6 +254,7 @@ function ActivityDetail({ id }: { id: string }) {
               )}
               {a.place && <span className="inline-flex items-center gap-1.5"><MapPin size={15} strokeWidth={1.75} className="text-forest-600" /> {a.place}</span>}
               {a.online != null && <span className="inline-flex items-center gap-1.5">{a.online ? <><span className="size-2 rounded-full bg-forest-500" /> {t("Online", "Online")}</> : t("Yüz yüze", "In person")}</span>}
+              {a.lang && <span className="inline-flex items-center gap-1.5"><Languages size={15} strokeWidth={1.75} className="text-forest-600" /> {a.lang === "both" ? "TR + EN" : a.lang === "en" ? t("İngilizce", "English") : t("Türkçe", "Turkish")}</span>}
               {(a.participantCount ?? 0) > 0 && <span className="inline-flex items-center gap-1.5"><Users size={15} strokeWidth={1.75} className="text-forest-600" /> {a.participantCount} {t("katılımcı", "joined")}</span>}
             </div>
           )}

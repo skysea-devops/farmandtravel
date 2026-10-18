@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { youtubeThumb } from "@/data/activities";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -26,9 +27,26 @@ function fmtDate(iso: string, lang: string) {
   }
 }
 
+// Etkinlik tarihi + saat (buluşma kartında gösterilir).
+function fmtWhen(iso: string, lang: string) {
+  try {
+    return new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "tr-TR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function langLabel(l: string | null | undefined, lang: string): string | null {
+  if (!l) return null;
+  if (l === "both") return lang === "en" ? "TR + EN" : "TR + EN";
+  if (l === "en") return lang === "en" ? "English" : "İngilizce";
+  return lang === "en" ? "Turkish" : "Türkçe";
+}
+
 export function ActivitiesPage() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
+  const nav = useNavigate();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -131,16 +149,35 @@ export function ActivitiesPage() {
 
   function ActivityCard({ a }: { a: ActivityItem }) {
     const kindLabel = useKindLabel();
+    // Üye ise app aktiviteler detayına (linke oradan ulaşır); değilse üye olma davetine.
+    const go = () => nav(user ? `/app/aktiviteler/${a.id}` : "/kayit");
+    const when = a.kind === "meeting" ? (a.eventDate ? fmtWhen(a.eventDate, lang) : a.when) : null;
+    const lbl = langLabel(a.lang, lang);
     return (
-      <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={go}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }}
+        className="cursor-pointer overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface transition hover:border-forest-600 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-600"
+      >
         {a.image && <div className="h-44 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
         <div className="p-5">
           <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</div>
           <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
           {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
-          {a.kind === "meeting" && a.when && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-700">
-              <span>{a.online ? t("🟢 Online", "🟢 Online") : t("📍 Yüz yüze", "📍 In person")}</span><span>·</span><span>{a.when}</span>
+          {(when || lbl) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {a.kind === "meeting" && when && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-700">
+                  <span>{a.online ? t("🟢 Online", "🟢 Online") : t("📍 Yüz yüze", "📍 In person")}</span><span>·</span><span>{when}</span>
+                </span>
+              )}
+              {lbl && (
+                <span className="inline-flex items-center rounded-full bg-moss-300/40 px-3 py-1.5 text-xs font-medium text-forest-700">
+                  {t("Dil", "Language")}: {lbl}
+                </span>
+              )}
             </div>
           )}
           <div className="mt-3 text-xs text-ink-500">{[a.author, a.place, fmtDate(a.date, lang)].filter(Boolean).join(" · ")}</div>
