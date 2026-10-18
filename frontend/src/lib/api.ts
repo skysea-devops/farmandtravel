@@ -98,6 +98,7 @@ export const api = {
   get: <T>(p: string) => req<T>("GET", p),
   post: <T>(p: string, b?: unknown) => req<T>("POST", p, b),
   put: <T>(p: string, b?: unknown) => req<T>("PUT", p, b),
+  patch: <T>(p: string, b?: unknown) => req<T>("PATCH", p, b),
   del: <T>(p: string) => req<T>("DELETE", p),
   // Cached GET with stale-while-revalidate: fresh mem hit → return it; else return
   // persisted data instantly and refresh in the background; else fetch.
@@ -209,6 +210,7 @@ export const activities = {
   leave: async <T>(id: string) => { const r = await api.del<T>(`/activities/${id}/join`); api.invalidate(); return r; },
   eligibility: <T>() => api.get<T>("/activities/eligibility"),
   submit: async <T>(body: unknown) => { const r = await api.post<T>("/activities", body); api.invalidate(); return r; },
+  update: async <T>(id: string, body: unknown) => { const r = await api.patch<T>(`/admin/activities/${id}`, body); api.invalidate(); return r; },
   mine: <T>() => api.get<T>("/activities/mine"),
   adminList: <T>(status = "pending") => api.get<T>(`/admin/activities?status=${status}`),
   approve: async (id: string) => { const r = await api.post(`/admin/activities/${id}/approve`); api.invalidate(); return r; },
