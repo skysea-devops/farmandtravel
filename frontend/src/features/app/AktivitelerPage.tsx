@@ -119,7 +119,7 @@ function ActivityList() {
             return (
               <button key={a.id} onClick={() => navigate(`/app/aktiviteler/${a.id}`)}
                 className="group flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface text-left transition hover:border-forest-500 hover:shadow-sm">
-                <div className="relative aspect-[16/10] bg-sand-100">
+                <div className="relative h-44 shrink-0 overflow-hidden bg-sand-100">
                   {a.image
                     ? <img src={a.image} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
                     : <div className="grid h-full w-full place-items-center text-moss-500"><Icon size={40} strokeWidth={1.5} /></div>}
@@ -240,7 +240,7 @@ function ActivityDetail({ id }: { id: string }) {
             </div>
           )}
           {(a.kind === "photo" || a.kind === "meeting") && a.image && (
-            <img src={a.image} alt="" className="w-full rounded-[var(--radius-lg)] border border-border object-cover" />
+            <img src={a.image} alt="" className="max-h-[440px] w-full rounded-[var(--radius-lg)] border border-border object-cover" />
           )}
 
           {(a.eventDate || a.when || a.place || a.online != null) && (

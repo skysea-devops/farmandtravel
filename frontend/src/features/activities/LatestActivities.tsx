@@ -39,7 +39,7 @@ export function LatestActivities({ limit = 4, excludeId, showHeader = true }: { 
           return (
             <Link key={a.id} to={`/app/aktiviteler/${a.id}`}
               className="group flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface transition hover:border-forest-500 hover:shadow-sm">
-              <div className="relative aspect-[16/10] bg-sand-100">
+              <div className="relative h-36 shrink-0 overflow-hidden bg-sand-100">
                 {a.image
                   ? <img src={a.image} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
                   : <div className="grid h-full w-full place-items-center text-moss-500"><Icon size={34} strokeWidth={1.5} /></div>}
