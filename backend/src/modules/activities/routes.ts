@@ -74,6 +74,7 @@ interface ActivityRow {
   duration_min: number | null;
   detail: string | null;
   link: string | null;
+  lang: string | null;
   participant_count?: number | string | null;
 }
 
@@ -109,12 +110,13 @@ async function toDto(r: ActivityRow, viewerPaid: boolean) {
     locked: !unlocked,
     detail: unlocked ? r.detail : null,
     link: unlocked ? r.link : null,
+    lang: r.lang,
   };
 }
 
 const COLS = `id, author_id, kind, title, description, image_key, image_url, youtube_id, video_key,
               author_name, place, event_at, event_date, online, status, pinned, created_at, published_at,
-              access, section, duration_min, detail, link`;
+              access, section, duration_min, detail, link, lang`;
 const PCOUNT = `(SELECT count(*)::int FROM activity_participants ap WHERE ap.activity_id = activities.id) AS participant_count`;
 const SELECT = `SELECT ${COLS}, ${PCOUNT} FROM activities`;
 
@@ -168,11 +170,12 @@ const base = {
   section: z.enum(["meetups", "knowledge", "academy", "member", "announcements"]).optional(),
   detail: z.string().max(4000).optional(),          // katılım şartları / uzun açıklama
   link: z.string().max(500).optional(),             // kayıt/katılım linki
+  lang: z.enum(["tr", "en", "both"]).optional(),     // etkinlik/içerik dili
 };
 const submitSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("video"), youtubeId: z.string().max(20).optional(), videoKey: z.string().max(300).optional(), durationMin: z.number().int().min(1).max(100000).optional(), ...base }),
   z.object({ kind: z.literal("photo"), imageKey: z.string().min(1).max(300), ...base }),
-  z.object({ kind: z.literal("meeting"), when: z.string().max(120).optional(), eventDate: z.string().datetime().optional(), online: z.boolean().optional(), ...base }),
+  z.object({ kind: z.literal("meeting"), when: z.string().max(120).optional(), eventDate: z.string().datetime().optional(), online: z.boolean().optional(), imageKey: z.string().max(300).optional(), ...base }),
   z.object({ kind: z.literal("announcement"), ...base }),
 ]);
 activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
@@ -194,6 +197,7 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const online = "online" in b ? b.online : undefined;
   const eventDate = "eventDate" in b ? b.eventDate : undefined;
   const durationMin = "durationMin" in b ? b.durationMin : undefined;
+  const lang = "lang" in b ? b.lang : undefined;
   // Yalnız admin bir içeriği "public" (ücretsiz/tanıtım) yapabilir; üye gönderileri members.
   const access = isAdmin ? (b.access ?? "members") : "members";
   // Bölüm: video için seçilir (meetups/knowledge), değilse türden türetilir.
@@ -204,9 +208,9 @@ activitiesRoutes.post("/activities", auth, requireMembership, async (c) => {
   const status = isAdmin ? "published" : "pending";
   const publishedAt = isAdmin ? new Date().toISOString() : null;
   const r = await query<ActivityRow>(
-    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, video_key, place, event_at, event_date, online, status, published_at, access, section, duration_min, detail, link)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING ${COLS}`,
-    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, videoKey ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, section, durationMin ?? null, b.detail ?? null, b.link ?? null],
+    `INSERT INTO activities (author_id, author_name, kind, title, description, image_key, youtube_id, video_key, place, event_at, event_date, online, status, published_at, access, section, duration_min, detail, link, lang)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING ${COLS}`,
+    [memberId, name.rows[0]?.first_name ?? null, b.kind, b.title, b.desc ?? null, imageKey ?? null, youtubeId ?? null, videoKey ?? null, b.place ?? null, when ?? null, eventDate ?? null, online ?? null, status, publishedAt, access, section, durationMin ?? null, b.detail ?? null, b.link ?? null, lang ?? null],
   );
   return c.json(await toDto(r.rows[0]!, true));
 });

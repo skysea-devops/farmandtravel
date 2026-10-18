@@ -40,6 +40,7 @@ export interface ActivityItem {
   locked?: boolean;          // members içerik + ödemesiz görüntüleyen
   detail?: string | null;    // yalnız kilidi açıkken dolu
   link?: string | null;      // yalnız kilidi açıkken dolu
+  lang?: "tr" | "en" | "both" | null; // etkinlik/içerik dili
   joined?: boolean;          // detayda: mevcut kullanıcı katıldı mı
 }
 

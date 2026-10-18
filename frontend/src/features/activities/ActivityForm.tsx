@@ -26,6 +26,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
   const [section, setSection] = useState<"meetups" | "knowledge" | "academy">("knowledge");
   const [detail, setDetail] = useState("");
   const [link, setLink] = useState("");
+  const [evLang, setEvLang] = useState<"tr" | "en" | "both">("tr");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -39,7 +40,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
     setBusy(true); setMsg(null);
     try {
       let imageKey: string | undefined;
-      if (kind === "photo" && file) imageKey = await uploadImage(file, "gallery");
+      if ((kind === "photo" || kind === "meeting") && file) imageKey = await uploadImage(file, "gallery");
       let videoKey: string | undefined;
       if (kind === "video" && videoSource === "upload" && videoFile) {
         setVideoPct(0);
@@ -55,6 +56,7 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
         durationMin: kind === "video" && dur && !Number.isNaN(dur) ? dur : undefined,
         ...(admin ? { access } : {}),
         ...(kind === "video" ? { section } : {}),
+        lang: kind === "meeting" || kind === "video" ? evLang : undefined,
         detail: detail.trim() || undefined,
         link: link.trim() || undefined,
       });
@@ -119,6 +121,14 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
             </select>
           </label>
           <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("İçerik dili", "Content language")}</span>
+            <select value={evLang} onChange={(e) => setEvLang(e.target.value as "tr" | "en" | "both")} className={inp}>
+              <option value="tr">{t("Türkçe", "Turkish")}</option>
+              <option value="en">{t("İngilizce", "English")}</option>
+              <option value="both">{t("İki dilli (TR + EN)", "Bilingual (TR + EN)")}</option>
+            </select>
+          </label>
+          <label className="mt-3 block text-sm">
             <span className="mb-1 block font-medium text-ink-700">{t("Video kaynağı", "Video source")}</span>
             <select value={videoSource} onChange={(e) => setVideoSource(e.target.value as "youtube" | "upload")} className={inp}>
               <option value="upload">{t("Dosya yükle (üyelere özel)", "Upload file (members only)")}</option>
@@ -170,6 +180,18 @@ export function ActivityForm({ onDone, admin = false }: { onDone: () => void; ad
           </div>
           <label className="mt-3 flex items-center gap-2 text-sm text-ink-700">
             <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} /> {t("Online buluşma", "Online meetup")}
+          </label>
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Etkinlik dili", "Event language")}</span>
+            <select value={evLang} onChange={(e) => setEvLang(e.target.value as "tr" | "en" | "both")} className={inp}>
+              <option value="tr">{t("Türkçe", "Turkish")}</option>
+              <option value="en">{t("İngilizce", "English")}</option>
+              <option value="both">{t("İki dilli (TR + EN)", "Bilingual (TR + EN)")}</option>
+            </select>
+          </label>
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block font-medium text-ink-700">{t("Görsel", "Image")} <span className="font-normal text-ink-400">({t("isteğe bağlı", "optional")})</span></span>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
           </label>
         </>
       )}
