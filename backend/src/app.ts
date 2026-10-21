@@ -55,7 +55,12 @@ export function createApp() {
       return c.json({ error: err.code, message: err.message }, err.status as any);
     }
     if (err?.name === "ZodError") {
-      return c.json({ error: "validation", details: (err as any).issues }, 400);
+      const issues = (err as any).issues as { path: (string | number)[]; message: string }[];
+      // Hangi alan(lar) hatalı — frontend banner'ında okunur bir mesaj göster.
+      const msg = issues?.length
+        ? "Geçersiz alan: " + issues.map((i) => `${i.path.join(".") || "(gövde)"} — ${i.message}`).join("; ")
+        : "Geçersiz veri";
+      return c.json({ error: "validation", message: msg, details: issues }, 400);
     }
     console.error(err);
     return c.json({ error: "internal", message: "Beklenmeyen hata" }, 500);
