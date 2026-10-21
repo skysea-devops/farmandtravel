@@ -93,10 +93,14 @@ export function OnboardingPage() {
     } else if (id === "intent") {
       if (intents.size === 0) m.push(t("En az bir niyet seçimi", "At least one intent"));
       if (hasPlace === null) m.push(t('"Bir yerin var mı?" sorusu', '"Do you have a place?"'));
-    } else if (id === "contact" && f.contactRequired) {
-      if (!lastName.trim()) m.push(t("Soyad", "Last name"));
-      if (!phone.trim()) m.push(t("Telefon", "Phone"));
-      if (!instagram.trim()) m.push(t("Sosyal medya", "Social media"));
+    } else if (id === "contact") {
+      if (f.contactRequired) {
+        if (!lastName.trim()) m.push(t("Soyad", "Last name"));
+        if (!phone.trim()) m.push(t("Telefon", "Phone"));
+        if (!instagram.trim()) m.push(t("Sosyal medya", "Social media"));
+      }
+      // Opsiyonel e-posta dolu ama geçersizse backend reddeder — erken ve net uyar.
+      if (contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) m.push(t("Geçerli e-posta", "Valid email"));
     } else if (id === "place") {
       if (!place.name?.trim()) m.push(t("Yerin adı", "Place name"));
       if (!place.type) m.push(t("Yer türü", "Place type"));
@@ -144,7 +148,7 @@ export function OnboardingPage() {
         firstName, lastName: lastName || null, country, city, bio,
         ...(avatarKey ? { avatarKey } : {}),
         ...(phone.trim() ? { phone: phone.trim() } : {}),
-        ...(contactEmail.trim() ? { contactEmail: contactEmail.trim() } : {}),
+        ...(contactEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim()) ? { contactEmail: contactEmail.trim() } : {}),
         ...(Object.keys(socials).length ? { socials } : {}),
         ...(f.hasPlace ? { addressExact } : {}),
         profile,
