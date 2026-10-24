@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { CATEGORIES } from "@/data/demo";
 import { youtubeThumb } from "@/data/activities";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { activities as actApi, api } from "@/lib/api";
 import type { ActivityItem, PublicMember } from "@/lib/types";
 import { BandSlider } from "./BandSlider";
@@ -32,6 +33,9 @@ const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.st
 
 export function HomePage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
+  // Zaten giriş yapmışsa "katıl" paneline gider; değilse kayıt sayfasına.
+  const joinTo = user ? "/app" : "/kayit";
 
   // Real community members for the "TOPLULUKTAN" panel (newest first from the API).
   // Falls back to the static sample cards below when none load yet / platform is empty.
@@ -101,7 +105,7 @@ export function HomePage() {
               {t("Çiftliğinde birlikte üretmek isteyen, projelere destek arayan ya da bilgisini paylaşmak isteyen insanları tek toplulukta buluşturuyoruz.", "We bring people together in one community — those who want to grow together on their farm, those seeking support for a project, and those who want to share what they know.")}
             </p>
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <Link to="/kayit" className="w-full sm:w-auto">
+              <Link to={joinTo} className="w-full sm:w-auto">
                 <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğa katıl", "Join the community")}</Button>
               </Link>
               {/* Mobile: map link (matches the hero mockup). Desktop: outlined button. */}
@@ -254,7 +258,7 @@ export function HomePage() {
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center"><Link to="/kayit"><Button size="lg">{t("Topluluğa katıl", "Join the community")}</Button></Link></div>
+          <div className="mt-8 text-center"><Link to={joinTo}><Button size="lg">{t("Topluluğa katıl", "Join the community")}</Button></Link></div>
         </div>
       </section>
 
