@@ -11,8 +11,14 @@ const KIND_ICON: Record<string, LucideIcon> = { video: PlayCircle, photo: ImageI
 
 // Ortak "Son etkinlikler" şeridi — hem app Aktiviteler sayfasında hem ana sayfada.
 // Sabit (pinned) içerikler başta gelir; kartlar app aktivite detayına gider.
+// Etkinlik tarihi (buluşma kartında belirgin gösterilir): "26 Eki 21:00".
+function fmtEvent(iso: string, lang: string) {
+  try { return new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  catch { return ""; }
+}
+
 export function LatestActivities({ limit = 4, excludeId, showHeader = true }: { limit?: number; excludeId?: string; showHeader?: boolean }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
 
   useEffect(() => {
@@ -51,9 +57,14 @@ export function LatestActivities({ limit = 4, excludeId, showHeader = true }: { 
               </div>
               <div className="flex flex-1 flex-col p-3">
                 <h3 className="font-display line-clamp-2 text-[14px] font-semibold leading-snug text-ink-900">{a.title}</h3>
+                {a.kind === "meeting" && a.eventDate && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 self-start rounded-full bg-forest-600/10 px-2 py-1 text-[11.5px] font-semibold text-forest-700">
+                    <CalendarDays size={12} strokeWidth={2} /> {fmtEvent(a.eventDate, lang)}
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between gap-2 text-[11.5px] text-ink-400">
                   <span className="truncate">{a.author ?? ""}</span>
-                  <span className="shrink-0">{listTime(a.date)}</span>
+                  <span className="shrink-0">{a.kind === "meeting" && a.eventDate ? "" : listTime(a.date)}</span>
                 </div>
               </div>
             </Link>
