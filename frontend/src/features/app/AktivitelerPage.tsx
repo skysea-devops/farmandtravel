@@ -35,7 +35,7 @@ const secOf = (a: ActivityItem): Section =>
   (a.section as Section) ?? (a.kind === "video" ? "knowledge" : a.kind === "photo" ? "member" : "announcements");
 
 function ActivityList() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { paid, admin } = useMe();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
@@ -135,11 +135,16 @@ function ActivityList() {
                 <div className="flex flex-1 flex-col p-3.5">
                   <h3 className="font-display text-[15px] font-semibold leading-snug text-ink-900">{a.title}</h3>
                   {a.desc && <p className="mt-1 line-clamp-2 text-[13px] text-ink-600">{a.desc}</p>}
+                  {a.kind === "meeting" && a.eventDate && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 self-start rounded-full bg-forest-600/10 px-2.5 py-1 text-[12.5px] font-semibold text-forest-700">
+                      <CalendarDays size={13} strokeWidth={2} /> {new Date(a.eventDate).toLocaleString(lang === "en" ? "en-GB" : "tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  )}
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-400">
                     {a.author && <span>{a.author}</span>}
                     {a.kind === "video" && a.durationMin ? <span className="inline-flex items-center gap-1"><Clock size={12} strokeWidth={1.75} /> {a.durationMin} {t("dk", "min")}</span> : null}
                     {a.kind === "meeting" && (a.participantCount ?? 0) > 0 ? <span className="inline-flex items-center gap-1"><Users size={12} strokeWidth={1.75} /> {a.participantCount}</span> : null}
-                    <span className="ml-auto">{listTime(a.date)}</span>
+                    <span className="ml-auto">{a.kind === "meeting" && a.eventDate ? t("yayınlandı ", "posted ") + listTime(a.date) : listTime(a.date)}</span>
                   </div>
                 </div>
               </button>
