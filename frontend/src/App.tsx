@@ -6,8 +6,11 @@ import { AboutPage } from "@/features/about/AboutPage";
 import { KurallarPage } from "@/features/about/KurallarPage";
 import { KosullarPage } from "@/features/about/KosullarPage";
 import { GizlilikPage } from "@/features/about/GizlilikPage";
+import { GuvenlikPage } from "@/features/about/GuvenlikPage";
 import { ExplorePage } from "@/features/explore/ExplorePage";
 import { ActivitiesPage } from "@/features/activities/ActivitiesPage";
+import { BlogPage } from "@/features/blog/BlogPage";
+import { BlogPostPage } from "@/features/blog/BlogPostPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
@@ -36,8 +39,11 @@ export default function App() {
         <Route path="kurallar" element={<KurallarPage />} />
         <Route path="kosullar" element={<KosullarPage />} />
         <Route path="gizlilik" element={<GizlilikPage />} />
+        <Route path="guvenlik" element={<GuvenlikPage />} />
         <Route path="kesfet" element={<ExplorePage />} />
         <Route path="aktiviteler" element={<ActivitiesPage />} />
+        <Route path="blog" element={<BlogPage />} />
+        <Route path="blog/:slug" element={<BlogPostPage />} />
         <Route path="kayit" element={<SignUpPage />} />
         <Route path="giris" element={<LoginPage />} />
         <Route path="onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />

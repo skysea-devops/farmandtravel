@@ -14,6 +14,7 @@ import { notificationsRoutes } from "./modules/notifications/routes.js";
 import { billingRoutes } from "./modules/billing/routes.js";
 import { activitiesRoutes } from "./modules/activities/routes.js";
 import { reportsRoutes } from "./modules/reports/routes.js";
+import { blogRoutes } from "./modules/blog/routes.js";
 
 // Allowed web origins. In prod ALLOWED_ORIGINS is set to the real domains; locally
 // it's unset, so we stay permissive (any origin) for dev convenience.
@@ -48,6 +49,7 @@ export function createApp() {
   app.route("/", billingRoutes);
   app.route("/", activitiesRoutes);
   app.route("/", reportsRoutes);
+  app.route("/", blogRoutes);
 
   // Merkezî hata çevirici
   app.onError((err, c) => {

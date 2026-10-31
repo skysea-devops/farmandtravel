@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Users, Flag, Scale, CalendarDays, Megaphone, Inbox, Check, Sprout, MapPin, Eye, Lock, Mail, Ban, RotateCcw, Paperclip, AlertTriangle, ChevronLeft } from "lucide-react";
+import { Users, Flag, Scale, CalendarDays, Megaphone, Inbox, Check, Sprout, MapPin, Eye, Lock, Mail, Ban, RotateCcw, Paperclip, AlertTriangle, ChevronLeft, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
-import { api, activities as actApi, admin as adminApi, reviews as reviewsApi } from "@/lib/api";
+import { api, activities as actApi, admin as adminApi, reviews as reviewsApi, blog as blogApi, uploadImage } from "@/lib/api";
 import { msgTime, listTime } from "@/lib/time";
 import { ActivityForm } from "@/features/activities/ActivityForm";
 import { countryNames } from "@/data/countries";
 import { fullDate } from "@/lib/time";
-import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember, ReportsData, ReportItem, VerificationData } from "@/lib/types";
+import type { ActivityItem, AdminInboxItem, AdminInboxThread, AdminReviewItem, Profile, RosterData, RosterMember, ReportsData, ReportItem, VerificationData, BlogCard, BlogPost } from "@/lib/types";
 
 const KIND: Record<string, string> = {
   video: "Podcast", photo: "Paylaşım", meeting: "Buluşma", announcement: "Duyuru",
@@ -22,12 +22,13 @@ type FoundMember = { id: string; firstName: string | null; lastName: string | nu
 const fullName = (m: FoundMember) => [m.firstName, m.lastName].filter(Boolean).join(" ") || "İsimsiz üye";
 const whereFrom = (m: FoundMember) => [m.city, m.country].filter(Boolean).join(", ");
 
-type TabId = "members" | "reports" | "reviews" | "activities" | "messages" | "inbox";
+type TabId = "members" | "reports" | "reviews" | "activities" | "blog" | "messages" | "inbox";
 const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
   { id: "members", label: "Üyeler", Icon: Users },
   { id: "reports", label: "Şikayetler", Icon: Flag },
   { id: "reviews", label: "Değerlendirmeler", Icon: Scale },
   { id: "activities", label: "Aktiviteler", Icon: CalendarDays },
+  { id: "blog", label: "Blog", Icon: Newspaper },
   { id: "messages", label: "Duyuru & Mesaj", Icon: Megaphone },
   { id: "inbox", label: "Gelen kutusu", Icon: Inbox },
 ];
@@ -95,6 +96,7 @@ export function AktiviteOnayPage() {
       {tab === "reports" && <ReportsSection onChange={loadReportsCount} />}
       {tab === "reviews" && <ReviewModerationCard />}
       {tab === "activities" && <ActivitiesSection />}
+      {tab === "blog" && <BlogSection />}
       {tab === "messages" && (
         <>
           <BroadcastCard />
@@ -795,6 +797,154 @@ function ActivitiesSection() {
 }
 
 // ── Duyuru & Mesaj ───────────────────────────────────────────────────────────
+// Admin blog yazıları: oluştur / düzenle / yayınla-taslak / sil. Tek dilde yazılır;
+// public uçlar diğer domain için otomatik çevirir.
+function BlogSection() {
+  const [items, setItems] = useState<BlogCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<BlogPost | "new" | null>(null);
+
+  const load = () => { setLoading(true); return blogApi.adminList<{ items: BlogCard[] }>().then((r) => setItems(r.items)).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
+
+  async function openEdit(id: string) {
+    const full = await blogApi.adminDetail<BlogPost>(id).catch(() => null);
+    if (full) setEditing(full);
+  }
+  async function remove(id: string) {
+    if (!confirm("Bu yazı silinsin mi?")) return;
+    await blogApi.remove(id); await load();
+  }
+  async function togglePublish(p: BlogCard) {
+    await blogApi.update(p.id, { status: p.status === "published" ? "draft" : "published" }); await load();
+  }
+
+  if (editing) return <BlogForm post={editing === "new" ? null : editing} onDone={() => { setEditing(null); load(); }} />;
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Blog</h2>
+          <p className="text-sm text-ink-500">Bilgilendirici yazılar. Tek dilde yaz; diğer domainde otomatik çevrilir.</p>
+        </div>
+        <Button size="sm" onClick={() => setEditing("new")}>＋ Yeni yazı</Button>
+      </div>
+
+      {loading ? (
+        <div className="py-8 text-center text-ink-500">Yükleniyor…</div>
+      ) : items.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong p-10 text-center text-sm text-ink-500">Henüz yazı yok.</div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-3">
+              {p.cover && <div className="size-14 shrink-0 rounded-lg bg-cover bg-center bg-sand-100" style={{ backgroundImage: `url(${p.cover})` }} />}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-display text-[15px] font-semibold">{p.title}</div>
+                <div className="mt-0.5 text-xs text-ink-400">
+                  <span className={p.status === "published" ? "text-forest-600" : "text-clay-600"}>{p.status === "published" ? "Yayında" : "Taslak"}</span>
+                  {p.author ? ` · ${p.author}` : ""} · /{p.slug}
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button size="sm" variant="outline" onClick={() => openEdit(p.id)}>Düzenle</Button>
+                <Button size="sm" variant="ghost" onClick={() => togglePublish(p)}>{p.status === "published" ? "Taslağa al" : "Yayınla"}</Button>
+                <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><span className="text-[#dc2626]">Sil</span></Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const binp = "w-full rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-sm outline-none focus:border-forest-600";
+function BlogForm({ post, onDone }: { post: BlogPost | null; onDone: () => void }) {
+  const [title, setTitle] = useState(post?.title ?? "");
+  const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
+  const [body, setBody] = useState(post?.body ?? "");
+  const [cover, setCover] = useState<string | null>(post?.cover ?? null);
+  const [coverKey, setCoverKey] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  async function onCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return;
+    try { const key = await uploadImage(f, "gallery"); setCoverKey(key); setCover(URL.createObjectURL(f)); } catch { /* ignore */ }
+  }
+
+  // Yazı içine görsel: gallery'ye yükle, gövdeye imlecin olduğu yere "media:<key>" ekle.
+  // Depoda key saklanır; public okumada backend taze imzalı URL'e çevirir.
+  async function onBodyImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+    setImgBusy(true); setMsg(null);
+    try {
+      const key = await uploadImage(f, "gallery");
+      const snippet = `\n\n![](media:${key})\n\n`;
+      const ta = bodyRef.current;
+      const s = ta?.selectionStart ?? body.length;
+      const en = ta?.selectionEnd ?? body.length;
+      setBody(body.slice(0, s) + snippet + body.slice(en));
+    } catch { setMsg("Görsel yüklenemedi, tekrar dene."); }
+    finally { setImgBusy(false); }
+  }
+
+  async function save(status: "draft" | "published") {
+    if (title.trim().length < 3 || body.trim().length < 1) { setMsg("Başlık ve içerik gerekli."); return; }
+    setBusy(true); setMsg(null);
+    try {
+      const payload = { title, excerpt: excerpt.trim() || null, body, ...(coverKey ? { coverKey } : {}), status };
+      if (post) await blogApi.update(post.id, payload);
+      else await blogApi.create(payload);
+      onDone();
+    } catch { setMsg("Kaydedilemedi, tekrar dene."); setBusy(false); }
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="font-display text-lg font-semibold">{post ? "Yazıyı düzenle" : "Yeni yazı"}</h2>
+        <Button size="sm" variant="ghost" onClick={onDone}>← Geri</Button>
+      </div>
+      <div className="space-y-3">
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-ink-700">Başlık</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className={binp} maxLength={200} />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-ink-700">Özet <span className="font-normal text-ink-400">(liste için kısa)</span></span>
+          <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} rows={2} className={binp} maxLength={500} />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-ink-700">Kapak görseli</span>
+          <input type="file" accept="image/*" onChange={onCover} className="text-sm" />
+          {cover && <img src={cover} alt="" className="mt-2 h-32 rounded-lg object-cover" />}
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-ink-700">İçerik <span className="font-normal text-ink-400">(Markdown: ## başlık, **kalın**, - liste, [link](url))</span></span>
+          <textarea ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value)} rows={16} className={binp + " font-mono text-[13px]"} />
+        </label>
+        <div className="flex items-center gap-2 text-sm">
+          <label className={`inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-3 py-1.5 font-medium text-ink-700 ${imgBusy ? "opacity-60" : "cursor-pointer hover:border-forest-600"}`}>
+            <input type="file" accept="image/*" onChange={onBodyImage} className="hidden" disabled={imgBusy} />
+            {imgBusy ? "Yükleniyor…" : "🖼 Yazıya görsel ekle"}
+          </label>
+          <span className="text-ink-400">Görsel, imlecin olduğu yere eklenir.</span>
+        </div>
+        <div className="flex items-center gap-3 pt-1">
+          <Button disabled={busy} onClick={() => save("published")}>{busy ? "Kaydediliyor…" : "Yayınla"}</Button>
+          <Button variant="outline" disabled={busy} onClick={() => save("draft")}>Taslak kaydet</Button>
+          {msg && <span className="text-sm text-ink-600">{msg}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Tüm üyelere resmi "Toprakla Yeniden" hesabından duyuru.
 function BroadcastCard() {
   const [body, setBody] = useState("");
