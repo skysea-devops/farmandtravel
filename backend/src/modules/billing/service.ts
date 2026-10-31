@@ -29,15 +29,19 @@ export function marketOfPermalink(permalink: string | null): Market {
   return "tr";
 }
 
-// Hosted Gumroad ürün URL'i. member_id url_params olarak taşınır (webhook'ta döner).
-// wanted=true KULLANMIYORUZ: üye önce ürün sayfasına düşsün, yıllık/3 aylık tier ve
-// periyodu kendisi seçip ödemeye geçsin (member_id seçim boyunca url_params'ta kalır).
-export function checkoutUrl(memberId: string, _email: string | null, market: Market): string {
+export type Period = "yearly" | "quarterly";
+
+// Hosted Gumroad checkout URL'i. Periyot (yıllık/3 aylık) SİTEDE seçilir; buraya gelir,
+// wanted=true + recurrence ile doğrudan o periyodun ödeme ekranına yönlendirir (Gumroad
+// ürün sayfasını atlar). member_id url_params olarak taşınır → webhook'ta döner.
+export function checkoutUrl(memberId: string, _email: string | null, market: Market, period: Period = "yearly"): string {
   const permalink = permalinkFor(market);
   if (!billingConfigured() || !permalink) throw new Error("billing_unconfigured");
   const base = `https://${env.GUMROAD_STORE}.gumroad.com/l/${permalink}`;
   const params = new URLSearchParams();
   params.set("member_id", memberId); // Gumroad'ın tanımadığı param → url_params[member_id] olarak döner
+  params.set("wanted", "true");       // doğrudan ödeme ekranı
+  params.set("recurrence", period);   // yıllık / 3 aylık önceden seçili
   return `${base}?${params.toString()}`;
 }
 
