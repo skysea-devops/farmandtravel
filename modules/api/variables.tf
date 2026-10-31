@@ -63,6 +63,23 @@ variable "ls_webhook_secret" {
   default   = ""
   sensitive = true
 }
+variable "gumroad_store" {
+  type    = string
+  default = ""
+}
+variable "gumroad_permalink_tr" {
+  type    = string
+  default = ""
+}
+variable "gumroad_permalink_intl" {
+  type    = string
+  default = ""
+}
+variable "gumroad_webhook_token" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
 
 variable "ai_mode" {
   type    = string

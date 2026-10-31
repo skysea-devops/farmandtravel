@@ -43,6 +43,9 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
+    env:
+      # Gizli Gumroad webhook token'ı GitHub secret'tan gelir (repoda tutulmaz).
+      TF_VAR_gumroad_webhook_token: ${{ secrets.GUMROAD_WEBHOOK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -68,6 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     # İstersen GitHub'da "prod" environment'ına manuel onay (required reviewers) ekle.
     environment: prod
+    env:
+      # Gizli Gumroad webhook token'ı GitHub secret'tan gelir (repoda tutulmaz).
+      TF_VAR_gumroad_webhook_token: ${{ secrets.GUMROAD_WEBHOOK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4

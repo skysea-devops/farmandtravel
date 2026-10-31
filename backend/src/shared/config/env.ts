@@ -20,12 +20,18 @@ const schema = z.object({
   MEDIA_BUCKET: z.string().optional(),
   // Comma-separated allowed web origins for CORS. Empty/unset = permissive (local dev).
   ALLOWED_ORIGINS: z.string().optional(),
-  // --- Lemon Squeezy billing (empty until configured → checkout returns 503) ---
-  // Uses hosted "buy links" (no outbound API call, works in a no-egress VPC).
-  LS_STORE: z.string().optional(), // store subdomain, e.g. "toprakla" → toprakla.lemonsqueezy.com
-  LS_VARIANT_TR: z.string().optional(), // $20/yr Toprak variant id (topraklayeniden.com)
-  LS_VARIANT_INTL: z.string().optional(), // $40/yr Return variant id (reconnectwithsoil.com)
-  LS_WEBHOOK_SECRET: z.string().optional(), // signing secret for webhook verification
+  // --- Lemon Squeezy billing (legacy; reddedildi, Gumroad'a geçildi) ---
+  LS_STORE: z.string().optional(),
+  LS_VARIANT_TR: z.string().optional(),
+  LS_VARIANT_INTL: z.string().optional(),
+  LS_WEBHOOK_SECRET: z.string().optional(),
+  // --- Gumroad billing (empty until configured → checkout returns 503) ---
+  // Hosted "buy links" (no outbound API call → no-egress VPC'de çalışır). Webhook
+  // kapalı VPC'den Gumroad API'yi çağıramadığı için doğrulama URL'deki gizli token ile.
+  GUMROAD_STORE: z.string().optional(),          // store subdomain, e.g. "topraklayeniden"
+  GUMROAD_PERMALINK_TR: z.string().optional(),   // TR ürün permalink, e.g. "uyelik"
+  GUMROAD_PERMALINK_INTL: z.string().optional(), // EN ürün permalink, e.g. "reconnect-membership"
+  GUMROAD_WEBHOOK_TOKEN: z.string().optional(),  // webhook URL'inde ?token=... doğrulaması
 });
 
 export const env = schema.parse(process.env);
