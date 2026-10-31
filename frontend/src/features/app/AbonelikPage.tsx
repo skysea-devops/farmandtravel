@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Sprout, Check, Handshake, MessageCircle, CalendarDays, PlayCircle } from "lucide-react";
+import { Sprout, Check, Handshake, MessageCircle, CalendarDays, PlayCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api, billing } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -101,9 +101,16 @@ export function AbonelikPage() {
             ))}
           </div>
           <div className="mt-4">
-            <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
+            <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Güvenli ödemeye yönlendiriliyorsun…", "Redirecting to secure checkout…") : t("Abone ol", "Subscribe")}</Button>
           </div>
-          {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-400">
+            <Lock size={13} strokeWidth={1.75} className="mt-0.5 shrink-0 text-forest-600" />
+            <span>{t(
+              "Ödeme, güvenli ödeme ortağımız Gumroad üzerinden alınır; “Abone ol”a basınca güvenli ödeme sayfasına yönlendirilirsin. Kart ekstrende ödeme “GUMROAD” olarak görünür. İstediğin an iptal edebilirsin.",
+              "Payment is handled by our secure partner Gumroad; tapping “Subscribe” takes you to the secure checkout. Your card statement will show “GUMROAD”. You can cancel anytime.",
+            )}</span>
+          </p>
+          {note && <p className="mt-2 text-xs text-ink-500">{note}</p>}
         </div>
       )}
     </div>
