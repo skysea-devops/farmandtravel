@@ -11,10 +11,10 @@ export function GuvenlikPage() {
   const cards: { Icon: LucideIcon; title: string; body: string }[] = [
     {
       Icon: ShieldCheck,
-      title: t("Her profil incelenir", "Every profile is reviewed"),
+      title: t("Her profil kontrol edilir", "Every profile is reviewed"),
       body: t(
-        "Ekibimiz her üyeyi, Keşfet'te görünmeden önce elle inceler. Topluluğun ruhuna uymayan profiller yayınlanmaz.",
-        "Our team reviews every member by hand before they appear in Discover. Profiles that don't fit the community are not published.",
+        "Her profil, Keşfet'te görünmeden önce ekibimiz tarafından kontrol edilir. Topluluğun ruhuna uymayan profiller yayınlanmaz.",
+        "Every profile is reviewed by our team before it appears in Discover. Profiles that don't fit the community are not published.",
       ),
     },
     {

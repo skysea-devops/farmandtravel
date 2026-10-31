@@ -54,6 +54,18 @@ export interface ActivityEligibility {
   need: { connections: number; reviews: number; rating: number };
 }
 
+export interface BlogCard {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover: string | null;
+  author: string | null;
+  status: "draft" | "published";
+  date: string;
+}
+export interface BlogPost extends BlogCard { body: string }
+
 export interface Profile {
   id: string;
   status: "onboarding" | "profile_complete" | "active" | "suspended";
