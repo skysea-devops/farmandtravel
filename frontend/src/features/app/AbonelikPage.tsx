@@ -103,12 +103,9 @@ export function AbonelikPage() {
           <div className="mt-4">
             <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Güvenli ödemeye yönlendiriliyorsun…", "Redirecting to secure checkout…") : t("Abone ol", "Subscribe")}</Button>
           </div>
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-400">
-            <Lock size={13} strokeWidth={1.75} className="mt-0.5 shrink-0 text-forest-600" />
-            <span>{t(
-              "Ödeme, güvenli ödeme ortağımız Gumroad üzerinden alınır; “Abone ol”a basınca güvenli ödeme sayfasına yönlendirilirsin. Kart ekstrende ödeme “GUMROAD” olarak görünür. İstediğin an iptal edebilirsin.",
-              "Payment is handled by our secure partner Gumroad; tapping “Subscribe” takes you to the secure checkout. Your card statement will show “GUMROAD”. You can cancel anytime.",
-            )}</span>
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-400">
+            <Lock size={13} strokeWidth={1.75} className="shrink-0 text-forest-600" />
+            <span>{t("Güvenli ödeme — Gumroad ile", "Secure checkout powered by Gumroad")}</span>
           </p>
           {note && <p className="mt-2 text-xs text-ink-500">{note}</p>}
         </div>
