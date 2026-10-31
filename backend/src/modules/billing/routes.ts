@@ -10,17 +10,20 @@ export const billingRoutes = new Hono();
 
 // Üye için abonelik checkout'u başlat. `market` (tr/intl) hangi ürün olduğunu belirler;
 // frontend domaine göre gönderir. Ödeme sıklığını (yıllık/3 aylık) müşteri Gumroad'da seçer.
-const checkoutSchema = z.object({ market: z.enum(["tr", "intl"]).optional() });
+const checkoutSchema = z.object({
+  market: z.enum(["tr", "intl"]).optional(),
+  period: z.enum(["yearly", "quarterly"]).optional(),
+});
 billingRoutes.post("/billing/checkout", auth, async (c) => {
   const { memberId } = currentUser(c);
   if (!billingConfigured()) return c.json({ error: "unavailable", message: "Ödeme yakında" }, 503);
-  const { market } = checkoutSchema.parse(await c.req.json().catch(() => ({})));
+  const { market, period } = checkoutSchema.parse(await c.req.json().catch(() => ({})));
   const m = await query<{ contact_email: string | null }>(
     "SELECT contact_email FROM members WHERE id=$1",
     [memberId],
   );
   try {
-    const url = checkoutUrl(memberId, m.rows[0]?.contact_email ?? null, (market ?? "tr") as Market);
+    const url = checkoutUrl(memberId, m.rows[0]?.contact_email ?? null, (market ?? "tr") as Market, period ?? "yearly");
     return c.json({ url });
   } catch {
     return c.json({ error: "checkout_failed", message: "Ödeme başlatılamadı" }, 502);

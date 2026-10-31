@@ -72,10 +72,15 @@ afterAll(async () => {
 });
 
 describe("billing service (saf fonksiyonlar)", () => {
-  it("checkoutUrl TR doğru ürün + member_id taşır", () => {
+  it("checkoutUrl TR doğru ürün + member_id + yıllık (varsayılan)", () => {
     const u = svc.checkoutUrl("m1", null, "tr");
     expect(u).toContain("topraklayeniden.gumroad.com/l/uyelik");
     expect(u).toContain("member_id=m1");
+    expect(u).toContain("wanted=true");
+    expect(u).toContain("recurrence=yearly");
+  });
+  it("checkoutUrl 3 aylık periyodu geçirir", () => {
+    expect(svc.checkoutUrl("m1", null, "tr", "quarterly")).toContain("recurrence=quarterly");
   });
   it("checkoutUrl INTL doğru ürüne gider", () => {
     expect(svc.checkoutUrl("m1", null, "intl")).toContain("/l/reconnect-membership");

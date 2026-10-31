@@ -11,18 +11,19 @@ export function AbonelikPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [period, setPeriod] = useState<"yearly" | "quarterly">("yearly");
 
   useEffect(() => {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const priceYear = t("$45 / yıl", "$45 / year");
-  const priceQuarter = t("veya $15 / 3 ay", "or $15 / 3 months");
+  const priceQuarter = t("$15 / 3 ay", "$15 / 3 months");
 
   async function subscribe() {
     setBusy(true); setNote(null);
     try {
-      const { url } = await billing.checkout(market);
+      const { url } = await billing.checkout(market, period);
       window.location.href = url;
     } catch {
       setNote(t("Ödeme altyapısı çok yakında eklenecek.", "Payments are coming very soon."));
@@ -82,14 +83,26 @@ export function AbonelikPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-            <div>
-              <div className="font-display text-2xl font-semibold text-forest-700">{priceYear}</div>
-              <div className="text-xs text-ink-500">{priceQuarter}</div>
-            </div>
-            <Button onClick={subscribe} disabled={busy} className="ml-auto">{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
+          {/* Periyot seçimi — sitede seçilir, doğrudan o periyodun ödemesine gider */}
+          <div className="mt-5 grid gap-2.5 border-t border-border pt-4 sm:grid-cols-2">
+            {([
+              { key: "yearly" as const, title: t("Yıllık", "Yearly"), price: priceYear, note: t("En avantajlı", "Best value") },
+              { key: "quarterly" as const, title: t("3 Aylık", "Quarterly"), price: priceQuarter, note: t("Esnek", "Flexible") },
+            ]).map((o) => (
+              <button key={o.key} type="button" onClick={() => setPeriod(o.key)}
+                className={`rounded-[var(--radius-lg)] border p-3 text-left transition ${period === o.key ? "border-forest-600 bg-offer-bg ring-1 ring-forest-600" : "border-border-strong hover:border-forest-500"}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-display font-semibold text-ink-900">{o.title}</span>
+                  {period === o.key && <Check size={16} strokeWidth={2.5} className="text-forest-600" />}
+                </div>
+                <div className="mt-0.5 font-display text-lg font-semibold text-forest-700">{o.price}</div>
+                <div className="text-xs text-ink-400">{o.note}</div>
+              </button>
+            ))}
           </div>
-          <p className="mt-2 text-xs text-ink-400">{t("Sonraki adımda yıllık ya da 3 aylık seçebilirsin.", "You'll choose yearly or 3-monthly on the next step.")}</p>
+          <div className="mt-4">
+            <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
+          </div>
           {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
         </div>
       )}

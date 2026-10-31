@@ -255,7 +255,8 @@ export const admin = {
 
 export const billing = {
   // Returns the hosted checkout URL to redirect to (or throws on 503 when unconfigured).
-  checkout: (market: "tr" | "intl") => api.post<{ url: string }>("/billing/checkout", { market }),
+  checkout: (market: "tr" | "intl", period: "yearly" | "quarterly" = "yearly") =>
+    api.post<{ url: string }>("/billing/checkout", { market, period }),
 };
 
 // Adres doğrulama belgesi (host) ve kullanıcı şikayeti.
