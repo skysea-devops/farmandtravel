@@ -28,8 +28,43 @@ env:
   MIGRATE_FN: farmandtravel-prod-api-migrate
 
 jobs:
+  # Ödeme modülü dahil tüm backend testleri — geçmeden prod'a deploy YAPILMAZ.
+  test:
+    name: backend tests (billing edge cases)
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ft
+          POSTGRES_PASSWORD: ft
+          POSTGRES_DB: farmandtravel
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: install
+        working-directory: backend
+        run: npm ci
+      - name: migrate test db
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://ft:ft@localhost:5432/farmandtravel
+        run: npm run migrate
+      - name: run tests
+        working-directory: backend
+        run: npm test
+
   deploy:
     name: build, deploy & migrate
+    needs: test # testler geçmeden deploy başlamaz
     # Skip when triggered by a failed Terraform run.
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
