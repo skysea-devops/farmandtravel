@@ -21,10 +21,11 @@ export async function translateMany(
   texts: (string | null | undefined)[],
   lang: string,
 ): Promise<(string | null)[]> {
-  // Translate to the viewer's language (tr or en), auto-detecting source. Content can be
-  // authored in either language, so this is bidirectional; strings already in the target
-  // come back unchanged. Disabled (stub/local) or unknown lang: pass through.
-  if (!client || (lang !== "en" && lang !== "tr")) return texts.map((t) => t ?? null);
+  // Base content language is Turkish, so only the English domain needs translation.
+  // Any other target (notably "tr") passes through unchanged — this also keeps the
+  // Turkish domain off the (slow) model path entirely, so a long body can't stall a
+  // request. Disabled (stub/local): pass through.
+  if (!client || lang !== "en") return texts.map((t) => t ?? null);
 
   // Distinct non-empty sources, keyed by hash.
   const uniq = new Map<string, string>();
@@ -83,7 +84,7 @@ export async function translateFields<T extends Record<string, unknown>>(
   fields: readonly (keyof T)[],
   lang: string,
 ): Promise<void> {
-  if (rows.length === 0 || (lang !== "en" && lang !== "tr")) return;
+  if (rows.length === 0 || lang !== "en") return;
   const flat: (string | null | undefined)[] = [];
   for (const r of rows) for (const f of fields) flat.push(r[f] as string | null | undefined);
   const tr = await translateMany(flat, lang);
@@ -113,14 +114,24 @@ Input: ${JSON.stringify(sources)}`;
     max_tokens: 4000,
     messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
   };
-  const res = await client!.send(
-    new InvokeModelCommand({
-      modelId: env.BEDROCK_MODEL_ID,
-      contentType: "application/json",
-      accept: "application/json",
-      body: JSON.stringify(body),
-    }),
-  );
+  // Hard timeout so a slow model call can never stall the HTTP request to a gateway
+  // timeout; on abort the caller falls back to the original text.
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15_000);
+  let res;
+  try {
+    res = await client!.send(
+      new InvokeModelCommand({
+        modelId: env.BEDROCK_MODEL_ID,
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify(body),
+      }),
+      { abortSignal: ac.signal },
+    );
+  } finally {
+    clearTimeout(timer);
+  }
   const decoded = JSON.parse(new TextDecoder().decode(res.body));
   const text: string = decoded?.content?.[0]?.text ?? "[]";
   const arr = JSON.parse(text.slice(text.indexOf("["), text.lastIndexOf("]") + 1));
