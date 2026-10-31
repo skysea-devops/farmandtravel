@@ -1,35 +1,55 @@
-// Lemon Squeezy billing. One provider, two variants priced per market:
-//   tr   -> $20/yr (Toprak,  topraklayeniden.com)
-//   intl -> $40/yr (Return,  reconnectwithsoil.com)
+// Gumroad billing. Tek hesap (store), market başına bir ürün (permalink):
+//   tr   -> topraklayeniden.gumroad.com/l/uyelik             (topraklayeniden.com)
+//   intl -> topraklayeniden.gumroad.com/l/reconnect-membership (reconnectwithsoil.com)
+// Her ürün içinde iki ödeme sıklığı (yıllık + 3 aylık); sıklığı müşteri checkout'ta seçer.
 //
-// The Lambda runs in a closed VPC with NO internet egress, so we CANNOT call the LS
-// API. Instead we build a hosted "buy link" (a plain URL, no outbound request) and
-// redirect the browser to it. The webhook (inbound via API Gateway) keeps state in
-// sync and only touches RDS, so it needs no egress either.
+// Lambda kapalı VPC'de, internet çıkışı YOK → Gumroad API'yi çağıramayız. Checkout
+// sadece bir URL üretir (outbound yok); üyenin kimliği member_id olarak URL'e iliştirilir
+// ve Gumroad bunu webhook'ta url_params[member_id] olarak geri gönderir. Webhook inbound
+// (API Gateway) olduğundan egress gerektirmez; doğrulama URL'deki gizli token ile yapılır.
 import { env } from "../../shared/config/env.js";
 
 export type Market = "tr" | "intl";
 
 export function billingConfigured(): boolean {
-  return Boolean(env.LS_STORE && env.LS_VARIANT_TR && env.LS_VARIANT_INTL);
+  return Boolean(
+    env.GUMROAD_STORE && env.GUMROAD_PERMALINK_TR && env.GUMROAD_PERMALINK_INTL && env.GUMROAD_WEBHOOK_TOKEN,
+  );
 }
 
-export function variantFor(market: Market): string | undefined {
-  return market === "intl" ? env.LS_VARIANT_INTL : env.LS_VARIANT_TR;
+export function permalinkFor(market: Market): string | undefined {
+  return market === "intl" ? env.GUMROAD_PERMALINK_INTL : env.GUMROAD_PERMALINK_TR;
 }
 
-export function marketOfVariant(variantId: string | null): Market {
-  return variantId && variantId === env.LS_VARIANT_INTL ? "intl" : "tr";
+// Gumroad gelen webhook'ta permalink'i (kısa ya da tam URL) döner; hangisine ait olduğunu
+// içerip içermediğine bakarak market'e eşleriz. INTL önce kontrol edilir.
+export function marketOfPermalink(permalink: string | null): Market {
+  const intl = env.GUMROAD_PERMALINK_INTL;
+  if (permalink && intl && permalink.includes(intl)) return "intl";
+  return "tr";
 }
 
-// Build a Lemon Squeezy hosted checkout URL. member_id rides along as custom data so
-// the webhook can map the resulting subscription back to the member.
-export function checkoutUrl(memberId: string, email: string | null, market: Market): string {
-  const variant = variantFor(market);
-  if (!billingConfigured() || !variant) throw new Error("billing_unconfigured");
-  const base = `https://${env.LS_STORE}.lemonsqueezy.com/checkout/buy/${variant}`;
+// Hosted Gumroad checkout URL'i. member_id url_params olarak taşınır (webhook'ta döner),
+// wanted=true doğrudan ödeme ekranını açar.
+export function checkoutUrl(memberId: string, _email: string | null, market: Market): string {
+  const permalink = permalinkFor(market);
+  if (!billingConfigured() || !permalink) throw new Error("billing_unconfigured");
+  const base = `https://${env.GUMROAD_STORE}.gumroad.com/l/${permalink}`;
   const params = new URLSearchParams();
-  params.set("checkout[custom][member_id]", memberId);
-  if (email) params.set("checkout[email]", email);
+  params.set("member_id", memberId); // Gumroad'ın tanımadığı param → url_params[member_id] olarak döner
+  params.set("wanted", "true");
   return `${base}?${params.toString()}`;
+}
+
+// recurrence → abonelik bitiş tarihi (bir sonraki yenilemeye kadar). ~2 gün tolerans.
+export function periodEnd(recurrence: string | null, from: Date = new Date()): Date {
+  const d = new Date(from);
+  switch ((recurrence ?? "").toLowerCase()) {
+    case "monthly": d.setMonth(d.getMonth() + 1); break;
+    case "quarterly": d.setMonth(d.getMonth() + 3); break;
+    case "biannually": d.setMonth(d.getMonth() + 6); break;
+    case "yearly": default: d.setFullYear(d.getFullYear() + 1); break;
+  }
+  d.setDate(d.getDate() + 2); // yenileme gecikmesi için küçük tolerans
+  return d;
 }

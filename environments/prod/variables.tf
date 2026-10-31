@@ -136,3 +136,26 @@ variable "ls_webhook_secret" {
   default     = ""
   sensitive   = true
 }
+
+# --- Gumroad billing (set via tfvars / CI secret when ready; empty disables checkout) ---
+variable "gumroad_store" {
+  description = "Gumroad store subdomain (e.g. 'topraklayeniden')."
+  type        = string
+  default     = ""
+}
+variable "gumroad_permalink_tr" {
+  description = "Gumroad TR product permalink (e.g. 'uyelik')."
+  type        = string
+  default     = ""
+}
+variable "gumroad_permalink_intl" {
+  description = "Gumroad EN product permalink (e.g. 'reconnect-membership')."
+  type        = string
+  default     = ""
+}
+variable "gumroad_webhook_token" {
+  description = "Secret token appended to the Gumroad webhook URL (?token=...) for verification."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

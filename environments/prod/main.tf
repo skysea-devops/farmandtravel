@@ -116,6 +116,11 @@ module "api" {
   ls_variant_intl   = var.ls_variant_intl
   ls_webhook_secret = var.ls_webhook_secret
 
+  gumroad_store          = var.gumroad_store
+  gumroad_permalink_tr   = var.gumroad_permalink_tr
+  gumroad_permalink_intl = var.gumroad_permalink_intl
+  gumroad_webhook_token  = var.gumroad_webhook_token
+
   ai_mode            = var.ai_mode
   bedrock_model_id   = var.bedrock_model_id
   frontier_cutoff    = var.frontier_cutoff

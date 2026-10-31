@@ -93,6 +93,11 @@ resource "aws_lambda_function" "api" {
       LS_VARIANT_TR     = var.ls_variant_tr
       LS_VARIANT_INTL   = var.ls_variant_intl
       LS_WEBHOOK_SECRET = var.ls_webhook_secret
+      # Gumroad billing (empty until configured → checkout returns 503).
+      GUMROAD_STORE          = var.gumroad_store
+      GUMROAD_PERMALINK_TR   = var.gumroad_permalink_tr
+      GUMROAD_PERMALINK_INTL = var.gumroad_permalink_intl
+      GUMROAD_WEBHOOK_TOKEN  = var.gumroad_webhook_token
       # DB creds injected at deploy time (no runtime Secrets Manager call / VPC endpoint).
       DB_SECRET_ARN = var.db_secret_arn
       DB_HOST       = var.db_host
