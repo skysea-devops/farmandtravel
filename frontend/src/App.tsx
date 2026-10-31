@@ -6,6 +6,7 @@ import { AboutPage } from "@/features/about/AboutPage";
 import { KurallarPage } from "@/features/about/KurallarPage";
 import { KosullarPage } from "@/features/about/KosullarPage";
 import { GizlilikPage } from "@/features/about/GizlilikPage";
+import { GuvenlikPage } from "@/features/about/GuvenlikPage";
 import { ExplorePage } from "@/features/explore/ExplorePage";
 import { ActivitiesPage } from "@/features/activities/ActivitiesPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="kurallar" element={<KurallarPage />} />
         <Route path="kosullar" element={<KosullarPage />} />
         <Route path="gizlilik" element={<GizlilikPage />} />
+        <Route path="guvenlik" element={<GuvenlikPage />} />
         <Route path="kesfet" element={<ExplorePage />} />
         <Route path="aktiviteler" element={<ActivitiesPage />} />
         <Route path="kayit" element={<SignUpPage />} />
