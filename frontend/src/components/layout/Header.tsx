@@ -16,7 +16,7 @@ export function Header() {
     { to: "/hakkimizda", label: t("Biz kimiz", "About") },
     { to: "/kesfet", label: t("Keşfet", "Explore") },
     { to: "/aktiviteler", label: t("Aktiviteler", "Activities") },
-    { to: "/blog", label: t("Blog", "Blog") },
+    { to: "/blog", label: t("Topluluk Bloğumuz", "Community Blog") },
   ];
 
   const linkClass = (isActive: boolean) =>
