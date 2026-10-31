@@ -161,9 +161,12 @@ locals {
   public_routes = [
     "GET /health",
     "POST /webhooks/lemonsqueezy",
+    "POST /webhooks/gumroad",
     "GET /taxonomy",
     "GET /public/members",
     "GET /activities",
+    "GET /blog",
+    "GET /blog/{slug}",
     "OPTIONS /{proxy+}",
   ]
 }
