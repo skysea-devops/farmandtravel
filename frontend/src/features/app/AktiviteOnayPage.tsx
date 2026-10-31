@@ -808,9 +808,7 @@ function BlogSection() {
   useEffect(() => { load(); }, []);
 
   async function openEdit(id: string) {
-    const r = items.find((x) => x.id === id);
-    if (!r) return;
-    const full = await blogApi.detail<BlogPost>(r.slug).catch(() => null);
+    const full = await blogApi.adminDetail<BlogPost>(id).catch(() => null);
     if (full) setEditing(full);
   }
   async function remove(id: string) {
@@ -870,11 +868,29 @@ function BlogForm({ post, onDone }: { post: BlogPost | null; onDone: () => void 
   const [cover, setCover] = useState<string | null>(post?.cover ?? null);
   const [coverKey, setCoverKey] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   async function onCover(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
     try { const key = await uploadImage(f, "gallery"); setCoverKey(key); setCover(URL.createObjectURL(f)); } catch { /* ignore */ }
+  }
+
+  // Yazı içine görsel: gallery'ye yükle, gövdeye imlecin olduğu yere "media:<key>" ekle.
+  // Depoda key saklanır; public okumada backend taze imzalı URL'e çevirir.
+  async function onBodyImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+    setImgBusy(true); setMsg(null);
+    try {
+      const key = await uploadImage(f, "gallery");
+      const snippet = `\n\n![](media:${key})\n\n`;
+      const ta = bodyRef.current;
+      const s = ta?.selectionStart ?? body.length;
+      const en = ta?.selectionEnd ?? body.length;
+      setBody(body.slice(0, s) + snippet + body.slice(en));
+    } catch { setMsg("Görsel yüklenemedi, tekrar dene."); }
+    finally { setImgBusy(false); }
   }
 
   async function save(status: "draft" | "published") {
@@ -909,9 +925,16 @@ function BlogForm({ post, onDone }: { post: BlogPost | null; onDone: () => void 
           {cover && <img src={cover} alt="" className="mt-2 h-32 rounded-lg object-cover" />}
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-ink-700">İçerik <span className="font-normal text-ink-400">(Markdown: ## başlık, **kalın**, - liste, [link](url), ![görsel](url))</span></span>
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={16} className={binp + " font-mono text-[13px]"} />
+          <span className="mb-1 block font-medium text-ink-700">İçerik <span className="font-normal text-ink-400">(Markdown: ## başlık, **kalın**, - liste, [link](url))</span></span>
+          <textarea ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value)} rows={16} className={binp + " font-mono text-[13px]"} />
         </label>
+        <div className="flex items-center gap-2 text-sm">
+          <label className={`inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-3 py-1.5 font-medium text-ink-700 ${imgBusy ? "opacity-60" : "cursor-pointer hover:border-forest-600"}`}>
+            <input type="file" accept="image/*" onChange={onBodyImage} className="hidden" disabled={imgBusy} />
+            {imgBusy ? "Yükleniyor…" : "🖼 Yazıya görsel ekle"}
+          </label>
+          <span className="text-ink-400">Görsel, imlecin olduğu yere eklenir.</span>
+        </div>
         <div className="flex items-center gap-3 pt-1">
           <Button disabled={busy} onClick={() => save("published")}>{busy ? "Kaydediliyor…" : "Yayınla"}</Button>
           <Button variant="outline" disabled={busy} onClick={() => save("draft")}>Taslak kaydet</Button>

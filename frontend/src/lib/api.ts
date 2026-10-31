@@ -223,6 +223,7 @@ export const blog = {
   list: <T>(limit = 20, offset = 0) => api.getCached<T>(`/blog?limit=${limit}&offset=${offset}`, 60_000),
   detail: <T>(slug: string) => api.get<T>(`/blog/${slug}`),
   adminList: <T>() => api.get<T>("/admin/blog"),
+  adminDetail: <T>(id: string) => api.get<T>(`/admin/blog/${id}`),
   create: async <T>(body: unknown) => { const r = await api.post<T>("/admin/blog", body); api.invalidate(); return r; },
   update: async <T>(id: string, body: unknown) => { const r = await api.patch<T>(`/admin/blog/${id}`, body); api.invalidate(); return r; },
   remove: async (id: string) => { const r = await api.del(`/admin/blog/${id}`); api.invalidate(); return r; },

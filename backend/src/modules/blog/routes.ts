@@ -27,6 +27,18 @@ async function toDto(r: Row, withBody: boolean) {
 
 const COLS = "id, slug, title, excerpt, body, cover_key, author_name, status, published_at, created_at";
 
+// Gövdeye gömülü "media:<key>" görsellerini okunurken taze imzalı URL'e çevir.
+// Depoda key saklanır (kalıcı); imzalı URL kısa ömürlü olduğu için her okumada yeniden üretilir.
+// Güvenlik: yalnız gallery/ önekli keyler çözülür, başka klasörler olduğu gibi bırakılır.
+const BODY_MEDIA_RE = /media:(gallery\/[A-Za-z0-9/_.-]+)/g;
+async function resolveBodyMedia(body: string): Promise<string> {
+  const keys = [...new Set(Array.from(body.matchAll(BODY_MEDIA_RE), (m) => m[1]!))];
+  if (!keys.length) return body;
+  const map = new Map<string, string>();
+  await Promise.all(keys.map(async (k) => { const u = await safeUrl(k); if (u) map.set(k, u); }));
+  return body.replace(BODY_MEDIA_RE, (full, k: string) => map.get(k) ?? full);
+}
+
 // Türkçe karakterleri de sadeleştiren slug üretici.
 function slugify(s: string): string {
   const base = s.toLowerCase()
@@ -58,6 +70,7 @@ blogRoutes.get("/blog/:slug", async (c) => {
   if (!row) throw NotFound("Yazı bulunamadı");
   const dto = await toDto(row, true);
   await translateFields([dto], ["title", "excerpt", "body"], reqLang(c));
+  if (typeof dto.body === "string") dto.body = await resolveBodyMedia(dto.body);
   return c.json(dto);
 });
 
@@ -65,6 +78,14 @@ blogRoutes.get("/blog/:slug", async (c) => {
 blogRoutes.get("/admin/blog", auth, requireAdmin, async (c) => {
   const r = await query<Row>(`SELECT ${COLS} FROM blog_posts ORDER BY created_at DESC`, []);
   return c.json({ items: await Promise.all(r.rows.map((r) => toDto(r, false))) });
+});
+
+// Düzenleme için tek yazı: taslaklar dahil, gövde HAM (media:<key> çözülmeden, çevrilmeden).
+blogRoutes.get("/admin/blog/:id", auth, requireAdmin, async (c) => {
+  const r = await query<Row>(`SELECT ${COLS} FROM blog_posts WHERE id=$1`, [c.req.param("id")]);
+  const row = r.rows[0];
+  if (!row) throw NotFound("Yazı bulunamadı");
+  return c.json(await toDto(row, true));
 });
 
 const createSchema = z.object({
