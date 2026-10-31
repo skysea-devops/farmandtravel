@@ -76,7 +76,6 @@ describe("billing service (saf fonksiyonlar)", () => {
     const u = svc.checkoutUrl("m1", null, "tr");
     expect(u).toContain("topraklayeniden.gumroad.com/l/uyelik");
     expect(u).toContain("member_id=m1");
-    expect(u).toContain("wanted=true");
   });
   it("checkoutUrl INTL doğru ürüne gider", () => {
     expect(svc.checkoutUrl("m1", null, "intl")).toContain("/l/reconnect-membership");

@@ -16,7 +16,8 @@ export function AbonelikPage() {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const price = t("$45 / yıl", "$45 / year");
+  const priceYear = t("$45 / yıl", "$45 / year");
+  const priceQuarter = t("veya $15 / 3 ay", "or $15 / 3 months");
 
   async function subscribe() {
     setBusy(true); setNote(null);
@@ -82,9 +83,13 @@ export function AbonelikPage() {
             ))}
           </ul>
           <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-            <span className="font-display text-2xl font-semibold text-forest-700">{price}</span>
-            <Button onClick={subscribe} disabled={busy}>{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
+            <div>
+              <div className="font-display text-2xl font-semibold text-forest-700">{priceYear}</div>
+              <div className="text-xs text-ink-500">{priceQuarter}</div>
+            </div>
+            <Button onClick={subscribe} disabled={busy} className="ml-auto">{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
           </div>
+          <p className="mt-2 text-xs text-ink-400">{t("Sonraki adımda yıllık ya da 3 aylık seçebilirsin.", "You'll choose yearly or 3-monthly on the next step.")}</p>
           {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
         </div>
       )}

@@ -190,7 +190,7 @@ export function OnboardingPage() {
             </div>
           ) : (
             <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
-              <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Üyelik · $45/yıl", "Membership · $45/year")}</div>
+              <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Üyelik · $45/yıl ya da $15/3 ay", "Membership · $45/year or $15/3 months")}</div>
               <p className="mt-1 text-sm text-ink-700">
                 {t("Keşfet ve profilleri gezmek ücretsiz. Bağlantı kurmak, mesajlaşmak ve etkinliklere katılmak için üyelik gerekir.",
                    "Browsing Discover and profiles is free. Connecting, messaging and joining events require membership.")}
