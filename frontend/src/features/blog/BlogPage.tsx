@@ -23,7 +23,7 @@ export function BlogPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
       <header className="mb-10 max-w-2xl">
-        <h1 className="font-display text-4xl font-semibold md:text-5xl">{t("Blog", "Blog")}</h1>
+        <h1 className="font-display text-4xl font-semibold md:text-5xl">{t("Topluluk Bloğumuz", "Community Blog")}</h1>
         <p className="mt-3 text-[17px] text-ink-600">
           {t("Topraktan, üretimden ve topluluktan ilham veren yazılar, rehberler ve hikâyeler.",
              "Inspiring articles, guides and stories about the soil, growing and our community.")}

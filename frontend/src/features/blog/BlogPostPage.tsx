@@ -32,7 +32,7 @@ export function BlogPostPage() {
   return (
     <article className="mx-auto max-w-3xl px-6 py-10 md:py-14">
       <Link to="/blog" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-forest-600 hover:underline">
-        <ChevronLeft size={16} strokeWidth={2} /> {t("Blog", "Blog")}
+        <ChevronLeft size={16} strokeWidth={2} /> {t("Topluluk Bloğumuz", "Community Blog")}
       </Link>
 
       <h1 className="font-display text-3xl font-semibold leading-tight text-ink-900 md:text-4xl">{p.title}</h1>
