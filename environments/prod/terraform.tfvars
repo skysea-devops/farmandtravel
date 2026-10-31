@@ -36,6 +36,13 @@ frontier_cutoff = "2027-01-01T00:00:00+03:00"
 rds_instance_class = "db.t4g.micro"
 rds_multi_az       = false
 
+# Gumroad billing (store + ürün permalink'leri — gizli değil). Webhook token GİZLİ:
+# repoya yazma; GitHub Actions secret'ı GUMROAD_WEBHOOK_TOKEN olarak gir (CI onu
+# TF_VAR_gumroad_webhook_token ile geçirir). Üçü de dolu + token set olunca checkout açılır.
+gumroad_store          = "topraklayeniden"
+gumroad_permalink_tr   = "uyelik"
+gumroad_permalink_intl = "reconnect-membership"
+
 # Frontend public domain (Route 53 hosted zone already in this account)
 domain_name = "topraklayeniden.com"
 
