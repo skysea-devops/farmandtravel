@@ -29,15 +29,15 @@ export function marketOfPermalink(permalink: string | null): Market {
   return "tr";
 }
 
-// Hosted Gumroad checkout URL'i. member_id url_params olarak taşınır (webhook'ta döner),
-// wanted=true doğrudan ödeme ekranını açar.
+// Hosted Gumroad ürün URL'i. member_id url_params olarak taşınır (webhook'ta döner).
+// wanted=true KULLANMIYORUZ: üye önce ürün sayfasına düşsün, yıllık/3 aylık tier ve
+// periyodu kendisi seçip ödemeye geçsin (member_id seçim boyunca url_params'ta kalır).
 export function checkoutUrl(memberId: string, _email: string | null, market: Market): string {
   const permalink = permalinkFor(market);
   if (!billingConfigured() || !permalink) throw new Error("billing_unconfigured");
   const base = `https://${env.GUMROAD_STORE}.gumroad.com/l/${permalink}`;
   const params = new URLSearchParams();
   params.set("member_id", memberId); // Gumroad'ın tanımadığı param → url_params[member_id] olarak döner
-  params.set("wanted", "true");
   return `${base}?${params.toString()}`;
 }
 
