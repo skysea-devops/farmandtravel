@@ -16,7 +16,7 @@ export function AbonelikPage() {
     api.get<Profile>("/profile/me").then(setP).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const price = t("$35 / yıl", "$35 / year");
+  const price = t("$45 / yıl", "$45 / year");
 
   async function subscribe() {
     setBusy(true); setNote(null);
