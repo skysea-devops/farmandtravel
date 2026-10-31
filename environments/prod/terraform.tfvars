@@ -24,11 +24,11 @@ ai_mode = "bedrock"
 # Bedrock console (Inference profiles) and grant model access before relying on it.
 bedrock_model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 
-# Paywall: free "frontier" until this date. Kept far out until Lemon Squeezy is live;
-# set to the real launch date (e.g. 2026-10-15T00:00:00+03:00) to start requiring pay.
-# NOTE: only pull this forward once LS checkout is live, otherwise new members land on
-# a paywall with no way to pay.
-frontier_cutoff = "2027-01-01T00:00:00+03:00"
+# Paywall: bu tarihten ÖNCE katılanlar ücretsiz "frontier"; sonrakiler paralı (plan=none).
+# Gumroad checkout canlı → ödemeli başlıyoruz: cutoff bugüne çekildi. Bu tarihten sonra
+# yeni üyeler bağlantı/mesaj/etkinlik için üyelik ($45/yıl) almak zorunda; keşif ücretsiz.
+# Mevcut frontier üyeler (bu tarihten önce katılanlar) ücretsiz kalır (grandfathered).
+frontier_cutoff = "2026-10-31T00:00:00+03:00"
 
 # RDS ölçekleme — büyüdükçe çevir (kod değişmeden):
 #   büyüme → rds_instance_class = "db.t4g.small" / "db.t4g.medium"

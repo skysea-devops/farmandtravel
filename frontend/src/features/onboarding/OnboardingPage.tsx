@@ -55,10 +55,12 @@ export function OnboardingPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [plan, setPlan] = useState<string>(""); // frontier | active | none
 
   const loadMe = () => api.get<Profile>("/profile/me").then((p) => {
     setPhotos(p.photos ?? []);
     setProofAddress(!!p.proofAddress);
+    if (p.plan) setPlan(p.plan);
     if (p.addressExact) setAddressExact((a) => a || p.addressExact!);
   }).catch(() => {});
   useEffect(() => { loadMe(); }, []);
@@ -178,14 +180,29 @@ export function OnboardingPage() {
             {t("Ekibimiz profilini kısa sürede inceleyecek; onaylanınca Keşfet'te görünür ve eşleşmeye başlarsın. O zamana dek gezinmeye başlayabilirsin.",
                "Our team will review your profile shortly; once approved you'll appear in Discover and start matching. Meanwhile you can start exploring.")}
           </p>
-          <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
-            <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
-            <p className="mt-1 text-sm text-ink-700">
-              {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($45/yıl) ileride başlayacak.",
-                 "You're among the first members — your access is free. Paid membership ($45/year) will start later.")}
-            </p>
+          {plan === "frontier" ? (
+            <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
+              <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
+              <p className="mt-1 text-sm text-ink-700">
+                {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz.",
+                   "You're among the first members — your access is free.")}
+              </p>
+            </div>
+          ) : (
+            <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
+              <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Üyelik · $45/yıl", "Membership · $45/year")}</div>
+              <p className="mt-1 text-sm text-ink-700">
+                {t("Keşfet ve profilleri gezmek ücretsiz. Bağlantı kurmak, mesajlaşmak ve etkinliklere katılmak için üyelik gerekir.",
+                   "Browsing Discover and profiles is free. Connecting, messaging and joining events require membership.")}
+              </p>
+            </div>
+          )}
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {plan !== "frontier" && plan !== "active" && (
+              <Button onClick={() => nav("/app/abonelik")}>{t("Üyeliği başlat", "Start membership")} <ChevronRight size={16} strokeWidth={2} /></Button>
+            )}
+            <Button variant={plan === "frontier" || plan === "active" ? "primary" : "outline"} onClick={() => nav("/app")}>{t("Keşfetmeye başla", "Start exploring")} <ChevronRight size={16} strokeWidth={2} /></Button>
           </div>
-          <Button className="mt-6" onClick={() => nav("/app")}>{t("Keşfetmeye başla", "Start exploring")} <ChevronRight size={16} strokeWidth={2} /></Button>
         </div>
       </div>
     );
