@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Sprout, Check, Handshake, MessageCircle, CalendarDays, PlayCircle } from "lucide-react";
+import { Sprout, Check, Handshake, MessageCircle, CalendarDays, PlayCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api, billing } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -101,9 +101,13 @@ export function AbonelikPage() {
             ))}
           </div>
           <div className="mt-4">
-            <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Yönlendiriliyor…", "Redirecting…") : t("Abone ol", "Subscribe")}</Button>
+            <Button onClick={subscribe} disabled={busy} className="w-full sm:w-auto">{busy ? t("Güvenli ödemeye yönlendiriliyorsun…", "Redirecting to secure checkout…") : t("Abone ol", "Subscribe")}</Button>
           </div>
-          {note && <p className="mt-3 text-xs text-ink-500">{note}</p>}
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-400">
+            <Lock size={13} strokeWidth={1.75} className="shrink-0 text-forest-600" />
+            <span>{t("Güvenli ödeme — Gumroad ile", "Secure checkout powered by Gumroad")}</span>
+          </p>
+          {note && <p className="mt-2 text-xs text-ink-500">{note}</p>}
         </div>
       )}
     </div>
