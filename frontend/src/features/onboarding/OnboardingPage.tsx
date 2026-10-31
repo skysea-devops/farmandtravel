@@ -181,8 +181,8 @@ export function OnboardingPage() {
           <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#c6e0c2] bg-offer-bg p-4 text-left">
             <div className="font-display flex items-center gap-2 text-base font-semibold text-forest-700"><Sprout size={18} strokeWidth={1.75} /> {t("Öncü üye · Ücretsiz", "Founding member · Free")}</div>
             <p className="mt-1 text-sm text-ink-700">
-              {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($35/yıl) ileride başlayacak.",
-                 "You're among the first members — your access is free. Paid membership ($35/year) will start later.")}
+              {t("Topluluğun ilk üyelerindensin — erişimin ücretsiz. Ücretli üyelik ($45/yıl) ileride başlayacak.",
+                 "You're among the first members — your access is free. Paid membership ($45/year) will start later.")}
             </p>
           </div>
           <Button className="mt-6" onClick={() => nav("/app")}>{t("Keşfetmeye başla", "Start exploring")} <ChevronRight size={16} strokeWidth={2} /></Button>

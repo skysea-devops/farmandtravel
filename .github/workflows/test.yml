@@ -1,0 +1,44 @@
+name: Tests
+
+# Backend testleri (ödeme modülü edge-case'leri dahil) her dev push'ta ve PR'da koşar,
+# böylece prod'a merge etmeden ÖNCE Actions sekmesinde yeşil/kırmızı görünür.
+# Prod deploy'un sert kapısı ayrıca backend-deploy.yml'daki "test" job'ında.
+on:
+  push:
+    branches: [dev]
+    paths: ["backend/**", ".github/workflows/test.yml"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: backend tests (billing edge cases)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ft
+          POSTGRES_PASSWORD: ft
+          POSTGRES_DB: farmandtravel
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: install
+        working-directory: backend
+        run: npm ci
+      - name: migrate test db
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://ft:ft@localhost:5432/farmandtravel
+        run: npm run migrate
+      - name: run tests
+        working-directory: backend
+        run: npm test
