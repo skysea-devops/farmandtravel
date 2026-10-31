@@ -54,7 +54,7 @@ export function HomePage() {
 
   const steps = [
     { n: 1, ttl: t("Anlat", "Tell us"), d: t("Ne aradığını ve ne sunabildiğini kendi cümlelerinle yaz.", "Describe what you're looking for and what you can offer, in your own words.") },
-    { n: 2, ttl: t("Eşleş", "Match"), d: t("Aradığın ile sunulanı akıllıca eşleştiriyoruz.", "We intelligently match what you seek with what others offer.") },
+    { n: 2, ttl: t("Keşfet", "Discover"), d: t("Haritada ve listede sana uygun kişileri kendin keşfet; ülke, şehir ve konuya göre filtrele.", "Explore the map and list to find the right people yourself; filter by country, city and topic.") },
     { n: 3, ttl: t("Bağlan", "Connect"), d: t("İstek gönder; iki taraf da kabul edince iletişim açılır.", "Send a request; once both sides accept, contact opens up.") },
   ];
 
