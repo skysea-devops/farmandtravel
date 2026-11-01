@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play } from "lucide-react";
+import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play, Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
@@ -100,25 +100,29 @@ export function HomePage() {
       <section className="bg-linear-160 from-forest-900 to-forest-700 text-sand-100">
         <div className="container-x grid items-center gap-10 py-16 md:grid-cols-[1.05fr_0.95fr]">
           <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3.5 py-1.5 text-[13px] font-medium text-moss-300">
+              <Sprout className="size-4 shrink-0" />
+              {t("Toprakla Yeniden Buluşanların Dayanışma Topluluğu", "A solidarity community for people reconnecting with the soil")}
+            </div>
             <h1 className="font-display mb-4 text-4xl leading-[1.08] font-semibold md:text-5xl">
-              {t("Toprakla yeniden buluşan insanları bir araya getiriyoruz.", "Bringing together people reconnecting with the soil.")}
+              {t("Toprakla bağ kurun, birlikte üretin, deneyim paylaşın.", "Connect with the soil, grow together, share experience.")}
             </h1>
             <p className="mb-7 max-w-lg text-[17px] text-moss-300">
-              {t("Çiftliğinde birlikte üretmek isteyen, projelere destek arayan ya da bilgisini paylaşmak isteyen insanları tek toplulukta buluşturuyoruz.", "We bring people together in one community — those who want to grow together on their farm, those seeking support for a project, and those who want to share what they know.")}
+              {t("Gönüllü arayan çiftlikler, bilgi paylaşan üreticiler ve sürdürülebilir yaşamı yerinde öğrenmek isteyenler tek bir çatı altında buluşuyor.", "Farms seeking volunteers, producers sharing knowledge, and people who want to learn sustainable living hands-on — all under one roof.")}
             </p>
-            <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link to="/kesfet" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğu Keşfet", "Explore the community")}</Button>
+              </Link>
               <Link to={joinTo} className="w-full sm:w-auto">
-                <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğa katıl", "Join the community")}</Button>
+                <Button variant="onDark" size="lg" className="w-full justify-center sm:w-auto">{t("Toprağını veya Deneyimini Paylaş", "Share your land or experience")}</Button>
               </Link>
-              {/* Mobile: map link (matches the hero mockup). Desktop: outlined button. */}
-              <Link to="/kesfet" className="inline-flex items-center gap-2 px-1 font-semibold text-white underline decoration-moss-300/50 underline-offset-[6px] sm:hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5">
-                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14" /><path d="M15 6v14" />
-                </svg>
-                {t("Haritada keşfet", "Explore the map")} <span aria-hidden>→</span>
-              </Link>
-              <Link to="/kesfet" className="hidden sm:inline-block"><Button variant="onDark" size="lg">{t("Haritada keşfet →", "Explore the map →")}</Button></Link>
             </div>
+            <ul className="mt-5 flex flex-col gap-1.5 text-[13.5px] text-moss-300 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1.5">
+              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Tamamen ücretsiz katılım", "Completely free to join")}</li>
+              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Doğrulanmış profiller", "Verified profiles")}</li>
+              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Kredi kartı gerekmez", "No credit card required")}</li>
+            </ul>
           </div>
           {/* Community preview panel — shown on all sizes (on mobile it sits below the hero). */}
           <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px]">
