@@ -20,6 +20,7 @@ export type Lang = "tr" | "en";
 export async function translateMany(
   texts: (string | null | undefined)[],
   lang: string,
+  timeoutMs = 15_000,
 ): Promise<(string | null)[]> {
   // Base content language is Turkish, so only the English domain needs translation.
   // Any other target (notably "tr") passes through unchanged — this also keeps the
@@ -51,7 +52,7 @@ export async function translateMany(
   const misses = [...uniq.entries()].filter(([h]) => !out.has(h));
   if (misses.length > 0) {
     try {
-      const translated = await bedrockTranslate(misses.map(([, s]) => s), lang);
+      const translated = await bedrockTranslate(misses.map(([, s]) => s), lang, timeoutMs);
       if (translated.length === misses.length) {
         const rows = misses.map(([h, s], i) => {
           const tr = (translated[i] ?? "").trim() || s;
@@ -135,10 +136,12 @@ export async function translateCachedFields<T extends Record<string, unknown>>(
 // translating on the request path. No-op unless the target needs translation (English).
 export async function warmTranslations(texts: (string | null | undefined)[], lang: string): Promise<void> {
   if (lang !== "en") return;
-  try { await translateMany(texts, lang); } catch { /* best-effort */ }
+  // Wider timeout than the read path: warming runs at publish (admin request, under the
+  // API-gateway limit), and a long body can take longer than the 15s read ceiling.
+  try { await translateMany(texts, lang, 25_000); } catch { /* best-effort */ }
 }
 
-async function bedrockTranslate(sources: string[], lang: string): Promise<string[]> {
+async function bedrockTranslate(sources: string[], lang: string, timeoutMs = 15_000): Promise<string[]> {
   const target = lang === "tr" ? "Turkish" : "English";
   const prompt = `You are a translation engine. Translate the CONTENT of each string in the JSON array below into natural ${target} for a farming / eco community platform.
 Rules:
@@ -158,7 +161,7 @@ Input: ${JSON.stringify(sources)}`;
   // Hard timeout so a slow model call can never stall the HTTP request to a gateway
   // timeout; on abort the caller falls back to the original text.
   const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 15_000);
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
   let res;
   try {
     res = await client!.send(

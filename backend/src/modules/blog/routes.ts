@@ -48,6 +48,18 @@ function slugify(s: string): string {
   return base || "yazi";
 }
 
+// EN: the translator keeps the brand verbatim (proper noun), so swap it to the market
+// name deterministically on read. TR passes through. Keeps the cache brand-neutral.
+function localizeBrand<T extends Record<string, unknown>>(rows: T[], fields: readonly (keyof T)[], lang: string): void {
+  if (lang !== "en") return;
+  for (const r of rows) {
+    for (const f of fields) {
+      const v = r[f];
+      if (typeof v === "string") (r as Record<string, unknown>)[f as string] = v.replace(/Toprakla Yeniden/g, "Reconnect with Soil");
+    }
+  }
+}
+
 // ---------- PUBLIC ----------
 const limitSchema = z.coerce.number().int().min(1).max(50).catch(20);
 const offsetSchema = z.coerce.number().int().min(0).catch(0);
@@ -60,7 +72,9 @@ blogRoutes.get("/blog", async (c) => {
     query<{ n: string }>("SELECT count(*)::int AS n FROM blog_posts WHERE status='published'"),
   ]);
   const items = await Promise.all(rows.rows.map((r) => toDto(r, false)));
-  await translateFields(items, ["title", "excerpt"], reqLang(c));
+  const lang = reqLang(c);
+  await translateFields(items, ["title", "excerpt"], lang);
+  localizeBrand(items, ["title", "excerpt"], lang);
   return c.json({ items, total: Number(count.rows[0]?.n ?? 0) });
 });
 
@@ -74,6 +88,11 @@ blogRoutes.get("/blog/:slug", async (c) => {
   // can never stall the page — the body is warmed into the cache at publish time instead.
   await translateFields([dto], ["title", "excerpt"], lang);
   await translateCachedFields([dto], ["body"], lang);
+  // Self-heal: if the EN body isn't cached yet (e.g. a post published before warming
+  // existed), kick off a background warm so the next visit is translated. Fire-and-forget,
+  // never blocks or stalls this response; no-op once the body is cached.
+  if (lang === "en" && dto.body === row.body) void warmTranslations([row.title, row.excerpt, row.body], "en");
+  localizeBrand([dto], ["title", "excerpt", "body"], lang);
   if (typeof dto.body === "string") dto.body = await resolveBodyMedia(dto.body);
   return c.json(dto);
 });
