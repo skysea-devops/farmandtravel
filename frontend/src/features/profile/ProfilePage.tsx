@@ -15,7 +15,7 @@ import { AvailabilityField, availabilityLabel, type Availability } from "@/featu
 import { VolunteerExperienceField, type VolunteerDetails } from "@/features/profile/VolunteerDetails";
 import { SKILLS, INTENTS, derivedTags, intentsFromTags, labelOf as skillLabel } from "@/features/onboarding/intents";
 import { INTENT_ICONS, DomainIcon } from "@/lib/icons";
-import { Check } from "lucide-react";
+import { Check, Camera, CalendarDays, Sprout, Eye, Images, MapPin, Lock } from "lucide-react";
 import type { HostDetails } from "@/data/host";
 import type { Axis, ActivityEligibility, MyReviewsData, Profile } from "@/lib/types";
 
@@ -152,14 +152,14 @@ export function ProfilePage() {
         <div className="relative">
           <Avatar url={p.avatarUrl} className="size-20" />
           <button onClick={() => avatarInput.current?.click()} disabled={busy}
-            className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full border border-border bg-surface text-sm shadow-sm hover:bg-sand-100"
-            title={t("Profil fotoğrafı değiştir", "Change profile photo")}>📷</button>
+            className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full border border-border bg-surface text-ink-600 shadow-sm hover:bg-sand-100"
+            title={t("Profil fotoğrafı değiştir", "Change profile photo")}><Camera className="size-3.5" /></button>
           <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
         </div>
         <div>
           <h1 className="font-display text-2xl font-semibold">{p.firstName ?? t("İsimsiz", "Unnamed")}</h1>
           <div className="text-sm text-ink-500">{[p.city, p.country].filter(Boolean).join(", ") || t("Konum eklenmedi", "No location")}{p.headline ? ` · ${p.headline}` : ""}</div>
-          {p.joinedAt && <div className="mt-0.5 text-xs text-ink-400">🗓️ {t("Üye:", "Member since")} {monthYear(p.joinedAt, lang)}</div>}
+          {p.joinedAt && <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-400"><CalendarDays className="size-3" /> {t("Üye:", "Member since")} {monthYear(p.joinedAt, lang)}</div>}
           {rev && rev.received.summary.count > 0 && (
             <div className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-600">
               <Stars value={rev.received.summary.avg} /><span className="font-semibold">{rev.received.summary.avg}</span>
@@ -205,7 +205,7 @@ export function ProfilePage() {
             );
           })}
           {isVolunteer && (
-            <Block title={t("🌱 Gönüllü bilgisi", "🌱 Volunteer info")}>
+            <Block title={<><Sprout className="size-4 text-forest-600" /> {t("Gönüllü bilgisi", "Volunteer info")}</>}>
               <p className="mb-3 text-xs text-ink-500">{t("Ev sahipleri için görünür; uygun eşleşmeyi bulmaya yardımcı olur.", "Shown to hosts; helps find the right match.")}</p>
               <VolunteerExperienceField value={volunteer} onChange={setVolunteer} />
             </Block>
@@ -253,15 +253,16 @@ export function ProfilePage() {
               </div>
             </form>
           </Block>
-          <div className="mt-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
-            {t("👁️ Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.", "👁️ Before connecting, others see only your name, city/country, photos and tags. Your contact details stay private.")}
+          <div className="mt-2 flex gap-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-4 py-3 text-sm text-[#2c5462]">
+            <Eye className="mt-0.5 size-4 shrink-0" />
+            <span>{t("Bağlantı öncesi başkaları yalnızca adını, şehrini/ülkeni, fotoğraflarını ve etiketlerini görür. İletişim bilgilerin gizli kalır.", "Before connecting, others see only your name, city/country, photos and tags. Your contact details stay private.")}</span>
           </div>
         </>
       )}
 
       {/* --- Takvim --- */}
       {activeTab === "takvim" && (
-        <Block title={t("📅 Takvim / müsaitlik", "📅 Calendar / availability")}>
+        <Block title={<><CalendarDays className="size-4 text-forest-600" /> {t("Takvim / müsaitlik", "Calendar / availability")}</>}>
           <p className="mb-3 text-xs text-ink-500">{t("Opsiyonel ama eşleşme için çok yardımcı olur. Profilinde görünür.", "Optional but very helpful for matching. Shown on your profile.")}</p>
           <AvailabilityField value={availability} onChange={setAvailability} label={availabilityLabel(wantsVolunteers, isVolunteer, t)} />
           <div className="mt-4 flex items-center gap-3">
@@ -281,7 +282,7 @@ export function ProfilePage() {
             {hMsg && <span className="text-sm text-ink-600">{hMsg}</span>}
           </div>
           <div className="mt-6 border-t border-border pt-4">
-            <h3 className="font-display mb-2 text-[15px] font-semibold text-forest-700">{t("📸 Ağırlama fotoğrafları", "📸 Accommodation photos")}</h3>
+            <h3 className="font-display mb-2 flex items-center gap-1.5 text-[15px] font-semibold text-forest-700"><Images className="size-4" /> {t("Ağırlama fotoğrafları", "Accommodation photos")}</h3>
             <HostPhotos photos={p.photos ?? []} onChange={load} />
           </div>
         </Block>
@@ -297,7 +298,7 @@ export function ProfilePage() {
 
       {/* --- Doğrulama --- */}
       {activeTab === "dogrulama" && (
-        <Block title={t("📍 Adres doğrulama", "📍 Address verification")}>
+        <Block title={<><MapPin className="size-4 text-forest-600" /> {t("Adres doğrulama", "Address verification")}</>}>
           <p className="mb-3 text-[13px] text-ink-500">
             {t("Açık adresini \"İletişim\" sekmesine gir (yalnızca bağlantılarınla paylaşılır). Ardından bir adres kanıtı belgesi (fatura, tapu, kira sözleşmesi) yükle — profilinde görünmez, yalnızca ekip doğrulama için görür. Belge zorunlu değil; onayda gerekirse istenir.",
                "Enter your full address in the \"Contact\" tab (shared only with your connections). Then upload a proof-of-address document (utility bill, deed, rental contract) — it never shows on your profile, only the team sees it. The document isn't required; it may be requested during review.")}
@@ -355,9 +356,10 @@ function MyReviews({ data }: { data: MyReviewsData | null }) {
         <TabBtn id="written" label={`${t("Yazdıklarım", "Written by me")} (${written.length})`} />
       </div>
       {tab === "received" && data.pendingReceived > 0 && (
-        <div className="mb-3 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-3 py-2 text-[13px] text-[#2c5462]">
-          {t(`🔒 ${data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.`,
-             `🔒 ${data.pendingReceived} review(s) are waiting for you. Reviews are mutual; they'll appear once you review the other person too (or after 15 days).`)}
+        <div className="mb-3 flex gap-2 rounded-lg border border-[#c4dde5] bg-[#e0edf1] px-3 py-2 text-[13px] text-[#2c5462]">
+          <Lock className="mt-0.5 size-3.5 shrink-0" />
+          <span>{t(`${data.pendingReceived} değerlendirme seni bekliyor. Değerlendirmeler karşılıklı; sen de ilgili kişiyi değerlendirince (ya da 15 gün sonra) görünür olacaklar.`,
+             `${data.pendingReceived} review(s) are waiting for you. Reviews are mutual; they'll appear once you review the other person too (or after 15 days).`)}</span>
         </div>
       )}
       {list.length === 0 ? (
@@ -402,7 +404,7 @@ function ActivityEligibilityCard({ elig }: { elig: ActivityEligibility | null })
   return (
     <Block title={t("Aktivite paylaşımı", "Sharing activities")}>
       {elig.canSubmit ? (
-        <p className="text-sm text-forest-700">{t("✓ Koşulları sağlıyorsun — Aktiviteler sayfasından paylaşım yapabilirsin.", "✓ You meet the requirements — you can post from the Activities page.")}</p>
+        <p className="flex items-center gap-1.5 text-sm text-forest-700"><Check className="size-4" /> {t("Koşulları sağlıyorsun — Aktiviteler sayfasından paylaşım yapabilirsin.", "You meet the requirements — you can post from the Activities page.")}</p>
       ) : (
         <>
           <p className="mb-2 text-sm text-ink-600">{t("Aktivite paylaşabilmek için:", "To share activities:")}</p>
@@ -480,10 +482,10 @@ function IntentEditor({ tags, onSaved }: { tags: { axis: Axis; value: string }[]
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mb-4 rounded-[var(--radius-lg)] border border-border bg-surface p-5">
-      <h2 className="mb-2.5 text-[15px] font-semibold">{title}</h2>
+      <h2 className="mb-2.5 flex items-center gap-1.5 text-[15px] font-semibold">{title}</h2>
       {children}
     </div>
   );

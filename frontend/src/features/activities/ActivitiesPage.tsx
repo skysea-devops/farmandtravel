@@ -4,17 +4,19 @@ import { youtubeThumb } from "@/data/activities";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { activities as actApi } from "@/lib/api";
+import { Video, Camera, CalendarDays, Megaphone, Circle, MapPin, Play } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ActivityForm } from "./ActivityForm";
 import type { ActivityItem, ActivityKind, ActivityEligibility } from "@/lib/types";
 
 function useKindLabel() {
   const { t } = useI18n();
-  const map: Record<ActivityKind, string> = {
-    video: t("🎥 Podcast", "🎥 Podcast"),
-    photo: t("📷 Paylaşım", "📷 Post"),
-    meeting: t("📅 Buluşma", "📅 Meetup"),
-    announcement: t("📢 Duyuru", "📢 Announcement"),
+  const map: Record<ActivityKind, { Icon: LucideIcon; label: string }> = {
+    video: { Icon: Video, label: t("Podcast", "Podcast") },
+    photo: { Icon: Camera, label: t("Paylaşım", "Post") },
+    meeting: { Icon: CalendarDays, label: t("Buluşma", "Meetup") },
+    announcement: { Icon: Megaphone, label: t("Duyuru", "Announcement") },
   };
   return map;
 }
@@ -132,13 +134,13 @@ export function ActivitiesPage() {
             <button onClick={() => setPlay(true)} className="group relative h-full w-full" aria-label={t("Videoyu oynat", "Play video")}>
               <img src={youtubeThumb(a.youtubeId!)} alt="" className="h-full w-full object-cover" />
               <span className="absolute inset-0 grid place-items-center bg-forest-900/30 transition group-hover:bg-forest-900/40">
-                <span className="grid size-16 place-items-center rounded-full bg-white/90 text-2xl text-forest-700 shadow-lg">▶</span>
+                <span className="grid size-16 place-items-center rounded-full bg-white/90 text-forest-700 shadow-lg"><Play className="size-7 fill-current" /></span>
               </span>
             </button>
           )}
         </div>
         <div className="p-5">
-          <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel.video} · {t("ÖNE ÇIKAN", "FEATURED")}</div>
+          <div className="mb-1 flex items-center gap-1 text-xs font-semibold tracking-wide text-clay-600"><kindLabel.video.Icon className="size-3.5" /> {kindLabel.video.label} · {t("ÖNE ÇIKAN", "FEATURED")}</div>
           <h2 className="font-display text-xl font-semibold">{a.title}</h2>
           {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
           <div className="mt-2 text-xs text-ink-500">{[a.author, a.place, fmtDate(a.date, lang)].filter(Boolean).join(" · ")}</div>
@@ -163,14 +165,14 @@ export function ActivitiesPage() {
       >
         {a.image && <div className="h-44 bg-cover bg-center bg-moss-300" style={{ backgroundImage: `url(${a.image})` }} />}
         <div className="p-5">
-          <div className="mb-1 text-xs font-semibold tracking-wide text-clay-600">{kindLabel[a.kind]}</div>
+          <div className="mb-1 flex items-center gap-1 text-xs font-semibold tracking-wide text-clay-600">{(() => { const K = kindLabel[a.kind]; return <><K.Icon className="size-3.5" /> {K.label}</>; })()}</div>
           <h3 className="font-display text-[17px] font-semibold">{a.title}</h3>
           {a.desc && <p className="mt-1.5 text-sm text-ink-700">{a.desc}</p>}
           {(when || lbl) && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {a.kind === "meeting" && when && (
                 <span className="inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-700">
-                  <span>{a.online ? t("🟢 Online", "🟢 Online") : t("📍 Yüz yüze", "📍 In person")}</span><span>·</span><span>{when}</span>
+                  <span className="inline-flex items-center gap-1">{a.online ? <><Circle className="size-2.5 fill-forest-600 text-forest-600" /> Online</> : <><MapPin className="size-3.5" /> {t("Yüz yüze", "In person")}</>}</span><span>·</span><span>{when}</span>
                 </span>
               )}
               {lbl && (

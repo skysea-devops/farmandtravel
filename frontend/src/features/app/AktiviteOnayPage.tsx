@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Users, Flag, Scale, CalendarDays, Megaphone, Inbox, Check, Sprout, MapPin, Eye, Lock, Mail, Ban, RotateCcw, Paperclip, AlertTriangle, ChevronLeft, Newspaper } from "lucide-react";
+import { Users, Flag, Scale, CalendarDays, Megaphone, Inbox, Check, Sprout, MapPin, Eye, Lock, Mail, Ban, RotateCcw, Paperclip, AlertTriangle, ChevronLeft, Newspaper, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { Avatar } from "@/components/ui/Avatar";
@@ -931,7 +931,7 @@ function BlogForm({ post, onDone }: { post: BlogPost | null; onDone: () => void 
         <div className="flex items-center gap-2 text-sm">
           <label className={`inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-3 py-1.5 font-medium text-ink-700 ${imgBusy ? "opacity-60" : "cursor-pointer hover:border-forest-600"}`}>
             <input type="file" accept="image/*" onChange={onBodyImage} className="hidden" disabled={imgBusy} />
-            {imgBusy ? "Yükleniyor…" : "🖼 Yazıya görsel ekle"}
+            {imgBusy ? "Yükleniyor…" : <><ImageIcon className="size-4" /> Yazıya görsel ekle</>}
           </label>
           <span className="text-ink-400">Görsel, imlecin olduğu yere eklenir.</span>
         </div>

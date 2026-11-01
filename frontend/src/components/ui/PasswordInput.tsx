@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 // Password field with a show/hide toggle. Drop-in replacement for a text <input>.
 export function PasswordInput({ className = "", ...rest }: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -15,9 +16,9 @@ export function PasswordInput({ className = "", ...rest }: React.InputHTMLAttrib
         tabIndex={-1}
         onClick={() => setShow((s) => !s)}
         aria-label={show ? "Şifreyi gizle" : "Şifreyi göster"}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-base text-ink-500 hover:text-ink-900"
+        className="absolute right-1 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded text-ink-500 hover:text-ink-900"
       >
-        {show ? "🙈" : "👁"}
+        {show ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
       </button>
     </div>
   );

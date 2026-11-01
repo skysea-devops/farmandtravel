@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
@@ -47,9 +49,9 @@ export function HomePage() {
   }, []);
 
   const miniCards = [
-    { name: "Marta · 🇵🇹", role: t("Permakültür çiftliği", "Permaculture farm"), photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", t("yer & deneyim sunuyor", "offering place & experience")], ["seek", t("gönüllü arıyor", "looking for volunteers")]] },
-    { name: "Jonas · 🇩🇪", role: t("Ekolog", "Ecologist"), photo: U + "photo-1507003211169-0a1dd7228f2d?w=160&q=80", tags: [["offer", t("uzmanlık sunuyor", "offering expertise")], ["topic", t("ağaçlandırma", "reforestation")]] },
-    { name: "Elif · 🇹🇷", role: t("Çiftlik hayali kuruyor", "Dreaming of a farm"), photo: U + "photo-1438761681033-6461ffad8d80?w=160&q=80", tags: [["seek", t("mentor arıyor", "looking for a mentor")], ["seek", t("bilgi arıyor", "looking for knowledge")]] },
+    { name: "Marta", role: t("Permakültür çiftliği · Portekiz", "Permaculture farm · Portugal"), photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", t("yer & deneyim sunuyor", "offering place & experience")], ["seek", t("gönüllü arıyor", "looking for volunteers")]] },
+    { name: "Jonas", role: t("Ekolog · Almanya", "Ecologist · Germany"), photo: U + "photo-1507003211169-0a1dd7228f2d?w=160&q=80", tags: [["offer", t("uzmanlık sunuyor", "offering expertise")], ["topic", t("ağaçlandırma", "reforestation")]] },
+    { name: "Elif", role: t("Çiftlik hayali kuruyor · Türkiye", "Dreaming of a farm · Türkiye"), photo: U + "photo-1438761681033-6461ffad8d80?w=160&q=80", tags: [["seek", t("mentor arıyor", "looking for a mentor")], ["seek", t("bilgi arıyor", "looking for knowledge")]] },
   ] as const;
 
   const steps = [
@@ -77,19 +79,19 @@ export function HomePage() {
     isVideo: a.kind === "video",
   }));
 
-  const perks: [string, string, string][] = [
-    ["🗺️", t("Haritada tüm topluluğu keşfet", "Explore the whole community on the map"), t("Yakınındaki ve dünyadaki destek sunan/arayan herkesi konumuyla gör, filtrele.", "See and filter everyone offering or seeking support, near you and around the world, by location.")],
-    ["🤝", t("Sınırsız bağlantı kur", "Connect without limits"), t("Dilediğine bağlantı isteği gönder, sana gelenleri yönet. Doğru insanları bul.", "Send a connection request to anyone, manage the ones you receive. Find the right people.")],
-    ["💬", t("Güvenli mesajlaşma", "Safe messaging"), t("İki taraf da kabul edince iletişim açılır; sohbet platformda, güvende.", "Contact opens once both sides accept; chat stays on the platform, safely.")],
-    ["✨", t("Sana özel eşleşmeler", "Personalized matches"), t("Aradığın ile sunduğun, karşındakinin sunduğu/aradığıyla akıllıca eşleştirilir.", "What you seek and offer is intelligently matched with what others offer and seek.")],
-    ["🌱", t("Profilini öne çıkar", "Showcase your profile"), t("Çiftliğini, projeni ya da uzmanlığını galerin ve etiketlerinle sergile.", "Show off your farm, project or expertise with your gallery and tags.")],
-    ["🔒", t("Gizlilik sende", "Privacy is yours"), t("İletişim bilgin sen istemeden kimseye görünmez. Kontrol tamamen sende.", "Your contact details stay hidden until you choose. You're fully in control.")],
+  const perks: [LucideIcon, string, string][] = [
+    [Map, t("Haritada tüm topluluğu keşfet", "Explore the whole community on the map"), t("Yakınındaki ve dünyadaki destek sunan/arayan herkesi konumuyla gör, filtrele.", "See and filter everyone offering or seeking support, near you and around the world, by location.")],
+    [Handshake, t("Sınırsız bağlantı kur", "Connect without limits"), t("Dilediğine bağlantı isteği gönder, sana gelenleri yönet. Doğru insanları bul.", "Send a connection request to anyone, manage the ones you receive. Find the right people.")],
+    [MessageCircle, t("Güvenli mesajlaşma", "Safe messaging"), t("İki taraf da kabul edince iletişim açılır; sohbet platformda, güvende.", "Contact opens once both sides accept; chat stays on the platform, safely.")],
+    [Sparkles, t("Sana özel eşleşmeler", "Personalized matches"), t("Aradığın ile sunduğun, karşındakinin sunduğu/aradığıyla akıllıca eşleştirilir.", "What you seek and offer is intelligently matched with what others offer and seek.")],
+    [Sprout, t("Profilini öne çıkar", "Showcase your profile"), t("Çiftliğini, projeni ya da uzmanlığını galerin ve etiketlerinle sergile.", "Show off your farm, project or expertise with your gallery and tags.")],
+    [Lock, t("Gizlilik sende", "Privacy is yours"), t("İletişim bilgin sen istemeden kimseye görünmez. Kontrol tamamen sende.", "Your contact details stay hidden until you choose. You're fully in control.")],
   ];
 
   const testimonials = [
-    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · 🇵🇹 Sintra", "Permaculture farm · 🇵🇹 Sintra"), photo: "/community/t-marta.jpg" },
-    { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · 🇩🇪 Berlin", "Ecologist · 🇩🇪 Berlin"), photo: "/community/t-jonas.jpg" },
-    { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · 🇹🇷 İzmir", "New farmer · 🇹🇷 İzmir"), photo: "/community/t-elif.jpg" },
+    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · Sintra", "Permaculture farm · Sintra"), photo: "/community/t-marta.jpg" },
+    { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · Berlin", "Ecologist · Berlin"), photo: "/community/t-jonas.jpg" },
+    { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · İzmir", "New farmer · İzmir"), photo: "/community/t-elif.jpg" },
   ];
 
   return (
@@ -232,7 +234,7 @@ export function HomePage() {
             <Link key={a.id} to={`/app/aktiviteler/${a.id}`} className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
               {a.isVideo && (
                 <span className="absolute inset-0 grid place-items-center bg-forest-900/25 transition group-hover:bg-forest-900/35">
-                  <span className="grid size-11 place-items-center rounded-full bg-white/90 text-lg text-forest-700 shadow">▶</span>
+                  <span className="grid size-11 place-items-center rounded-full bg-white/90 text-forest-700 shadow"><Play className="size-5 fill-current" /></span>
                 </span>
               )}
               <div className="absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3 text-white">
@@ -250,9 +252,9 @@ export function HomePage() {
           <h2 className="font-display mb-1.5 text-center text-3xl font-semibold text-white">{t("Seni neler bekliyor?", "What's waiting for you?")}</h2>
           <p className="mx-auto mb-8 max-w-xl text-center text-moss-300">{t("Toprakla Yeniden bir topluluk. Üyeliğinle bu topluluğun tüm kapıları sana açılır.", "This is a community. Your membership opens every door in it.")}</p>
           <div className="grid gap-4 md:grid-cols-3">
-            {perks.map(([ic, title, d]) => (
+            {perks.map(([Ic, title, d]) => (
               <div key={title} className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[22px]">
-                <div className="mb-2.5 text-2xl">{ic}</div>
+                <div className="mb-2.5 text-moss-300"><Ic className="size-6" strokeWidth={1.5} /></div>
                 <h3 className="mb-1.5 text-base font-semibold text-white">{title}</h3>
                 <p className="text-sm text-moss-300">{d}</p>
               </div>

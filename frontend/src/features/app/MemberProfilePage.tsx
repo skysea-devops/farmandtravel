@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { StarInput } from "@/components/ui/StarInput";
 import { cn } from "@/lib/cn";
-import { MapPin, CalendarDays, Eye, Mail, Phone, Building2, Shield, Bookmark, BookmarkCheck, Handshake, MessageCircle, Images, Check, Clock, Star } from "lucide-react";
+import { MapPin, CalendarDays, Eye, Mail, Phone, Building2, Shield, Bookmark, BookmarkCheck, Handshake, MessageCircle, Images, Check, Clock, Star, ArrowUp } from "lucide-react";
 import { PHOTO_ICONS, DomainIcon } from "@/lib/icons";
 import { api, admin as adminApi, connections, reviews as reviewsApi, saved as savedApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -412,7 +412,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
                   {t("1. Puanını ver", "1. Give a rating")} <span className="text-clay-600">*</span>
                 </label>
                 <StarInput value={rating} onChange={(v) => { setRating(v); setRateErr(false); }} />
-                {rateErr && <p className="mt-2 text-sm font-medium text-clay-600">{t("👆 Göndermeden önce yıldızlara dokunarak puan ver.", "👆 Tap the stars to give a rating before sending.")}</p>}
+                {rateErr && <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-clay-600"><ArrowUp className="size-4" /> {t("Göndermeden önce yıldızlara dokunarak puan ver.", "Tap the stars to give a rating before sending.")}</p>}
               </div>
               <label className="mb-1.5 block text-sm font-semibold text-ink-700">
                 {t("2. Yorumun", "2. Your comment")} <span className="font-normal text-ink-400">{t("(isteğe bağlı)", "(optional)")}</span>
@@ -434,7 +434,7 @@ function ReviewsSection({ memberId, name }: { memberId: string; name: string }) 
               {subErr && <p className="mt-2 rounded-lg border border-[#eec4c0] bg-[#f7e2e0] px-3 py-2 text-sm text-[#8a2f29]">{subErr}</p>}
             </div>
           )}
-          {sent && <p className="mt-2 text-sm text-forest-700">✓ {sent}</p>}
+          {sent && <p className="mt-2 flex items-center gap-1.5 text-sm text-forest-700"><Check className="size-4" /> {sent}</p>}
         </div>
       ) : null}
 

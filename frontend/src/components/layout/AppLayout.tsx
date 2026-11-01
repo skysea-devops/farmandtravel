@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Home, Search, Clapperboard, Handshake, MessageCircle, Bookmark, Bell, User, CreditCard, ScrollText, Settings, Shield, Sprout, Circle, Menu, X, LogOut } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { api, notifications as notifApi } from "@/lib/api";
 import type { Profile } from "@/lib/types";
+
+type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean };
 
 export function AppLayout() {
   const { user, logout } = useAuth();
@@ -20,20 +24,20 @@ export function AppLayout() {
   // Close the mobile menu whenever the route changes (i.e. after tapping an item).
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  const nav = [
-    { to: "/app", label: t("Panel", "Home"), icon: "🏠", end: true },
-    { to: "/app/kesfet", label: t("Keşfet", "Discover"), icon: "🔍" },
-    { to: "/app/aktiviteler", label: t("Aktiviteler", "Activities"), icon: "🎬" },
-    { to: "/app/baglantilar", label: t("Bağlantılar", "Connections"), icon: "🤝" },
-    { to: "/app/mesajlar", label: t("Mesajlar", "Messages"), icon: "💬" },
-    { to: "/app/kaydedilenler", label: t("Kaydedilenler", "Saved"), icon: "🔖" },
-    { to: "/app/bildirimler", label: t("Bildirimler", "Notifications"), icon: "🔔" },
-    { to: "/app/profil", label: t("Profilim", "My profile"), icon: "👤" },
+  const nav: NavItem[] = [
+    { to: "/app", label: t("Panel", "Home"), Icon: Home, end: true },
+    { to: "/app/kesfet", label: t("Keşfet", "Discover"), Icon: Search },
+    { to: "/app/aktiviteler", label: t("Aktiviteler", "Activities"), Icon: Clapperboard },
+    { to: "/app/baglantilar", label: t("Bağlantılar", "Connections"), Icon: Handshake },
+    { to: "/app/mesajlar", label: t("Mesajlar", "Messages"), Icon: MessageCircle },
+    { to: "/app/kaydedilenler", label: t("Kaydedilenler", "Saved"), Icon: Bookmark },
+    { to: "/app/bildirimler", label: t("Bildirimler", "Notifications"), Icon: Bell },
+    { to: "/app/profil", label: t("Profilim", "My profile"), Icon: User },
   ];
-  const navBottom = [
-    { to: "/app/abonelik", label: t("Abonelik", "Membership"), icon: "💳" },
-    { to: "/kurallar", label: t("Topluluk Kuralları", "Community Rules"), icon: "📜" },
-    { to: "/app/ayarlar", label: t("Ayarlar", "Settings"), icon: "⚙️" },
+  const navBottom: NavItem[] = [
+    { to: "/app/abonelik", label: t("Abonelik", "Membership"), Icon: CreditCard },
+    { to: "/kurallar", label: t("Topluluk Kuralları", "Community Rules"), Icon: ScrollText },
+    { to: "/app/ayarlar", label: t("Ayarlar", "Settings"), Icon: Settings },
   ];
 
   // Refresh the bell badge on navigation (cheap, cached 30s).
@@ -55,15 +59,15 @@ export function AppLayout() {
       .catch(() => {});
   }, [navigate]);
 
-  const planBadge =
-    plan === "frontier" ? { text: t("🌱 Öncü üye · ücretsiz", "🌱 Founding member · free"), cls: "text-moss-300" }
-    : plan === "active" ? { text: t("● Üyelik aktif", "● Membership active"), cls: "text-moss-300" }
-    : plan === "none" ? { text: t("Üyelik gerekli", "Membership required"), cls: "text-clay-300" }
-    : { text: "", cls: "text-moss-300" };
+  const planBadge: { Icon: LucideIcon | null; text: string; cls: string } =
+    plan === "frontier" ? { Icon: Sprout, text: t("Öncü üye · ücretsiz", "Founding member · free"), cls: "text-moss-300" }
+    : plan === "active" ? { Icon: Circle, text: t("Üyelik aktif", "Membership active"), cls: "text-moss-300" }
+    : plan === "none" ? { Icon: null, text: t("Üyelik gerekli", "Membership required"), cls: "text-clay-300" }
+    : { Icon: null, text: "", cls: "text-moss-300" };
 
-  const adminNav: typeof nav = isAdmin ? [{ to: "/app/aktivite-onay", label: t("Admin Panel", "Admin Panel"), icon: "🛡️" }] : [];
+  const adminNav: NavItem[] = isAdmin ? [{ to: "/app/aktivite-onay", label: t("Admin Panel", "Admin Panel"), Icon: Shield }] : [];
 
-  const item = ({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) => (
+  const item = ({ to, label, Icon, end }: NavItem) => (
     <NavLink
       key={to}
       to={to}
@@ -75,7 +79,7 @@ export function AppLayout() {
         )
       }
     >
-      <span className="text-base">{icon}</span>
+      <Icon className="size-[18px] shrink-0" strokeWidth={2} />
       <span className="flex-1">{label}</span>
       {to === "/app/bildirimler" && unread > 0 && (
         <span className="rounded-full bg-clay-500 px-1.5 text-[11px] font-semibold text-white">{unread}</span>
@@ -102,14 +106,14 @@ export function AppLayout() {
           <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? t("Üye", "Member")}</div>
-            {planBadge.text && <div className={cn("text-xs", planBadge.cls)}>{planBadge.text}</div>}
+            {planBadge.text && <div className={cn("flex items-center gap-1 text-xs", planBadge.cls)}>{planBadge.Icon && <planBadge.Icon className="size-3 shrink-0" fill={planBadge.Icon === Circle ? "currentColor" : "none"} />}{planBadge.text}</div>}
           </div>
         </div>
         <button
           onClick={() => { logout(); navigate("/"); }}
-          className="mt-2 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
+          className="mt-2 flex items-center gap-2 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
         >
-          {t("↪ Çıkış", "↪ Log out")}
+          <LogOut className="size-4 shrink-0" /> {t("Çıkış", "Log out")}
         </button>
       </aside>
 
@@ -126,7 +130,7 @@ export function AppLayout() {
             aria-expanded={menuOpen}
             className="relative ml-auto grid size-9 place-items-center rounded-lg text-white transition hover:bg-white/10"
           >
-            <span className="text-xl leading-none">{menuOpen ? "✕" : "☰"}</span>
+            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             {!menuOpen && unread > 0 && <span className="absolute right-1 top-1 size-2 rounded-full bg-clay-500" />}
           </button>
         </header>
@@ -143,14 +147,14 @@ export function AppLayout() {
               <div className="size-9 shrink-0 rounded-full bg-linear-135 from-moss-300 to-clay-500" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-white">{user?.email?.split("@")[0] ?? t("Üye", "Member")}</div>
-                {planBadge.text && <div className={cn("text-xs", planBadge.cls)}>{planBadge.text}</div>}
+                {planBadge.text && <div className={cn("flex items-center gap-1 text-xs", planBadge.cls)}>{planBadge.Icon && <planBadge.Icon className="size-3 shrink-0" fill={planBadge.Icon === Circle ? "currentColor" : "none"} />}{planBadge.text}</div>}
               </div>
             </div>
             <button
               onClick={() => { logout(); navigate("/"); }}
-              className="mt-1 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="mt-1 flex items-center gap-2 rounded-lg px-3.5 py-2 text-left text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
             >
-              {t("↪ Çıkış", "↪ Log out")}
+              <LogOut className="size-4 shrink-0" /> {t("Çıkış", "Log out")}
             </button>
           </nav>
         )}

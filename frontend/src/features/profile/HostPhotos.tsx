@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
+import { X } from "lucide-react";
 import { api, uploadImage } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { DomainIcon, PHOTO_ICONS } from "@/lib/icons";
 import { HOST_PHOTO_CATEGORIES } from "@/data/host";
 import type { Photo } from "@/lib/types";
 
@@ -51,7 +53,7 @@ export function HostPhotos({ photos, onChange, generalOnly }: { photos: Photo[];
             <div key={ph.id} className="group relative size-24 overflow-hidden rounded-lg bg-sand-100">
               {ph.url && <img src={ph.url} alt="" className="size-full object-cover" />}
               <button type="button" onClick={() => remove(ph.id)} disabled={busy === ph.id}
-                className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-ink-900/70 text-[11px] text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Kaldır", "Remove")}>✕</button>
+                className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-ink-900/70 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Kaldır", "Remove")}><X className="size-3" /></button>
             </div>
           ))}
           <button type="button" onClick={() => inputs.current["general"]?.click()} disabled={busy === "general"}
@@ -81,7 +83,7 @@ export function HostPhotos({ photos, onChange, generalOnly }: { photos: Photo[];
           return (
             <div key={cat.key} className="rounded-[var(--radius-lg)] border border-border bg-surface p-3">
               <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-ink-800">
-                <span>{cat.icon}</span>
+                <DomainIcon map={PHOTO_ICONS} k={cat.key} size={16} className="text-forest-600" />
                 <span>{label}</span>
                 {cat.required && <span className="font-bold text-[#dc2626]" title={t("Zorunlu", "Required")}>*</span>}
               </div>
@@ -96,7 +98,7 @@ export function HostPhotos({ photos, onChange, generalOnly }: { photos: Photo[];
                       className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-ink-900/70 text-[11px] text-white opacity-0 transition group-hover:opacity-100"
                       aria-label={t("Kaldır", "Remove")}
                     >
-                      ✕
+                      <X className="size-3" />
                     </button>
                   </div>
                 ))}
