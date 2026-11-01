@@ -43,7 +43,7 @@ export function ExploreCard({ m, onOpen, selected }: { m: PublicMember; onOpen: 
       onClick={() => onOpen(m.id)}
       className={`flex cursor-pointer gap-3.5 rounded-xl border bg-surface p-3.5 transition hover:border-forest-500 hover:shadow-sm ${selected ? "border-forest-600 ring-2 ring-forest-500/30" : "border-border"}`}
     >
-      <Avatar url={m.avatarUrl} className="size-20 shrink-0 rounded-lg sm:size-24" />
+      <Avatar url={m.avatarUrl} className="size-16 shrink-0 rounded-lg sm:size-24" />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -76,7 +76,7 @@ export function ExploreCard({ m, onOpen, selected }: { m: PublicMember; onOpen: 
           {monthLabel && <Chip Icon={CalendarCheck}>{t(`Müsait: ${monthLabel}`, `Available: ${monthLabel}`)}</Chip>}
         </div>
 
-        <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="outline" onClick={() => onOpen(m.id)}>{t("Profili İncele", "View profile")}</Button>
           <Button size="sm" onClick={() => onOpen(m.id)}>{t("Bağlantı Kur", "Connect")}</Button>
         </div>
