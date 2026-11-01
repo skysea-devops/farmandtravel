@@ -7,12 +7,13 @@ import type { MatchTag } from "@/lib/types";
 
 export type Role = MapCategory;
 
-// Rozet metni ikonun hemen yanında net görünür (renk tek başına yetmez).
-export const ROLE_META: Record<Role, { tr: string; en: string; color: string; Icon: LucideIcon }> = {
-  host_active: { tr: "Gönüllü Arıyor", en: "Looking for volunteers", color: MAP_COLORS.host_active, Icon: Handshake },
-  host_idle: { tr: "Paylaşıma Açık", en: "Open to sharing", color: MAP_COLORS.host_idle, Icon: Sprout },
-  volunteer: { tr: "Gönüllü", en: "Volunteer", color: MAP_COLORS.volunteer, Icon: Backpack },
-  other: { tr: "Topluluk Üyesi", en: "Community member", color: MAP_COLORS.other, Icon: Users },
+// tr/en: tek kişiye ait kart rozeti (kısa). catTr/catEn: filtre & harita lejandı
+// kategori adı (çoğul) — ikisi harita lejandıyla birebir aynı.
+export const ROLE_META: Record<Role, { tr: string; en: string; catTr: string; catEn: string; color: string; Icon: LucideIcon }> = {
+  host_active: { tr: "Gönüllü Arıyor", en: "Looking for volunteers", catTr: "Gönüllü arayan yer sahipleri", catEn: "Place owners seeking volunteers", color: MAP_COLORS.host_active, Icon: Handshake },
+  host_idle: { tr: "Paylaşıma Açık", en: "Open to sharing", catTr: "Yer sahibi (şu an aramıyor)", catEn: "Place owners (not seeking now)", color: MAP_COLORS.host_idle, Icon: Sprout },
+  volunteer: { tr: "Gönüllü", en: "Volunteer", catTr: "Gönüllüler", catEn: "Volunteers", color: MAP_COLORS.volunteer, Icon: Backpack },
+  other: { tr: "Topluluk Üyesi", en: "Community member", catTr: "Öğrenen & destekçiler", catEn: "Learners & supporters", color: MAP_COLORS.other, Icon: Users },
 };
 
 export const isHost = (c: Role) => c === "host_active" || c === "host_idle";

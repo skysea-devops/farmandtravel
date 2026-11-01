@@ -131,7 +131,7 @@ export function ExplorePage() {
           <label key={r} className="flex cursor-pointer items-center gap-2 py-1">
             <input type="radio" name="role" checked={role === r} onChange={() => setRole(r)} className="accent-forest-600" />
             {r !== "all" && <span className="size-2.5 rounded-full" style={{ background: MAP_COLORS[r] }} />}
-            <span className="flex-1">{r === "all" ? t("Tümü", "All") : t(ROLE_META[r].tr, ROLE_META[r].en)}</span>
+            <span className="flex-1">{r === "all" ? t("Tümü", "All") : t(ROLE_META[r].catTr, ROLE_META[r].catEn)}</span>
             <span className="text-xs text-ink-400">{roleCounts[r]}</span>
           </label>
         ))}
