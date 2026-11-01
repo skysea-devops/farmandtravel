@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play } from "lucide-react";
+import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play, Check, ArrowRight, Backpack, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
@@ -44,9 +44,24 @@ export function HomePage() {
   const [community, setCommunity] = useState<PublicMember[]>([]);
   useEffect(() => {
     api.get<{ members: PublicMember[] }>("/public/members")
-      .then((r) => setCommunity(r.members.slice(0, 3)))
+      .then((r) => setCommunity(r.members))
       .catch(() => {});
   }, []);
+
+  // "Topluluğa yeni katılanlar": en yeni üyeler (API zaten created_at DESC döner),
+  // içinde mutlaka bir çiftlik/yer sahibi olsun — yoksa en son katılan host'u öne al.
+  const isHost = (m: PublicMember) => m.category === "host_active" || m.category === "host_idle";
+  const newJoiners = useMemo(() => {
+    if (community.length === 0) return [];
+    const top = community.slice(0, 3);
+    if (top.some(isHost)) return top;
+    const host = community.find(isHost);
+    return host ? [host, ...community.filter((m) => m.id !== host.id).slice(0, 2)] : top;
+  }, [community]);
+  const catLabel = (c: PublicMember["category"]) =>
+    c === "host_active" || c === "host_idle" ? t("Çiftlik / yer sahibi", "Farm / place owner")
+    : c === "volunteer" ? t("Gönüllü", "Volunteer")
+    : t("Topluluk üyesi", "Community member");
 
   const miniCards = [
     { name: "Marta", role: t("Permakültür çiftliği · Portekiz", "Permaculture farm · Portugal"), photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", t("yer & deneyim sunuyor", "offering place & experience")], ["seek", t("gönüllü arıyor", "looking for volunteers")]] },
@@ -55,9 +70,27 @@ export function HomePage() {
   ] as const;
 
   const steps = [
-    { n: 1, ttl: t("Anlat", "Tell us"), d: t("Ne aradığını ve ne sunabildiğini kendi cümlelerinle yaz.", "Describe what you're looking for and what you can offer, in your own words.") },
-    { n: 2, ttl: t("Keşfet", "Discover"), d: t("Haritada ve listede sana uygun kişileri kendin keşfet; ülke, şehir ve konuya göre filtrele.", "Explore the map and list to find the right people yourself; filter by country, city and topic.") },
-    { n: 3, ttl: t("Bağlan", "Connect"), d: t("İstek gönder; iki taraf da kabul edince iletişim açılır.", "Send a request; once both sides accept, contact opens up.") },
+    { n: "01", ttl: t("Profilini Oluştur", "Create your profile"),
+      d: t("İster gönüllü ol, ister bilgi ve deneyim paylaş, ister sadece öğren; amacına uygun profilini oluştur.", "Whether you want to volunteer, share knowledge and experience, or just learn, create the profile that fits your goal."),
+      cta: t("Profil Oluştur", "Create profile"), to: joinTo },
+    { n: "02", ttl: t("Topluluğu Keşfet", "Explore the community"),
+      d: t("Şehir, ilgi duyduğun alanlar veya aktiflik durumuna göre insanları bul.", "Find people by city, the areas you're interested in, or how active they are."),
+      cta: t("Haritada Ara", "Search the map"), to: "/kesfet" },
+    { n: "03", ttl: t("Birlikte Üret ve Paylaş", "Grow & share together"),
+      d: t("Çiftlik ziyaretlerine katıl, bilgi alışverişi yap ya da topluluk etkinliklerinde bir araya gel.", "Join farm visits, exchange knowledge, or meet up at community events."),
+      cta: t("Etkinlikleri İncele", "Browse events"), to: "/aktiviteler" },
+  ];
+
+  const personas: { Icon: LucideIcon; ttl: string; d: string; cta: string; to: string }[] = [
+    { Icon: Sprout, ttl: t("Emeğini, toprağını veya tecrübeni paylaş.", "Share your work, land or experience."),
+      d: t("İster hasat zamanı destek arayın, ister benzer vizyondaki üreticilerle bilgi paylaşın.", "Whether you're after a hand at harvest time or just want to share knowledge with like-minded producers."),
+      cta: t("Ev Sahibi Olarak Katıl", "Join as a host"), to: joinTo },
+    { Icon: Backpack, ttl: t("Doğanın içinde yerinde deneyim kazan.", "Gain hands-on experience in nature."),
+      d: t("Teoriden pratiğe geçin; sürdürülebilir tarım pratiklerini sahadaki üreticilerle birlikte uygulayın.", "Go from theory to practice; apply sustainable farming practices alongside producers in the field."),
+      cta: t("Gönüllü Fırsatlarını Gör", "See volunteer opportunities"), to: "/kesfet" },
+    { Icon: Users, ttl: t("Doğa odaklı bir çevrenin parçası ol.", "Be part of a nature-focused circle."),
+      d: t("Henüz toprağınız veya vaktiniz olmasa bile topluluk etkinliklerine katılın ve dayanışmayı büyütün.", "Even without land or time yet, join community events and help grow the solidarity."),
+      cta: t("Topluluk Ağına Katıl", "Join the community network"), to: joinTo },
   ];
 
   const [feed, setFeed] = useState<ActivityItem[]>([]);
@@ -89,7 +122,7 @@ export function HomePage() {
   ];
 
   const testimonials = [
-    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · Sintra", "Permaculture farm · Sintra"), photo: "/community/t-marta.jpg" },
+    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım; biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed, and one is still with us."), n: "Marta", r: t("Permakültür çiftliği · Sintra", "Permaculture farm · Sintra"), photo: "/community/t-marta.jpg" },
     { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · Berlin", "Ecologist · Berlin"), photo: "/community/t-jonas.jpg" },
     { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · İzmir", "New farmer · İzmir"), photo: "/community/t-elif.jpg" },
   ];
@@ -100,25 +133,28 @@ export function HomePage() {
       <section className="bg-linear-160 from-forest-900 to-forest-700 text-sand-100">
         <div className="container-x grid items-center gap-10 py-16 md:grid-cols-[1.05fr_0.95fr]">
           <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3.5 py-1.5 text-[13px] font-medium text-moss-300">
+              <Sprout className="size-4 shrink-0" />
+              {t("Toprakla Yeniden Buluşanların Dayanışma Topluluğu", "A solidarity community for people reconnecting with the soil")}
+            </div>
             <h1 className="font-display mb-4 text-4xl leading-[1.08] font-semibold md:text-5xl">
-              {t("Toprakla yeniden buluşan insanları bir araya getiriyoruz.", "Bringing together people reconnecting with the soil.")}
+              {t("Toprakla bağ kurun, birlikte üretin, deneyim paylaşın.", "Connect with the soil, grow together, share experience.")}
             </h1>
             <p className="mb-7 max-w-lg text-[17px] text-moss-300">
-              {t("Çiftliğinde birlikte üretmek isteyen, projelere destek arayan ya da bilgisini paylaşmak isteyen insanları tek toplulukta buluşturuyoruz.", "We bring people together in one community — those who want to grow together on their farm, those seeking support for a project, and those who want to share what they know.")}
+              {t("Gönüllü arayan çiftlikler, bilgi paylaşan üreticiler ve sürdürülebilir yaşamı yerinde öğrenmek isteyenler tek bir çatı altında buluşuyor.", "Farms seeking volunteers, producers sharing knowledge, and people who want to learn sustainable living hands-on, all under one roof.")}
             </p>
-            <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link to="/kesfet" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğu Keşfet", "Explore the community")}</Button>
+              </Link>
               <Link to={joinTo} className="w-full sm:w-auto">
-                <Button size="lg" className="w-full justify-center sm:w-auto">{t("Topluluğa katıl", "Join the community")}</Button>
+                <Button variant="onDark" size="lg" className="w-full justify-center sm:w-auto">{t("Toprağını veya Deneyimini Paylaş", "Share your land or experience")}</Button>
               </Link>
-              {/* Mobile: map link (matches the hero mockup). Desktop: outlined button. */}
-              <Link to="/kesfet" className="inline-flex items-center gap-2 px-1 font-semibold text-white underline decoration-moss-300/50 underline-offset-[6px] sm:hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5">
-                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14" /><path d="M15 6v14" />
-                </svg>
-                {t("Haritada keşfet", "Explore the map")} <span aria-hidden>→</span>
-              </Link>
-              <Link to="/kesfet" className="hidden sm:inline-block"><Button variant="onDark" size="lg">{t("Haritada keşfet →", "Explore the map →")}</Button></Link>
             </div>
+            <ul className="mt-5 flex flex-col gap-1.5 text-[13.5px] text-moss-300 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1.5">
+              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Tamamen ücretsiz katılım", "Completely free to join")}</li>
+              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Doğrulanmış profiller", "Verified profiles")}</li>
+            </ul>
           </div>
           {/* Community preview panel — shown on all sizes (on mobile it sits below the hero). */}
           <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-[18px]">
@@ -127,7 +163,7 @@ export function HomePage() {
             <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">{t("TOPLULUKTAN", "FROM THE COMMUNITY")}</div>
             <div className="flex flex-col gap-2.5">
               {community.length > 0 ? (
-                community.map((m) => (
+                community.slice(0, 3).map((m) => (
                   <Link key={m.id} to="/kesfet" className="block rounded-xl bg-surface p-3 transition hover:shadow-sm">
                     <div className="flex items-center gap-2.5">
                       <Avatar url={m.avatarUrl} className="size-10 shrink-0" />
@@ -164,13 +200,17 @@ export function HomePage() {
 
       {/* Nasıl çalışır */}
       <section className="container-x py-14">
-        <h2 className="font-display mb-6 text-center text-3xl font-semibold">{t("Nasıl çalışır?", "How it works")}</h2>
+        <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Toprakla Yeniden Nasıl Çalışır?", "How Reconnect with Soil works")}</h2>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Üretmek, öğrenmek ve doğaya dönmek isteyen herkes için açık bir alan.", "An open space for anyone who wants to produce, learn and return to nature.")}</p>
         <div className="grid gap-5 md:grid-cols-3">
           {steps.map((s) => (
-            <div key={s.n} className="rounded-[var(--radius-lg)] border border-border bg-surface p-6 text-center">
-              <div className="font-display mx-auto mb-3.5 grid size-11 place-items-center rounded-full bg-sand-100 text-xl font-semibold text-forest-600">{s.n}</div>
+            <div key={s.n} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+              <div className="font-display mb-3 text-3xl font-semibold text-moss-300">{s.n}</div>
               <h3 className="mb-1.5 text-[17px] font-semibold">{s.ttl}</h3>
-              <p className="text-sm text-ink-500">{s.d}</p>
+              <p className="mb-4 flex-1 text-sm text-ink-500">{s.d}</p>
+              <Link to={s.to} className="inline-flex items-center gap-1 text-sm font-semibold text-forest-600 hover:gap-1.5 hover:underline">
+                {s.cta} <ArrowRight className="size-4" />
+              </Link>
             </div>
           ))}
         </div>
@@ -187,11 +227,61 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Hedef kitle / persona kartları */}
+      <section className="bg-sand-100/60">
+        <div className="container-x py-14">
+          <h2 className="font-display mb-8 text-center text-3xl font-semibold">{t("Bu toplulukta senin de yerin var", "There's a place for you here")}</h2>
+          <div className="grid gap-5 md:grid-cols-3">
+            {personas.map((p) => (
+              <div key={p.cta} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+                <div className="mb-3.5 grid size-11 place-items-center rounded-full bg-forest-600/10 text-forest-600"><p.Icon className="size-5" strokeWidth={1.75} /></div>
+                <h3 className="font-display mb-1.5 text-[18px] font-semibold leading-snug">{p.ttl}</h3>
+                <p className="mb-5 flex-1 text-sm text-ink-600">{p.d}</p>
+                <Link to={p.to}><Button variant="outline" size="sm" className="w-full justify-center">{p.cta}</Button></Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Topluluğa yeni katılanlar — gerçek üyeler (host garantili) */}
+      {newJoiners.length > 0 && (
+        <section className="container-x py-14">
+          <div className="mb-8 text-center">
+            <h2 className="font-display text-3xl font-semibold">{t("Topluluğa yeni katılanlar", "Newly joined the community")}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-ink-500">{t("Aramıza en son katılan üreticiler ve gönüllülerden birkaçı.", "A few of the latest producers and volunteers to join us.")}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {newJoiners.map((m) => (
+              <Link key={m.id} to="/kesfet" className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5 transition hover:border-forest-500 hover:shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Avatar url={m.avatarUrl} className="size-12" />
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">{m.firstName}</div>
+                    <div className="truncate text-[13px] text-ink-500">{[m.city, m.country].filter(Boolean).join(", ")}</div>
+                  </div>
+                </div>
+                <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full bg-forest-600/10 px-2.5 py-0.5 text-[12px] font-semibold text-forest-700">
+                  {isHost(m) ? <Sprout className="size-3.5" /> : m.category === "volunteer" ? <Backpack className="size-3.5" /> : <Users className="size-3.5" />}
+                  {catLabel(m.category)}
+                </span>
+                {m.headline && <p className="mt-2 line-clamp-2 text-sm text-ink-600">{m.headline}</p>}
+                {m.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {m.tags.slice(0, 3).map((tg) => <Tag key={`${tg.axis}-${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Kategoriler */}
       <section className="container-x py-14">
         <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Nasıl bir deneyim arıyorsun?", "What kind of experience are you after?")}</h2>
         <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
-          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına — keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests — a diverse world of experiences is waiting to be explored.")}
+          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına kadar keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests, a diverse world of experiences is waiting to be explored.")}
         </p>
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
           {CATEGORIES.map((c) => (
@@ -228,7 +318,7 @@ export function HomePage() {
           <h2 className="font-display text-3xl font-semibold">{t("Topluluktan son aktiviteler", "Latest from the community")}</h2>
           <Link to="/app/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">{t("Tümünü gör →", "See all →")}</Link>
         </div>
-        <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular — topluluğun nabzı.", "Podcasts, meetups, posts and announcements — the pulse of the community.")}</p>
+        <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular: topluluğun nabzı.", "Podcasts, meetups, posts and announcements: the pulse of the community.")}</p>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           {homeActivities.map((a) => (
             <Link key={a.id} to={`/app/aktiviteler/${a.id}`} className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
