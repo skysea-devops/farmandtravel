@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { HandHelping, Gift, Trees, ClipboardCheck, House, Users, Clock, BedDouble, Utensils, TreePalm, Sprout, Star, CalendarClock, CalendarDays, Images } from "lucide-react";
+import { HandHelping, Gift, Trees, ClipboardCheck, House, Users, Clock, BedDouble, Utensils, TreePalm, Sprout, Star, CalendarClock, CalendarDays, Images, Leaf, Compass, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { HELP_ICONS, AMENITY_ICONS, MEAL_ICONS, AROUND_ICONS, RULE_ICONS, DomainIcon } from "@/lib/icons";
 import {
@@ -45,7 +45,7 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
   const setRuleNote = (field: RuleField, key: string, note: string) => {
     set({ [field]: ruleItems(field).map((r) => (r.key === key ? { ...r, note: note || undefined } : r)) } as Partial<HostDetails>);
   };
-  const ruleBlock = (field: RuleField, list: LabeledKey[]) => (
+  const ruleBlock = (field: RuleField, list: LabeledKey[], iconMap: Record<string, LucideIcon>) => (
     <div className="space-y-2">
       {list.map((k) => {
         const on = ruleOn(field, k.key);
@@ -54,7 +54,7 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
           <div key={k.key} className={`rounded-lg border p-2.5 ${on ? "border-forest-500/60 bg-sand-100/50" : "border-border"}`}>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={on} onChange={() => toggleRule(field, k.key)} />
-              <span>{k.icon} {lang === "en" ? k.en : k.tr}</span>
+              <span className="flex items-center gap-1.5"><DomainIcon map={iconMap} k={k.key} size={15} className="text-forest-600" /> {lang === "en" ? k.en : k.tr}</span>
             </label>
             {on && (
               <input className={`${inp} mt-2`} value={item?.note ?? ""} onChange={(e) => setRuleNote(field, k.key, e.target.value)}
@@ -128,8 +128,8 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
         </Field>
       </div>
 
-      {/* ── 📅 Günlük akış ── */}
-      <Section title={t("📅 Günlük akış", "📅 Daily routine")}
+      {/* ── Günlük akış ── */}
+      <Section title={<><CalendarDays className="size-4" /> {t("Günlük akış", "Daily routine")}</>}
         hint={t("İstersen saatli doldur, istersen genel bırak. Satır ekleyebilirsin.", "Fill with times if you like, or keep it general. You can add rows.")}>
         <div className="space-y-2">
           {routine.map((r, i) => (
@@ -138,7 +138,7 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
                 placeholder={t("Saat (ops.)", "Time (opt.)")} />
               <input className={inp} value={r.activity} onChange={(e) => setRoutine(routine.map((x, j) => j === i ? { ...x, activity: e.target.value } : x))}
                 placeholder={t("Örn: Sabah hayvan bakımı, kahvaltı, tarla işi…", "E.g. Morning animal care, breakfast, field work…")} />
-              <button type="button" onClick={() => setRoutine(routine.filter((_, j) => j !== i))} className="shrink-0 text-ink-400 hover:text-clay-600" title={t("Sil", "Remove")}>✕</button>
+              <button type="button" onClick={() => setRoutine(routine.filter((_, j) => j !== i))} className="shrink-0 text-ink-400 hover:text-clay-600" title={t("Sil", "Remove")}><X className="size-4" /></button>
             </div>
           ))}
           <button type="button" onClick={() => setRoutine([...routine, { activity: "" }])}
@@ -148,23 +148,23 @@ export function HostDetailsForm({ value, onChange }: { value: HostDetails; onCha
         </div>
       </Section>
 
-      {/* ── 🌿 İzin günleri ── */}
-      <Section title={t("🌿 İzin günleri", "🌿 Days off")}
+      {/* ── İzin günleri ── */}
+      <Section title={<><Leaf className="size-4" /> {t("İzin günleri", "Days off")}</>}
         hint={t("Standart: haftada 5 gün çalışma → 2 gün izin. İzin günlerinde ne yapılabilir?", "Standard: 5 days of work → 2 days off. What can volunteers do on days off?")}>
         <textarea rows={2} className={ta} value={value.daysOff ?? ""} onChange={(e) => set({ daysOff: e.target.value })}
           placeholder={t("Örn: 5 gün çalışma, 2 gün izin. İzin günlerinde çevreyi gezebilir, dinlenebilirsin.", "E.g. 5 days work, 2 days off. On days off you can explore the area or rest.")} />
       </Section>
 
-      {/* ── 🏠 Ev kuralları & ipuçları ── */}
-      <Section title={t("🏠 Ev kuralları & ipuçları", "🏠 House rules & tips")}
+      {/* ── Ev kuralları & ipuçları ── */}
+      <Section title={<><House className="size-4" /> {t("Ev kuralları & ipuçları", "House rules & tips")}</>}
         hint={t("Geçerli olanları seç, istersen kısa not ekle.", "Pick the ones that apply, add a short note if you like.")}>
-        {ruleBlock("houseRules", HOUSE_RULES)}
+        {ruleBlock("houseRules", HOUSE_RULES, RULE_ICONS)}
       </Section>
 
-      {/* ── 🧭 Çevrede ── */}
-      <Section title={t("🧭 Çevrede", "🧭 Around us")}
+      {/* ── Çevrede ── */}
+      <Section title={<><Compass className="size-4" /> {t("Çevrede", "Around us")}</>}
         hint={t("Gönüllüler gezip görmek de ister. Çevredeki imkanları seç.", "Volunteers like to explore too. Pick what's around.")}>
-        {ruleBlock("around", AROUND_US)}
+        {ruleBlock("around", AROUND_US, AROUND_ICONS)}
       </Section>
     </div>
   );
@@ -180,10 +180,10 @@ function Field({ label, hint, req, children }: { label: string; hint?: string; r
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: React.ReactNode; hint?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-bg/40 p-4">
-      <h3 className="font-display text-[15px] font-semibold text-forest-700">{title}</h3>
+      <h3 className="font-display flex items-center gap-1.5 text-[15px] font-semibold text-forest-700">{title}</h3>
       {hint && <p className="mb-3 mt-0.5 text-xs text-ink-500">{hint}</p>}
       {children}
     </div>

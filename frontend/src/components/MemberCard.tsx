@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
@@ -24,7 +25,7 @@ export function MemberCard({ m, highlight = false }: { m: MatchCard; highlight?:
           {(m.ratingCount ?? 0) > 0 && (
             <div className="flex items-center gap-1 text-[12px] text-ink-500"><Stars value={m.ratingAvg ?? 0} className="text-[11px]" /> {m.ratingAvg} ({m.ratingCount})</div>
           )}
-          {m.joinedAt && <div className="text-[11.5px] text-ink-400">🗓️ {t("Üye:", "Member since:")} {monthYear(m.joinedAt, lang)}</div>}
+          {m.joinedAt && <div className="flex items-center gap-1 text-[11.5px] text-ink-400"><CalendarDays className="size-3" /> {t("Üye:", "Member since:")} {monthYear(m.joinedAt, lang)}</div>}
         </div>
         {pct > 0 && <span className="ml-auto shrink-0 rounded-full bg-moss-500 px-2 py-0.5 text-[11px] font-semibold text-white">{t(`%${pct} uyum`, `${pct}% match`)}</span>}
       </div>

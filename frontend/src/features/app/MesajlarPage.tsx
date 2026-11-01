@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Hand } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { ReportButton } from "@/components/ReportButton";
@@ -184,7 +185,7 @@ function ThreadView({ connectionId, onSent, onBack }: { connectionId: string; on
             </button>
           </div>
         )}
-        {msgs.length === 0 && <div className="py-8 text-center text-sm text-ink-500">{t("İlk mesajı sen yaz 👋", "Say hello 👋")}</div>}
+        {msgs.length === 0 && <div className="flex items-center justify-center gap-1.5 py-8 text-center text-sm text-ink-500"><Hand className="size-4" /> {t("İlk mesajı sen yaz", "Say hello")}</div>}
         {msgs.map((m: Message) => {
           const mine = m.senderId === meta.me;
           return (

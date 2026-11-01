@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Avatar } from "@/components/ui/Avatar";
@@ -30,7 +31,11 @@ export function KaydedilenlerPage() {
       <h1 className="font-display mb-5 text-2xl font-semibold">{t("Kaydedilenler", "Saved")}</h1>
       {members.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface p-10 text-center text-sm text-ink-500">
-          {t("Henüz kimseyi kaydetmedin. Keşfet'te beğendiğin profillerde 🔖 ile kaydet.", "You haven't saved anyone yet. Tap 🔖 on profiles you like in Discover.")}
+          <span className="inline-flex flex-wrap items-center justify-center gap-1">
+            {t("Henüz kimseyi kaydetmedin. Keşfet'te beğendiğin profillerde", "You haven't saved anyone yet. Tap")}
+            <Bookmark className="size-4" />
+            {t("ile kaydet.", "on profiles you like in Discover.")}
+          </span>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

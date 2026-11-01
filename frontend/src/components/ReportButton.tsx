@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Flag, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { reports as reportsApi } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
@@ -23,8 +25,8 @@ export function ReportButton({ reportedId, context, className }: {
   return (
     <>
       <button type="button" onClick={() => { setOpen(true); setDone(false); }}
-        className={className ?? "text-xs text-ink-500 transition hover:text-[#8a2f29]"}>
-        🚩 {t("Şikayet et", "Report")}
+        className={cn("inline-flex items-center gap-1", className ?? "text-xs text-ink-500 transition hover:text-[#8a2f29]")}>
+        <Flag className="size-3.5" /> {t("Şikayet et", "Report")}
       </button>
 
       {open && (
@@ -32,7 +34,7 @@ export function ReportButton({ reportedId, context, className }: {
           <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-surface p-5" onClick={(e) => e.stopPropagation()}>
             {done ? (
               <div className="text-center">
-                <div className="mb-2 text-2xl">✅</div>
+                <div className="mb-2 flex justify-center text-forest-600"><CheckCircle2 className="size-8" /></div>
                 <p className="text-sm text-ink-700">{t("Bildirimin alındı. Ekibimiz en kısa sürede inceleyecek. Teşekkürler.", "Your report was received. Our team will review it shortly. Thank you.")}</p>
                 <Button size="sm" className="mt-4" onClick={() => setOpen(false)}>{t("Kapat", "Close")}</Button>
               </div>

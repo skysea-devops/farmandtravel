@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
@@ -57,9 +58,9 @@ export function Header() {
           onClick={() => setOpen((o) => !o)}
           aria-label={t("Menü", "Menu")}
           aria-expanded={open}
-          className="ml-auto grid size-10 place-items-center rounded-lg text-2xl text-ink-700 hover:bg-sand-100 md:hidden"
+          className="ml-auto grid size-10 place-items-center rounded-lg text-ink-700 hover:bg-sand-100 md:hidden"
         >
-          {open ? "✕" : "☰"}
+          {open ? <X className="size-6" /> : <Menu className="size-6" />}
         </button>
       </div>
 

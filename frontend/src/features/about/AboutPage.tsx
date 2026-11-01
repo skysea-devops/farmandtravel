@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
+import { Globe, Handshake, Sprout, Tractor, MapPin, Video } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 
 export function AboutPage() {
   const { t } = useI18n();
 
-  const values: [string, string, string][] = [
-    ["🌍", t("Doğaya dönüş", "Back to nature"), t("Çiftlikler, eco-village'lar, gıda ormanları ve doğa temelli her proje burada yer bulur.", "Farms, eco-villages, food forests and every nature-based project has a place here.")],
-    ["🤝", t("Gerçek bağlantı", "Real connection"), t("İletişim, iki taraf da isteyince açılır. Sahici, karşılıklı, güvenli.", "Contact opens only when both sides want it. Genuine, mutual, safe.")],
-    ["🌱", t("Birlikte büyümek", "Growing together"), t("Bilgi, emek ve deneyim paylaşıldıkça çoğalır. Topluluk bunun için var.", "Knowledge, effort and experience multiply as they're shared. That's what the community is for.")],
+  const values: [LucideIcon, string, string][] = [
+    [Globe, t("Doğaya dönüş", "Back to nature"), t("Çiftlikler, eco-village'lar, gıda ormanları ve doğa temelli her proje burada yer bulur.", "Farms, eco-villages, food forests and every nature-based project has a place here.")],
+    [Handshake, t("Gerçek bağlantı", "Real connection"), t("İletişim, iki taraf da isteyince açılır. Sahici, karşılıklı, güvenli.", "Contact opens only when both sides want it. Genuine, mutual, safe.")],
+    [Sprout, t("Birlikte büyümek", "Growing together"), t("Bilgi, emek ve deneyim paylaşıldıkça çoğalır. Topluluk bunun için var.", "Knowledge, effort and experience multiply as they're shared. That's what the community is for.")],
   ];
 
   return (
@@ -24,9 +26,9 @@ export function AboutPage() {
       </section>
 
       <section className="mx-auto grid max-w-5xl gap-4.5 px-6 pt-5 pb-8 md:grid-cols-3">
-        {values.map(([ic, title, d]) => (
+        {values.map(([Ic, title, d]) => (
           <div key={title} className="rounded-[var(--radius-lg)] border border-border bg-surface p-6">
-            <div className="mb-2.5 text-3xl">{ic}</div>
+            <div className="mb-2.5 text-forest-600"><Ic className="size-7" strokeWidth={1.5} /></div>
             <h3 className="mb-1.5 text-[17px] font-semibold">{title}</h3>
             <p className="text-sm text-ink-500">{d}</p>
           </div>
@@ -43,7 +45,11 @@ export function AboutPage() {
           <div>
             <div className="mb-1 text-xs font-semibold tracking-wider text-clay-600">{t("KURUCU ÜYE", "FOUNDING MEMBER")}</div>
             <h2 className="font-display text-2xl font-semibold">Özgür Gökdeniz</h2>
-            <div className="mb-3 text-sm text-ink-500">{t("🚜 Çiftlik sahibi · 📍 Demirtaş köyü, Kırkağaç / Manisa", "🚜 Farm owner · 📍 Demirtaş village, Kırkağaç / Manisa, Türkiye")}</div>
+            <div className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-ink-500">
+              <Tractor className="size-4" /> {t("Çiftlik sahibi", "Farm owner")}
+              <span>·</span>
+              <MapPin className="size-4" /> {t("Demirtaş köyü, Kırkağaç / Manisa", "Demirtaş village, Kırkağaç / Manisa, Türkiye")}
+            </div>
             <p className="text-[15px] text-ink-700">
               {t(
                 "Merhaba, ben Özgür. Yıllar önce şehir hayatını geride bırakıp Manisa Kırkağaç'ın Demirtaş köyüne yerleştim ve burada küçük bir çiftlik kurdum. Buradaki birinci amacım organik ve sağlıklı üretim yaparak kendi yiyeceğimi, kendi gıdamı üretmek.",
@@ -57,7 +63,7 @@ export function AboutPage() {
               )}
             </p>
             <div className="mt-4">
-              <Link to="/aktiviteler"><Button variant="outline" size="sm">{t("🎥 Özgür ile podcast'i izle", "🎥 Watch the podcast with Özgür")}</Button></Link>
+              <Link to="/aktiviteler"><Button variant="outline" size="sm"><span className="inline-flex items-center gap-1.5"><Video className="size-4" /> {t("Özgür ile podcast'i izle", "Watch the podcast with Özgür")}</span></Button></Link>
             </div>
           </div>
         </div>

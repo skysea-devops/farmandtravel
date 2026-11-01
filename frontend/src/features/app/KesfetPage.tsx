@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { MemberCard } from "@/components/MemberCard";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -111,7 +112,8 @@ export function KesfetPage() {
           {matches.length > 0 && (
             <section>
               <div className="mb-3 flex items-center gap-2">
-                <h2 className="font-display text-lg font-semibold">{t("✨ Senin için en iyi eşleşmeler", "✨ Your best matches")}</h2>
+                <Sparkles className="size-5 text-clay-500" />
+                <h2 className="font-display text-lg font-semibold">{t("Senin için en iyi eşleşmeler", "Your best matches")}</h2>
                 <span className="rounded-full bg-moss-500/15 px-2 py-0.5 text-xs font-semibold text-forest-700">{matches.length}</span>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

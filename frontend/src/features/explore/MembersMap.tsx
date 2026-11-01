@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { MapPin as MapPinIcon } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { MAP_COLORS, type MapCategory } from "./categories";
 
@@ -73,8 +74,8 @@ function MembersMap({ pins, onPinClick }: { pins: MapPin[]; onPinClick: (id: str
     <div className="relative h-[720px] overflow-hidden rounded-[var(--radius-lg)] border border-border">
       <div ref={boxRef} className="h-full w-full" />
       <button onClick={locate}
-        className="absolute top-3.5 right-3.5 z-[500] rounded-full border border-border bg-white/95 px-3.5 py-2 text-[13px] font-semibold text-forest-700 shadow-sm">
-        {t("📍 Konumuma git", "📍 Go to my location")}
+        className="absolute top-3.5 right-3.5 z-[500] inline-flex items-center gap-1.5 rounded-full border border-border bg-white/95 px-3.5 py-2 text-[13px] font-semibold text-forest-700 shadow-sm">
+        <MapPinIcon className="size-4" /> {t("Konumuma git", "Go to my location")}
       </button>
       <div className="absolute bottom-3.5 left-3.5 z-[500] rounded-xl border border-border bg-white/95 px-3 py-2.5 text-[12.5px] shadow-sm">
         <div className="my-0.5 flex items-center gap-2"><span className="size-3 rounded-full rounded-bl-none" style={{ background: MAP_COLORS.host_active, transform: "rotate(-45deg)" }} /> {t("Gönüllü arayan yer sahipleri", "Place owners seeking volunteers")}</div>

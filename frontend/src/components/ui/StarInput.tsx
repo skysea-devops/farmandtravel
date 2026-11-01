@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 
@@ -30,11 +31,11 @@ export function StarInput({
             onClick={() => onChange(i)}
             onMouseEnter={() => setHover(i)}
             className={cn(
-              "text-[36px] leading-none transition-transform hover:scale-110 focus:outline-none focus-visible:scale-110",
+              "leading-none transition-transform hover:scale-110 focus:outline-none focus-visible:scale-110",
               i <= shown ? "text-clay-500" : "text-border-strong",
             )}
           >
-            ★
+            <Star className="size-9" strokeWidth={1.5} fill={i <= shown ? "currentColor" : "none"} />
           </button>
         ))}
       </div>

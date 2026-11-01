@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { api, connections } from "@/lib/api";
@@ -56,7 +57,7 @@ export function BaglantilarPage() {
         {data.accepted.length === 0 ? <Empty>{t("Henüz bağlantın yok. Keşfet'ten insanlarla bağlantı kur.", "No connections yet. Connect with people from Discover.")}</Empty> : data.accepted.map((c) => (
           <Row key={c.connectionId} c={c}>
             <div className="flex flex-col items-end gap-1.5">
-              <Link to={`/app/mesajlar/${c.connectionId}`}><Button size="sm" variant="outline">{t("💬 Mesaj", "💬 Message")}</Button></Link>
+              <Link to={`/app/mesajlar/${c.connectionId}`}><Button size="sm" variant="outline"><span className="inline-flex items-center gap-1.5"><MessageCircle className="size-3.5" /> {t("Mesaj", "Message")}</span></Button></Link>
               {c.contact?.contactEmail && <div className="text-xs text-ink-500">{c.contact.contactEmail}</div>}
             </div>
           </Row>
