@@ -48,6 +48,9 @@
     color: var(--color-ink-900);
     font-family: var(--font-sans);
     line-height: 1.6;
+    /* Mobilde yanlışlıkla taşan bir öğe yatay kaydırma yaratmasın.
+       `clip` (hidden değil) position:sticky'yi bozmaz. */
+    overflow-x: clip;
   }
   .font-display {
     font-family: var(--font-display);
