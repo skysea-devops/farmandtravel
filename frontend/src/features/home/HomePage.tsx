@@ -244,12 +244,28 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Kategoriler */}
+      <section className="container-x py-14">
+        <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Nasıl bir deneyim arıyorsun?", "What kind of experience are you after?")}</h2>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
+          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına kadar keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests, a diverse world of experiences is waiting to be explored.")}
+        </p>
+        <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
+          {CATEGORIES.map((c) => (
+            <div key={c.label} className="relative h-40 overflow-hidden rounded-[var(--radius-lg)] bg-linear-135 from-moss-300 to-forest-500">
+              <img src={c.photo} alt="" onError={hide} className="h-full w-full object-cover transition duration-300 hover:scale-105" />
+              <div className="font-display absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3.5 text-base font-semibold text-white">{t(c.label, CAT_EN[c.label] ?? c.label)}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-sm text-ink-500">{t("…ve topluluk büyüdükçe çok daha fazlası sizleri bekliyor.", "…and much more as the community grows.")}</p>
+      </section>
+
       {/* Topluluğa yeni katılanlar — gerçek üyeler (host garantili) */}
       {newJoiners.length > 0 && (
         <section className="container-x py-14">
           <div className="mb-8 text-center">
             <h2 className="font-display text-3xl font-semibold">{t("Topluluğa yeni katılanlar", "Newly joined the community")}</h2>
-            <p className="mx-auto mt-2 max-w-xl text-ink-500">{t("Aramıza en son katılan üreticiler ve gönüllülerden birkaçı.", "A few of the latest producers and volunteers to join us.")}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {newJoiners.map((m) => (
@@ -277,41 +293,6 @@ export function HomePage() {
         </section>
       )}
 
-      {/* Kategoriler */}
-      <section className="container-x py-14">
-        <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Nasıl bir deneyim arıyorsun?", "What kind of experience are you after?")}</h2>
-        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
-          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına kadar keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests, a diverse world of experiences is waiting to be explored.")}
-        </p>
-        <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
-          {CATEGORIES.map((c) => (
-            <div key={c.label} className="relative h-40 overflow-hidden rounded-[var(--radius-lg)] bg-linear-135 from-moss-300 to-forest-500">
-              <img src={c.photo} alt="" onError={hide} className="h-full w-full object-cover transition duration-300 hover:scale-105" />
-              <div className="font-display absolute inset-x-0 bottom-0 bg-linear-0 from-forest-900/85 to-transparent p-3.5 text-base font-semibold text-white">{t(c.label, CAT_EN[c.label] ?? c.label)}</div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-sm text-ink-500">{t("…ve topluluk büyüdükçe çok daha fazlası sizleri bekliyor.", "…and much more as the community grows.")}</p>
-      </section>
-
-      {/* Kurucu üyeden — sabit tanıtım videosu */}
-      {featured && featured.youtubeId && (
-        <section className="container-x pb-10">
-          <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface md:flex">
-            <div className="aspect-video bg-black md:w-3/5">
-              <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${featured.youtubeId}`} title={featured.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-            </div>
-            <div className="flex flex-col justify-center gap-2 p-6 md:w-2/5">
-              <span className="text-xs font-semibold tracking-wide text-clay-600">{t("Kurucu üyeden", "From the founder")}</span>
-              <h2 className="font-display text-2xl font-semibold leading-tight">{featured.title}</h2>
-              {featured.desc && <p className="line-clamp-4 text-sm leading-relaxed text-ink-600">{featured.desc}</p>}
-              {featured.author && <div className="text-[13px] text-ink-400">{featured.author}</div>}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Topluluk aktiviteleri */}
       <section className="container-x pb-14">
         <div className="mb-2 flex items-end justify-between">
@@ -319,6 +300,20 @@ export function HomePage() {
           <Link to="/app/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">{t("Tümünü gör →", "See all →")}</Link>
         </div>
         <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular: topluluğun nabzı.", "Podcasts, meetups, posts and announcements: the pulse of the community.")}</p>
+          {featured && featured.youtubeId && (
+          <div className="mb-6 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface md:flex">
+            <div className="aspect-video bg-black md:w-3/5">
+              <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${featured.youtubeId}`} title={featured.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+            <div className="flex flex-col justify-center gap-2 p-6 md:w-2/5">
+              <span className="text-xs font-semibold tracking-wide text-clay-600">{t("Kurucu üyeden", "From the founder")}</span>
+              <h3 className="font-display text-2xl font-semibold leading-tight">{featured.title}</h3>
+              {featured.desc && <p className="line-clamp-4 text-sm leading-relaxed text-ink-600">{featured.desc}</p>}
+              {featured.author && <div className="text-[13px] text-ink-400">{featured.author}</div>}
+            </div>
+          </div>
+          )}
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           {homeActivities.map((a) => (
             <Link key={a.id} to={`/app/aktiviteler/${a.id}`} className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
