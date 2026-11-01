@@ -97,6 +97,47 @@ export async function translateFields<T extends Record<string, unknown>>(
   }
 }
 
+// Cache-ONLY variant of translateFields: fills fields from the translation cache where a
+// hit exists, leaves the original otherwise. Never calls the model, so it can't stall a
+// request — used for long fields (blog body) that are warmed at write time instead.
+export async function translateCachedFields<T extends Record<string, unknown>>(
+  rows: T[],
+  fields: readonly (keyof T)[],
+  lang: string,
+): Promise<void> {
+  if (rows.length === 0 || lang !== "en") return;
+  const flat: (string | null | undefined)[] = [];
+  for (const r of rows) for (const f of fields) flat.push(r[f] as string | null | undefined);
+  const uniq = new Map<string, string>();
+  for (const t of flat) { const s = (t ?? "").trim(); if (s) uniq.set(hash(s), s); }
+  if (uniq.size === 0) return;
+  const out = new Map<string, string>();
+  try {
+    const hits = await query<{ source_hash: string; translated: string }>(
+      `SELECT source_hash, translated FROM translations WHERE target_lang = $1 AND source_hash = ANY($2::text[])`,
+      [lang, [...uniq.keys()]],
+    );
+    for (const r of hits.rows) out.set(r.source_hash, r.translated);
+  } catch { return; }
+  let i = 0;
+  for (const r of rows) {
+    for (const f of fields) {
+      const s = (flat[i++] ?? "").trim();
+      if (!s) continue;
+      const tr = out.get(hash(s));
+      if (tr) (r as Record<string, unknown>)[f as string] = tr;
+    }
+  }
+}
+
+// Warm the translation cache for these strings (one model call, then persisted). Best-effort:
+// any failure is swallowed. Call this at write time so readers hit the cache instead of
+// translating on the request path. No-op unless the target needs translation (English).
+export async function warmTranslations(texts: (string | null | undefined)[], lang: string): Promise<void> {
+  if (lang !== "en") return;
+  try { await translateMany(texts, lang); } catch { /* best-effort */ }
+}
+
 async function bedrockTranslate(sources: string[], lang: string): Promise<string[]> {
   const target = lang === "tr" ? "Turkish" : "English";
   const prompt = `You are a translation engine. Translate the CONTENT of each string in the JSON array below into natural ${target} for a farming / eco community platform.
