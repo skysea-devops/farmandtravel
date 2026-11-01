@@ -123,7 +123,7 @@ export function ExplorePage() {
 
       {/* Katkı yönü */}
       <FilterGroup title={t("Katkı yönü", "Giving or seeking")}>
-        {([["all", t("Herkes", "Everyone")], ["offer", t("Paylaşıyor (sunuyor)", "Offering / sharing")], ["seek", t("Arıyor (destek istiyor)", "Seeking support")]] as [Dir, string][]).map(([v, label]) => (
+        {([["all", t("Herkes", "Everyone")], ["offer", t("Destek sunuyor", "Offering support")], ["seek", t("Destek bekliyor", "Seeking support")]] as [Dir, string][]).map(([v, label]) => (
           <label key={v} className="flex cursor-pointer items-center gap-2 py-1">
             <input type="radio" name="dir" checked={dir === v} onChange={() => setDir(v)} className="accent-forest-600" />
             <span className="flex-1">{label}</span>
