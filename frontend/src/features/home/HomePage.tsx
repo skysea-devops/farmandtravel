@@ -71,7 +71,7 @@ export function HomePage() {
 
   const steps = [
     { n: "01", ttl: t("Profilini Oluştur", "Create your profile"),
-      d: t("Gönüllü olmak, bilgi ve deneyim paylaşmak ya da sadece öğrenmek — amacına uygun profilini oluştur.", "Volunteering, sharing knowledge and experience, or just learning — create the profile that fits your goal."),
+      d: t("İster gönüllü ol, ister bilgi ve deneyim paylaş, ister sadece öğren; amacına uygun profilini oluştur.", "Whether you want to volunteer, share knowledge and experience, or just learn, create the profile that fits your goal."),
       cta: t("Profil Oluştur", "Create profile"), to: joinTo },
     { n: "02", ttl: t("Topluluğu Keşfet", "Explore the community"),
       d: t("Şehir, ilgi duyduğun alanlar veya aktiflik durumuna göre insanları bul.", "Find people by city, the areas you're interested in, or how active they are."),
@@ -122,7 +122,7 @@ export function HomePage() {
   ];
 
   const testimonials = [
-    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım — biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed — one is still with us."), n: "Marta", r: t("Permakültür çiftliği · Sintra", "Permaculture farm · Sintra"), photo: "/community/t-marta.jpg" },
+    { q: t("Çiftliğimde hasat için gönüllü arıyordum. İki hafta içinde tam aradığım üç kişiyle tanıştım; biri hâlâ bizimle.", "I was looking for volunteers for the harvest on my farm. Within two weeks I met exactly the three people I needed, and one is still with us."), n: "Marta", r: t("Permakültür çiftliği · Sintra", "Permaculture farm · Sintra"), photo: "/community/t-marta.jpg" },
     { q: t("Ekoloji bilgimi paylaşacak bir yer arıyordum. Şimdi üç farklı projeye mentorluk yapıyorum. Tam da hayalini kurduğum topluluk.", "I was looking for somewhere to share my ecology knowledge. Now I mentor three different projects. Exactly the community I dreamed of."), n: "Jonas", r: t("Ekolog · Berlin", "Ecologist · Berlin"), photo: "/community/t-jonas.jpg" },
     { q: t("Çiftlik hayalim vardı ama nereden başlayacağımı bilmiyordum. Burada bulduğum mentor sayesinde ilk adımı attım.", "I had a dream of a farm but didn't know where to start. Thanks to the mentor I found here, I took my first step."), n: "Elif", r: t("Yeni çiftçi · İzmir", "New farmer · İzmir"), photo: "/community/t-elif.jpg" },
   ];
@@ -141,7 +141,7 @@ export function HomePage() {
               {t("Toprakla bağ kurun, birlikte üretin, deneyim paylaşın.", "Connect with the soil, grow together, share experience.")}
             </h1>
             <p className="mb-7 max-w-lg text-[17px] text-moss-300">
-              {t("Gönüllü arayan çiftlikler, bilgi paylaşan üreticiler ve sürdürülebilir yaşamı yerinde öğrenmek isteyenler tek bir çatı altında buluşuyor.", "Farms seeking volunteers, producers sharing knowledge, and people who want to learn sustainable living hands-on — all under one roof.")}
+              {t("Gönüllü arayan çiftlikler, bilgi paylaşan üreticiler ve sürdürülebilir yaşamı yerinde öğrenmek isteyenler tek bir çatı altında buluşuyor.", "Farms seeking volunteers, producers sharing knowledge, and people who want to learn sustainable living hands-on, all under one roof.")}
             </p>
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link to="/kesfet" className="w-full sm:w-auto">
@@ -230,8 +230,7 @@ export function HomePage() {
       {/* Hedef kitle / persona kartları */}
       <section className="bg-sand-100/60">
         <div className="container-x py-14">
-          <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Bu toplulukta senin de yerin var", "There's a place for you here")}</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Nereden geldiğin fark etmez — toprakla ilişkin ne olursa olsun, başlayabileceğin bir kapı var.", "Wherever you're coming from — whatever your relationship with the soil, there's a door you can start from.")}</p>
+          <h2 className="font-display mb-8 text-center text-3xl font-semibold">{t("Bu toplulukta senin de yerin var", "There's a place for you here")}</h2>
           <div className="grid gap-5 md:grid-cols-3">
             {personas.map((p) => (
               <div key={p.cta} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
@@ -282,7 +281,7 @@ export function HomePage() {
       <section className="container-x py-14">
         <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Nasıl bir deneyim arıyorsun?", "What kind of experience are you after?")}</h2>
         <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">
-          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına — keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests — a diverse world of experiences is waiting to be explored.")}
+          {t("Çiftlik konaklamalarından eco-village'lara, hayvan bakımından gıda ormanlarına kadar keşfetmeyi bekleyen çeşitli bir deneyim dünyası seni bekliyor.", "From farm stays to eco-villages, animal care to food forests, a diverse world of experiences is waiting to be explored.")}
         </p>
         <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
           {CATEGORIES.map((c) => (
@@ -319,7 +318,7 @@ export function HomePage() {
           <h2 className="font-display text-3xl font-semibold">{t("Topluluktan son aktiviteler", "Latest from the community")}</h2>
           <Link to="/app/aktiviteler" className="text-sm font-medium text-forest-600 hover:underline">{t("Tümünü gör →", "See all →")}</Link>
         </div>
-        <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular — topluluğun nabzı.", "Podcasts, meetups, posts and announcements — the pulse of the community.")}</p>
+        <p className="mb-8 max-w-xl text-ink-500">{t("Podcast'ler, buluşmalar, paylaşımlar ve duyurular: topluluğun nabzı.", "Podcasts, meetups, posts and announcements: the pulse of the community.")}</p>
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
           {homeActivities.map((a) => (
             <Link key={a.id} to={`/app/aktiviteler/${a.id}`} className="group relative h-[180px] overflow-hidden rounded-xl bg-cover bg-center bg-linear-135 from-moss-300 to-forest-500" style={{ backgroundImage: `url(${a.img})` }}>
