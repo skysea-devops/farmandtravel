@@ -19,16 +19,21 @@ export const ROLE_META: Record<Role, { tr: string; en: string; catTr: string; ca
 export const isHost = (c: Role) => c === "host_active" || c === "host_idle";
 
 // Destek türü: kişinin sunduğu/aradığı yardımın niteliği (offer/seek etiketlerinden türetilir).
-export type Support = "bilgi" | "emek" | "malzeme";
+// Host lojistiği değil; topluluğun paylaşım/dayanışma eksenleri.
+export type Support = "bilgi" | "egitim" | "emek" | "malzeme" | "ortaklik";
 export const SUPPORT_META: { key: Support; tr: string; en: string }[] = [
-  { key: "bilgi", tr: "Bilgi", en: "Knowledge" },
-  { key: "emek", tr: "Emek", en: "Labor" },
-  { key: "malzeme", tr: "Malzeme", en: "Materials" },
+  { key: "bilgi", tr: "Bilgi & deneyim", en: "Knowledge & experience" },
+  { key: "egitim", tr: "Eğitim & atölye", en: "Training & workshops" },
+  { key: "emek", tr: "Emek & gönüllülük", en: "Labor & volunteering" },
+  { key: "malzeme", tr: "Malzeme, tohum & ekipman", en: "Materials, seeds & tools" },
+  { key: "ortaklik", tr: "Ortaklık & ağ", en: "Partnership & network" },
 ];
 const SUPPORT_VALUES: Record<Support, Set<string>> = {
-  bilgi: new Set(["expertise", "mentoring", "workshops", "knowledge", "mentor"]),
+  bilgi: new Set(["expertise", "mentoring", "knowledge", "mentor"]),
+  egitim: new Set(["workshops"]),
   emek: new Set(["volunteer-labor", "volunteers"]),
   malzeme: new Set(["equipment", "logistics"]),
+  ortaklik: new Set(["partnership", "partner", "networking"]),
 };
 
 // Bir üyenin kapsadığı destek türleri (offer + seek eksenindeki etiketlerine göre).

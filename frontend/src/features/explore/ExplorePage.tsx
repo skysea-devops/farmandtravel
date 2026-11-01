@@ -16,17 +16,8 @@ const MembersMap = lazy(() => import("./MembersMap"));
 
 const BANNER_IMAGES = ["/community/s1.jpg", "/community/s7.jpg", "/community/s4.jpg", "/community/s6.jpg"];
 
-// Üst-düzey olanak filtreleri (kart çipleriyle aynı gruplama).
-const AMEN_FILTERS: { key: string; tr: string; en: string; match: (a: string[]) => boolean }[] = [
-  { key: "lodging", tr: "Barınma", en: "Lodging", match: (a) => a.some((x) => ["private_room", "shared_room", "camping"].includes(x)) },
-  { key: "meals", tr: "Yemek", en: "Meals", match: (a) => a.includes("shared_kitchen") },
-  { key: "wifi", tr: "İnternet", en: "Wi-Fi", match: (a) => a.includes("wifi") },
-];
-
-const nowMonthKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
-
 type RoleFilter = "all" | Role;
-type Avail = "all" | "month" | "any";
+type Dir = "all" | "offer" | "seek";
 
 export function ExplorePage() {
   const { user } = useAuth();
@@ -40,8 +31,7 @@ export function ExplorePage() {
   const [city, setCity] = useState("");
   const [topics, setTopics] = useState<Set<string>>(new Set());
   const [supports, setSupports] = useState<Set<Support>>(new Set());
-  const [amenities, setAmenities] = useState<Set<string>>(new Set());
-  const [avail, setAvail] = useState<Avail>("all");
+  const [dir, setDir] = useState<Dir>("all");
   const [q, setQ] = useState("");
 
   const [view, setView] = useState<"list" | "map">("list");
@@ -84,29 +74,23 @@ export function ExplorePage() {
     return c;
   }, [all]);
 
-  const nowKey = nowMonthKey();
   const results = useMemo(() => {
     const needle = q.toLocaleLowerCase("tr").trim();
     return all.filter((m) => {
       if (role !== "all" && m.category !== role) return false;
+      if (dir === "offer" && !m.tags.some((tg) => tg.axis === "offer")) return false;
+      if (dir === "seek" && !m.tags.some((tg) => tg.axis === "seek")) return false;
       if (country && m.country !== country) return false;
       if (city && m.city !== city) return false;
       if (topics.size && !m.tags.some((tg) => tg.axis === "topic" && topics.has(tg.value))) return false;
       if (supports.size) { const s = supportOf(m.tags); if (![...supports].some((x) => s.has(x))) return false; }
-      if (amenities.size) {
-        const a = m.host?.amenities;
-        if (!a) return false;
-        if (![...amenities].every((k) => AMEN_FILTERS.find((f) => f.key === k)!.match(a))) return false;
-      }
-      if (avail === "month" && !(m.availMonths ?? []).includes(nowKey)) return false;
-      if (avail === "any" && !(m.availMonths ?? []).length) return false;
       if (needle) {
         const hay = `${m.firstName ?? ""} ${m.city ?? ""} ${m.country ?? ""} ${m.headline ?? ""} ${m.blurb ?? ""} ${m.tags.map((t) => t.labelTr).join(" ")}`.toLocaleLowerCase("tr");
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [all, role, country, city, topics, supports, amenities, avail, q, nowKey]);
+  }, [all, role, dir, country, city, topics, supports, q]);
 
   const pins = useMemo<MapPin[]>(() => {
     const out: MapPin[] = [];
@@ -117,8 +101,8 @@ export function ExplorePage() {
     return out;
   }, [results]);
 
-  const activeFilters = (role !== "all" ? 1 : 0) + (country ? 1 : 0) + (city ? 1 : 0) + topics.size + supports.size + amenities.size + (avail !== "all" ? 1 : 0);
-  const clearAll = () => { setRole("all"); setCountry(""); setCity(""); setTopics(new Set()); setSupports(new Set()); setAmenities(new Set()); setAvail("all"); };
+  const activeFilters = (role !== "all" ? 1 : 0) + (dir !== "all" ? 1 : 0) + (country ? 1 : 0) + (city ? 1 : 0) + topics.size + supports.size;
+  const clearAll = () => { setRole("all"); setDir("all"); setCountry(""); setCity(""); setTopics(new Set()); setSupports(new Set()); };
   const toggle = <T,>(set: Set<T>, val: T, setter: (s: Set<T>) => void) => {
     const n = new Set(set); n.has(val) ? n.delete(val) : n.add(val); setter(n);
   };
@@ -133,6 +117,16 @@ export function ExplorePage() {
             {r !== "all" && <span className="size-2.5 rounded-full" style={{ background: MAP_COLORS[r] }} />}
             <span className="flex-1">{r === "all" ? t("Tümü", "All") : t(ROLE_META[r].catTr, ROLE_META[r].catEn)}</span>
             <span className="text-xs text-ink-400">{roleCounts[r]}</span>
+          </label>
+        ))}
+      </FilterGroup>
+
+      {/* Katkı yönü */}
+      <FilterGroup title={t("Katkı yönü", "Giving or seeking")}>
+        {([["all", t("Herkes", "Everyone")], ["offer", t("Paylaşıyor (sunuyor)", "Offering / sharing")], ["seek", t("Arıyor (destek istiyor)", "Seeking support")]] as [Dir, string][]).map(([v, label]) => (
+          <label key={v} className="flex cursor-pointer items-center gap-2 py-1">
+            <input type="radio" name="dir" checked={dir === v} onChange={() => setDir(v)} className="accent-forest-600" />
+            <span className="flex-1">{label}</span>
           </label>
         ))}
       </FilterGroup>
@@ -163,32 +157,12 @@ export function ExplorePage() {
         </FilterGroup>
       )}
 
-      {/* Destek türü */}
-      <FilterGroup title={t("Destek türü", "Type of support")}>
+      {/* Paylaşım & destek türü */}
+      <FilterGroup title={t("Paylaşım & destek", "Sharing & support")}>
         {SUPPORT_META.map((s) => (
           <label key={s.key} className="flex cursor-pointer items-center gap-2 py-1">
             <input type="checkbox" checked={supports.has(s.key)} onChange={() => toggle(supports, s.key, setSupports)} className="accent-forest-600" />
             <span className="flex-1">{t(s.tr, s.en)}</span>
-          </label>
-        ))}
-      </FilterGroup>
-
-      {/* Olanaklar */}
-      <FilterGroup title={t("İmkânlar (ev sahipleri)", "Amenities (hosts)")}>
-        {AMEN_FILTERS.map((a) => (
-          <label key={a.key} className="flex cursor-pointer items-center gap-2 py-1">
-            <input type="checkbox" checked={amenities.has(a.key)} onChange={() => toggle(amenities, a.key, setAmenities)} className="accent-forest-600" />
-            <span className="flex-1">{t(a.tr, a.en)}</span>
-          </label>
-        ))}
-      </FilterGroup>
-
-      {/* Müsaitlik */}
-      <FilterGroup title={t("Müsaitlik", "Availability")}>
-        {([["all", t("Hepsi", "Any")], ["month", t("Bu ay müsait", "Available this month")], ["any", t("Bir dönem müsait", "Has open dates")]] as [Avail, string][]).map(([v, label]) => (
-          <label key={v} className="flex cursor-pointer items-center gap-2 py-1">
-            <input type="radio" name="avail" checked={avail === v} onChange={() => setAvail(v)} className="accent-forest-600" />
-            <span className="flex-1">{label}</span>
           </label>
         ))}
       </FilterGroup>
