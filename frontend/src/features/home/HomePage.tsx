@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play, Check, ArrowRight, Backpack, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -44,9 +44,24 @@ export function HomePage() {
   const [community, setCommunity] = useState<PublicMember[]>([]);
   useEffect(() => {
     api.get<{ members: PublicMember[] }>("/public/members")
-      .then((r) => setCommunity(r.members.slice(0, 3)))
+      .then((r) => setCommunity(r.members))
       .catch(() => {});
   }, []);
+
+  // "Topluluğa yeni katılanlar": en yeni üyeler (API zaten created_at DESC döner),
+  // içinde mutlaka bir çiftlik/yer sahibi olsun — yoksa en son katılan host'u öne al.
+  const isHost = (m: PublicMember) => m.category === "host_active" || m.category === "host_idle";
+  const newJoiners = useMemo(() => {
+    if (community.length === 0) return [];
+    const top = community.slice(0, 3);
+    if (top.some(isHost)) return top;
+    const host = community.find(isHost);
+    return host ? [host, ...community.filter((m) => m.id !== host.id).slice(0, 2)] : top;
+  }, [community]);
+  const catLabel = (c: PublicMember["category"]) =>
+    c === "host_active" || c === "host_idle" ? t("Çiftlik / yer sahibi", "Farm / place owner")
+    : c === "volunteer" ? t("Gönüllü", "Volunteer")
+    : t("Topluluk üyesi", "Community member");
 
   const miniCards = [
     { name: "Marta", role: t("Permakültür çiftliği · Portekiz", "Permaculture farm · Portugal"), photo: U + "photo-1544005313-94ddf0286df2?w=160&q=80", tags: [["offer", t("yer & deneyim sunuyor", "offering place & experience")], ["seek", t("gönüllü arıyor", "looking for volunteers")]] },
@@ -148,7 +163,7 @@ export function HomePage() {
             <div className="mb-2.5 text-xs font-semibold tracking-wider text-moss-300">{t("TOPLULUKTAN", "FROM THE COMMUNITY")}</div>
             <div className="flex flex-col gap-2.5">
               {community.length > 0 ? (
-                community.map((m) => (
+                community.slice(0, 3).map((m) => (
                   <Link key={m.id} to="/kesfet" className="block rounded-xl bg-surface p-3 transition hover:shadow-sm">
                     <div className="flex items-center gap-2.5">
                       <Avatar url={m.avatarUrl} className="size-10 shrink-0" />
@@ -218,6 +233,39 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Topluluğa yeni katılanlar — gerçek üyeler (host garantili) */}
+      {newJoiners.length > 0 && (
+        <section className="container-x py-14">
+          <div className="mb-8 text-center">
+            <h2 className="font-display text-3xl font-semibold">{t("Topluluğa yeni katılanlar", "Newly joined the community")}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-ink-500">{t("Aramıza en son katılan üreticiler ve gönüllülerden birkaçı.", "A few of the latest producers and volunteers to join us.")}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {newJoiners.map((m) => (
+              <Link key={m.id} to="/kesfet" className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-5 transition hover:border-forest-500 hover:shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Avatar url={m.avatarUrl} className="size-12" />
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">{m.firstName}</div>
+                    <div className="truncate text-[13px] text-ink-500">{[m.city, m.country].filter(Boolean).join(", ")}</div>
+                  </div>
+                </div>
+                <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full bg-forest-600/10 px-2.5 py-0.5 text-[12px] font-semibold text-forest-700">
+                  {isHost(m) ? <Sprout className="size-3.5" /> : m.category === "volunteer" ? <Backpack className="size-3.5" /> : <Users className="size-3.5" />}
+                  {catLabel(m.category)}
+                </span>
+                {m.headline && <p className="mt-2 line-clamp-2 text-sm text-ink-600">{m.headline}</p>}
+                {m.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {m.tags.slice(0, 3).map((tg) => <Tag key={`${tg.axis}-${tg.value}`} axis={tg.axis}>{lang === "en" ? tg.labelEn : tg.labelTr}</Tag>)}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Çiftlikte hayat bandı */}
       <section className="relative flex min-h-[300px] items-end overflow-hidden bg-cover bg-center"
