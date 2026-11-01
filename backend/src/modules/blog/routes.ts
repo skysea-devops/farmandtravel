@@ -5,7 +5,7 @@ import { query } from "../../shared/db/pool.js";
 import { safeUrl } from "../../shared/media/s3.js";
 import { Forbidden, NotFound } from "../../shared/errors/index.js";
 import { reqLang } from "../../shared/http/lang.js";
-import { translateFields, translateCachedFields, warmTranslations } from "../../shared/text/translate.js";
+import { translateFields, translateBody } from "../../shared/text/translate.js";
 
 export const blogRoutes = new Hono();
 
@@ -87,11 +87,9 @@ blogRoutes.get("/blog/:slug", async (c) => {
   // Short fields translate live (fast). The long body is cache-only so a slow translation
   // can never stall the page — the body is warmed into the cache at publish time instead.
   await translateFields([dto], ["title", "excerpt"], lang);
-  await translateCachedFields([dto], ["body"], lang);
-  // Self-heal: if the EN body isn't cached yet (e.g. a post published before warming
-  // existed), kick off a background warm so the next visit is translated. Fire-and-forget,
-  // never blocks or stalls this response; no-op once the body is cached.
-  if (lang === "en" && dto.body === row.body) void warmTranslations([row.title, row.excerpt, row.body], "en");
+  // Body is translated paragraph-by-paragraph (parallel + cached) so a long body fits the
+  // 15s request budget; first EN view translates & caches, later views are instant.
+  if (typeof dto.body === "string") dto.body = await translateBody(dto.body, lang);
   localizeBrand([dto], ["title", "excerpt", "body"], lang);
   if (typeof dto.body === "string") dto.body = await resolveBodyMedia(dto.body);
   return c.json(dto);
@@ -136,11 +134,7 @@ blogRoutes.post("/admin/blog", auth, requireAdmin, async (c) => {
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING ${COLS}`,
     [slug, b.title, b.excerpt ?? null, b.body, b.coverKey ?? null, name.rows[0]?.first_name ?? null, status, publishedAt],
   );
-  const saved = r.rows[0]!;
-  // Published → warm the EN cache now so reconnectwithsoil.com readers hit the cache
-  // instead of translating a long body on their request. Best-effort; never blocks publish.
-  if (saved.status === "published") await warmTranslations([saved.title, saved.excerpt, saved.body], "en");
-  return c.json(await toDto(saved, true));
+  return c.json(await toDto(r.rows[0]!, true));
 });
 
 const editSchema = z.object({
@@ -167,9 +161,7 @@ blogRoutes.patch("/admin/blog/:id", auth, requireAdmin, async (c) => {
   vals.push(c.req.param("id"));
   const r = await query<Row>(`UPDATE blog_posts SET ${sets.join(", ")} WHERE id=$${vals.length} RETURNING ${COLS}`, vals);
   if (!r.rowCount) throw NotFound("Yazı bulunamadı");
-  const saved = r.rows[0]!;
-  if (saved.status === "published") await warmTranslations([saved.title, saved.excerpt, saved.body], "en");
-  return c.json(await toDto(saved, true));
+  return c.json(await toDto(r.rows[0]!, true));
 });
 
 blogRoutes.delete("/admin/blog/:id", auth, requireAdmin, async (c) => {

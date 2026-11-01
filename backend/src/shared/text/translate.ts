@@ -141,6 +141,32 @@ export async function warmTranslations(texts: (string | null | undefined)[], lan
   try { await translateMany(texts, lang, 25_000); } catch { /* best-effort */ }
 }
 
+// Translate a long markdown body paragraph by paragraph. Splitting keeps each model call
+// small so even a long body fits the 15s Lambda budget; chunks run in parallel and each
+// paragraph is cached individually (via translateMany), so repeat views are instant and
+// partial progress sticks. Image/media paragraphs are left untouched so media:<key> tokens
+// survive for resolveBodyMedia. No-op unless translating to English.
+export async function translateBody(body: string, lang: string): Promise<string> {
+  if (lang !== "en" || !body.trim()) return body;
+  const paras = body.split(/\n{2,}/);
+  const idx: number[] = [];
+  const todo: string[] = [];
+  paras.forEach((p, i) => {
+    if (p.includes("(media:") || /^!\[/.test(p.trim())) return; // leave images/media alone
+    idx.push(i); todo.push(p);
+  });
+  if (todo.length === 0) return body;
+  const CHUNK = 6;
+  const chunks: string[][] = [];
+  for (let i = 0; i < todo.length; i += CHUNK) chunks.push(todo.slice(i, i + CHUNK));
+  const results = await Promise.all(
+    chunks.map((ch) => translateMany(ch, lang, 10_000).catch(() => ch.map(() => null))),
+  );
+  const flat: (string | null)[] = results.flat();
+  idx.forEach((pi, k) => { const t = flat[k]; if (t) paras[pi] = t; });
+  return paras.join("\n\n");
+}
+
 async function bedrockTranslate(sources: string[], lang: string, timeoutMs = 15_000): Promise<string[]> {
   const target = lang === "tr" ? "Turkish" : "English";
   const prompt = `You are a translation engine. Translate the CONTENT of each string in the JSON array below into natural ${target} for a farming / eco community platform.
