@@ -70,11 +70,11 @@ export function HomePage() {
   ] as const;
 
   const steps = [
-    { n: "01", ttl: t("Profilini ve Niyetini Seç", "Choose your profile & intent"),
-      d: t("Gönüllü olmak, toprağını paylaşmak ya da sadece öğrenmek — amacına uygun profilini 2 dakikada oluştur.", "Volunteering, sharing your land, or just learning — set up the profile that fits your goal in 2 minutes."),
-      cta: t("Rolleri Gör", "See the roles"), to: joinTo },
-    { n: "02", ttl: t("Filtrele ve Bağlantı Kur", "Filter & connect"),
-      d: t("Şehir, ilgi duyduğun tarım pratiği (permakültür, zeytincilik, kompost) veya aktiflik durumuna göre insanları bul.", "Find people by city, the farming practice you're into (permaculture, olive growing, composting) or how active they are."),
+    { n: "01", ttl: t("Profilini Oluştur", "Create your profile"),
+      d: t("Gönüllü olmak, bilgi ve deneyim paylaşmak ya da sadece öğrenmek — amacına uygun profilini oluştur.", "Volunteering, sharing knowledge and experience, or just learning — create the profile that fits your goal."),
+      cta: t("Profil Oluştur", "Create profile"), to: joinTo },
+    { n: "02", ttl: t("Topluluğu Keşfet", "Explore the community"),
+      d: t("Şehir, ilgi duyduğun alanlar veya aktiflik durumuna göre insanları bul.", "Find people by city, the areas you're interested in, or how active they are."),
       cta: t("Haritada Ara", "Search the map"), to: "/kesfet" },
     { n: "03", ttl: t("Birlikte Üret ve Paylaş", "Grow & share together"),
       d: t("Çiftlik ziyaretlerine katıl, bilgi alışverişi yap ya da topluluk etkinliklerinde bir araya gel.", "Join farm visits, exchange knowledge, or meet up at community events."),
@@ -201,7 +201,7 @@ export function HomePage() {
       {/* Nasıl çalışır */}
       <section className="container-x py-14">
         <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Toprakla Yeniden Nasıl Çalışır?", "How Reconnect with Soil works")}</h2>
-        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Sadece bir gönüllü takası değil; üretmek, öğrenmek ve doğaya dönmek isteyen herkes için açık bir alan.", "Not just a volunteer exchange — an open space for anyone who wants to produce, learn and return to nature.")}</p>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Üretmek, öğrenmek ve doğaya dönmek isteyen herkes için açık bir alan.", "An open space for anyone who wants to produce, learn and return to nature.")}</p>
         <div className="grid gap-5 md:grid-cols-3">
           {steps.map((s) => (
             <div key={s.n} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
@@ -213,6 +213,17 @@ export function HomePage() {
               </Link>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Çiftlikte hayat bandı */}
+      <section className="relative flex min-h-[300px] items-end overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `linear-gradient(160deg,#2f5741,#6f9e5c)` }}>
+        <BandSlider images={BAND_IMAGES} />
+        <div className="absolute inset-0 bg-linear-90 from-forest-900/70 to-forest-900/20" />
+        <div className="container-x relative py-8 text-white">
+          <h3 className="font-display text-2xl font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">{t("Çiftlikte hayat, birlikte üretmek", "Life on the farm, growing together")}</h3>
+          <p className="max-w-xl text-[15px] text-sand-100 [text-shadow:0_1px_6px_rgba(0,0,0,.4)]">{t("Toprakla uğraşan, öğrenen, paylaşan bir topluluğun parçası ol.", "Become part of a community that works the land, learns and shares.")}</p>
         </div>
       </section>
 
@@ -266,17 +277,6 @@ export function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Çiftlikte hayat bandı */}
-      <section className="relative flex min-h-[300px] items-end overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: `linear-gradient(160deg,#2f5741,#6f9e5c)` }}>
-        <BandSlider images={BAND_IMAGES} />
-        <div className="absolute inset-0 bg-linear-90 from-forest-900/70 to-forest-900/20" />
-        <div className="container-x relative py-8 text-white">
-          <h3 className="font-display text-2xl font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.4)]">{t("Çiftlikte hayat, birlikte üretmek", "Life on the farm, growing together")}</h3>
-          <p className="max-w-xl text-[15px] text-sand-100 [text-shadow:0_1px_6px_rgba(0,0,0,.4)]">{t("Toprakla uğraşan, öğrenen, paylaşan bir topluluğun parçası ol.", "Become part of a community that works the land, learns and shares.")}</p>
-        </div>
-      </section>
 
       {/* Kategoriler */}
       <section className="container-x py-14">
