@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play, Check } from "lucide-react";
+import { Map, Handshake, MessageCircle, Sparkles, Sprout, Lock, Play, Check, ArrowRight, Backpack, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
@@ -55,9 +55,27 @@ export function HomePage() {
   ] as const;
 
   const steps = [
-    { n: 1, ttl: t("Anlat", "Tell us"), d: t("Ne aradığını ve ne sunabildiğini kendi cümlelerinle yaz.", "Describe what you're looking for and what you can offer, in your own words.") },
-    { n: 2, ttl: t("Keşfet", "Discover"), d: t("Haritada ve listede sana uygun kişileri kendin keşfet; ülke, şehir ve konuya göre filtrele.", "Explore the map and list to find the right people yourself; filter by country, city and topic.") },
-    { n: 3, ttl: t("Bağlan", "Connect"), d: t("İstek gönder; iki taraf da kabul edince iletişim açılır.", "Send a request; once both sides accept, contact opens up.") },
+    { n: "01", ttl: t("Profilini ve Niyetini Seç", "Choose your profile & intent"),
+      d: t("Gönüllü olmak, toprağını paylaşmak ya da sadece öğrenmek — amacına uygun profilini 2 dakikada oluştur.", "Volunteering, sharing your land, or just learning — set up the profile that fits your goal in 2 minutes."),
+      cta: t("Rolleri Gör", "See the roles"), to: joinTo },
+    { n: "02", ttl: t("Filtrele ve Bağlantı Kur", "Filter & connect"),
+      d: t("Şehir, ilgi duyduğun tarım pratiği (permakültür, zeytincilik, kompost) veya aktiflik durumuna göre insanları bul.", "Find people by city, the farming practice you're into (permaculture, olive growing, composting) or how active they are."),
+      cta: t("Haritada Ara", "Search the map"), to: "/kesfet" },
+    { n: "03", ttl: t("Birlikte Üret ve Paylaş", "Grow & share together"),
+      d: t("Çiftlik ziyaretlerine katıl, bilgi alışverişi yap ya da topluluk etkinliklerinde bir araya gel.", "Join farm visits, exchange knowledge, or meet up at community events."),
+      cta: t("Etkinlikleri İncele", "Browse events"), to: "/aktiviteler" },
+  ];
+
+  const personas: { Icon: LucideIcon; ttl: string; d: string; cta: string; to: string }[] = [
+    { Icon: Sprout, ttl: t("Emeğini, toprağını veya tecrübeni paylaş.", "Share your work, land or experience."),
+      d: t("İster hasat zamanı destek arayın, ister benzer vizyondaki üreticilerle bilgi paylaşın.", "Whether you're after a hand at harvest time or just want to share knowledge with like-minded producers."),
+      cta: t("Ev Sahibi Olarak Katıl", "Join as a host"), to: joinTo },
+    { Icon: Backpack, ttl: t("Doğanın içinde yerinde deneyim kazan.", "Gain hands-on experience in nature."),
+      d: t("Teoriden pratiğe geçin; sürdürülebilir tarım pratiklerini sahadaki üreticilerle birlikte uygulayın.", "Go from theory to practice; apply sustainable farming practices alongside producers in the field."),
+      cta: t("Gönüllü Fırsatlarını Gör", "See volunteer opportunities"), to: "/kesfet" },
+    { Icon: Users, ttl: t("Doğa odaklı bir çevrenin parçası ol.", "Be part of a nature-focused circle."),
+      d: t("Henüz toprağınız veya vaktiniz olmasa bile topluluk etkinliklerine katılın ve dayanışmayı büyütün.", "Even without land or time yet, join community events and help grow the solidarity."),
+      cta: t("Topluluk Ağına Katıl", "Join the community network"), to: joinTo },
   ];
 
   const [feed, setFeed] = useState<ActivityItem[]>([]);
@@ -121,7 +139,6 @@ export function HomePage() {
             <ul className="mt-5 flex flex-col gap-1.5 text-[13.5px] text-moss-300 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1.5">
               <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Tamamen ücretsiz katılım", "Completely free to join")}</li>
               <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Doğrulanmış profiller", "Verified profiles")}</li>
-              <li className="flex items-center gap-1.5"><Check className="size-4 shrink-0 text-moss-300" /> {t("Kredi kartı gerekmez", "No credit card required")}</li>
             </ul>
           </div>
           {/* Community preview panel — shown on all sizes (on mobile it sits below the hero). */}
@@ -168,15 +185,37 @@ export function HomePage() {
 
       {/* Nasıl çalışır */}
       <section className="container-x py-14">
-        <h2 className="font-display mb-6 text-center text-3xl font-semibold">{t("Nasıl çalışır?", "How it works")}</h2>
+        <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Toprakla Yeniden Nasıl Çalışır?", "How Reconnect with Soil works")}</h2>
+        <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Sadece bir gönüllü takası değil; üretmek, öğrenmek ve doğaya dönmek isteyen herkes için açık bir alan.", "Not just a volunteer exchange — an open space for anyone who wants to produce, learn and return to nature.")}</p>
         <div className="grid gap-5 md:grid-cols-3">
           {steps.map((s) => (
-            <div key={s.n} className="rounded-[var(--radius-lg)] border border-border bg-surface p-6 text-center">
-              <div className="font-display mx-auto mb-3.5 grid size-11 place-items-center rounded-full bg-sand-100 text-xl font-semibold text-forest-600">{s.n}</div>
+            <div key={s.n} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+              <div className="font-display mb-3 text-3xl font-semibold text-moss-300">{s.n}</div>
               <h3 className="mb-1.5 text-[17px] font-semibold">{s.ttl}</h3>
-              <p className="text-sm text-ink-500">{s.d}</p>
+              <p className="mb-4 flex-1 text-sm text-ink-500">{s.d}</p>
+              <Link to={s.to} className="inline-flex items-center gap-1 text-sm font-semibold text-forest-600 hover:gap-1.5 hover:underline">
+                {s.cta} <ArrowRight className="size-4" />
+              </Link>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Hedef kitle / persona kartları */}
+      <section className="bg-sand-100/60">
+        <div className="container-x py-14">
+          <h2 className="font-display mb-2 text-center text-3xl font-semibold">{t("Bu toplulukta senin de yerin var", "There's a place for you here")}</h2>
+          <p className="mx-auto mb-8 max-w-xl text-center text-ink-500">{t("Nereden geldiğin fark etmez — toprakla ilişkin ne olursa olsun, başlayabileceğin bir kapı var.", "Wherever you're coming from — whatever your relationship with the soil, there's a door you can start from.")}</p>
+          <div className="grid gap-5 md:grid-cols-3">
+            {personas.map((p) => (
+              <div key={p.cta} className="flex flex-col rounded-[var(--radius-lg)] border border-border bg-surface p-6">
+                <div className="mb-3.5 grid size-11 place-items-center rounded-full bg-forest-600/10 text-forest-600"><p.Icon className="size-5" strokeWidth={1.75} /></div>
+                <h3 className="font-display mb-1.5 text-[18px] font-semibold leading-snug">{p.ttl}</h3>
+                <p className="mb-5 flex-1 text-sm text-ink-600">{p.d}</p>
+                <Link to={p.to}><Button variant="outline" size="sm" className="w-full justify-center">{p.cta}</Button></Link>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
