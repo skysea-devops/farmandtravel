@@ -109,6 +109,10 @@ export interface PublicMember {
   tags: MatchTag[];
   dir: "offer" | "seek";
   category: "host_active" | "host_idle" | "volunteer" | "other";
+  joinedAt?: string;                 // ISO — kartta "Katıldı: Ekim 2026"
+  blurb?: string | null;             // host'ta iş açıklaması, diğerinde bio (kısa)
+  host?: { amenities: string[]; minStay: string | null; mealTypes: string[] } | null;
+  availMonths?: string[];            // açık ay anahtarları "YYYY-MM"
 }
 export interface Photo { id: string; url: string | null; caption: string | null; category?: string | null }
 export interface MatchCard {
