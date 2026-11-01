@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Lock, Sprout, SlidersHorizontal, List, Map as MapIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -55,10 +56,11 @@ export function ExplorePage() {
   const open = (id: string) =>
     !user ? setModal(true) : navigate(id === myId ? "/app/profil" : `/app/uye/${id}`);
 
+  // Haritada bir pin'e tıklanınca harita görünümünde kal; kişiyi harita üstünde
+  // küçük bir önizleme kartında göster (liste görünümündeysek listede vurgula+kaydır).
   const selectFromPin = (id: string) => {
     setSelectedId(id);
-    setView("list");
-    requestAnimationFrame(() => document.getElementById(`xm-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    if (view === "list") requestAnimationFrame(() => document.getElementById(`xm-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
   };
 
   const countries = useMemo(() => [...new Set(all.map((m) => m.country).filter(Boolean))] as string[], [all]);
@@ -91,6 +93,8 @@ export function ExplorePage() {
       return true;
     });
   }, [all, role, dir, country, city, topics, supports, q]);
+
+  const selectedMember = selectedId ? all.find((m) => m.id === selectedId) ?? null : null;
 
   const pins = useMemo<MapPin[]>(() => {
     const out: MapPin[] = [];
@@ -224,9 +228,28 @@ export function ExplorePage() {
           </div>
 
           {view === "map" ? (
-            <Suspense fallback={<div className="h-[720px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
-              <MembersMap pins={pins} onPinClick={selectFromPin} />
-            </Suspense>
+            <div className="relative">
+              <Suspense fallback={<div className="h-[720px] rounded-[var(--radius-lg)] border border-border bg-[#e8eef0]" />}>
+                <MembersMap pins={pins} onPinClick={selectFromPin} />
+              </Suspense>
+              {selectedMember && (
+                <div className="absolute inset-x-3 bottom-3 z-[500] flex items-center gap-3 rounded-xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
+                  <Avatar url={selectedMember.avatarUrl} className="size-14 shrink-0 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-semibold">{selectedMember.firstName}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: ROLE_META[selectedMember.category].color }}>
+                        {t(ROLE_META[selectedMember.category].tr, ROLE_META[selectedMember.category].en)}
+                      </span>
+                    </div>
+                    <div className="truncate text-xs text-ink-500">{[selectedMember.city, selectedMember.country].filter(Boolean).join(", ")}</div>
+                    {selectedMember.blurb && <p className="line-clamp-1 text-[12.5px] text-ink-600">{selectedMember.blurb}</p>}
+                  </div>
+                  <Button size="sm" className="shrink-0" onClick={() => open(selectedMember.id)}>{t("Profili İncele", "View profile")}</Button>
+                  <button onClick={() => setSelectedId(null)} aria-label={t("Kapat", "Close")} className="shrink-0 text-ink-400 hover:text-ink-700"><X className="size-4" /></button>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {results.map((m) => (
