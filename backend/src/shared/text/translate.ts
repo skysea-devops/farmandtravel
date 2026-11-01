@@ -28,10 +28,16 @@ export async function translateMany(
   // request. Disabled (stub/local): pass through.
   if (!client || lang !== "en") return texts.map((t) => t ?? null);
 
+  // EN hedefinde markayı çeviriye SOKMA: model "Toprakla Yeniden"i düz çevirmesin
+  // (ör. "Back to the Soil") diye kaynağı çeviriden önce İngilizce marka adıyla
+  // değiştir — model İngilizce özel ismi olduğu gibi bırakır. Kaynak hash'i de
+  // değiştiği için önceden yanlış önbelleğe yazılmış çeviriler otomatik atlanır.
+  const brand = (s: string) => s.replace(/Toprakla Yeniden/g, "Reconnect with Soil");
+
   // Distinct non-empty sources, keyed by hash.
   const uniq = new Map<string, string>();
   for (const t of texts) {
-    const s = (t ?? "").trim();
+    const s = brand((t ?? "").trim());
     if (s) uniq.set(hash(s), s);
   }
   if (uniq.size === 0) return texts.map((t) => t ?? null);
@@ -66,7 +72,7 @@ export async function translateMany(
 
   // 3) Map every input back to its translation (or original on miss/failure).
   return texts.map((t) => {
-    const s = (t ?? "").trim();
+    const s = brand((t ?? "").trim());
     if (!s) return t ?? null;
     return out.get(hash(s)) ?? (t ?? null);
   });
