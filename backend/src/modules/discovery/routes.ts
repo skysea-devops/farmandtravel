@@ -248,9 +248,25 @@ discoveryRoutes.get("/members", auth, async (c) => {
 // Keşfet page. No contact, no cognito_sub, no match score — just enough to browse
 // and be enticed to sign up. Registered as a public route in API Gateway.
 discoveryRoutes.get("/public/members", async (c) => {
-  const rows = (await candidates("00000000-0000-0000-0000-000000000000")).map((cd) => {
+  const cds = await candidates("00000000-0000-0000-0000-000000000000");
+  const ids = cds.map((cd) => cd.id);
+  // Host olanakları + müsaitlik teaser projeksiyonunda yok; keşif kartları/filtreleri
+  // için tek sorguda çek (gizli alan yok: hepsi kişinin sunduğu açık bilgiler).
+  const extraRows = ids.length
+    ? await query<{ id: string; host: Record<string, unknown> | null; availability: { months?: Record<string, string> } | null }>(
+        `SELECT id, profile->'host' AS host, profile->'availability' AS availability FROM members WHERE id = ANY($1::uuid[])`, [ids])
+    : { rows: [] as { id: string; host: Record<string, unknown> | null; availability: { months?: Record<string, string> } | null }[] };
+  const extra = new Map(extraRows.rows.map((r) => [r.id, r]));
+  const rows = cds.map((cd) => {
     const tags = cd.tags ?? [];
     const dir: "offer" | "seek" = tags.some((t) => t.axis === "offer") ? "offer" : "seek";
+    const category = categoryOf(tags);
+    const isHost = category === "host_active" || category === "host_idle";
+    const ex = extra.get(cd.id);
+    const host = (ex?.host && typeof ex.host === "object") ? ex.host as Record<string, unknown> : null;
+    const months = ex?.availability?.months ?? {};
+    const availMonths = Object.entries(months).filter(([, s]) => s === "open").map(([k]) => k);
+    const blurbSrc = (isHost && typeof host?.work === "string" && host.work) ? host.work as string : (cd.bio ?? null);
     return {
       id: cd.id,
       firstName: cd.first_name,
@@ -262,11 +278,19 @@ discoveryRoutes.get("/public/members", async (c) => {
       ratingCount: Number(cd.rating_count ?? 0),
       tags,
       dir,
-      category: categoryOf(tags),
+      category,
+      joinedAt: cd.created_at,
+      blurb: blurbSrc ? blurbSrc.slice(0, 240) : null,
+      host: isHost && host ? {
+        amenities: Array.isArray(host.amenities) ? (host.amenities as string[]) : [],
+        minStay: typeof host.minStay === "string" ? host.minStay : null,
+        mealTypes: Array.isArray(host.mealTypes) ? (host.mealTypes as string[]) : [],
+      } : null,
+      availMonths,
     };
   });
   const withUrls = await withAvatarUrls(rows);
-  await translateFields(withUrls, ["headline", "country"], reqLang(c));
+  await translateFields(withUrls, ["headline", "country", "blurb"], reqLang(c));
   return c.json({ members: withUrls });
 });
 
